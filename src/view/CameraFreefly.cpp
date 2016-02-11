@@ -1,5 +1,6 @@
 #include "view/CameraFreefly.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/ext.hpp>
 
 void CameraFreefly::computeDirs() {
     // Spherical coordinates
@@ -47,4 +48,16 @@ void CameraFreefly::setEye(const glm::vec3 &eye) {
 
 glm::vec3 CameraFreefly::getEye() const {
     return _eye;
+}
+
+std::ostream& operator<<(std::ostream& out, const CameraFreefly& c){
+    out << "Camera" << std::endl;
+    out << "----------------------" << std::endl;
+    out << "Eye:\t\t "          << glm::to_string(c._eye)               << std::endl;
+    out << "Angles:\t\t "       << glm::to_string(c._sphericalAngles)   << std::endl;
+    out << "Front:\t\t "        << glm::to_string(c._front)             << std::endl;
+    out << "Front Left:\t "   << glm::to_string(c._frontLeft)         << std::endl;
+    out << "Up:\t\t\t "           << glm::to_string(c._up)                << std::endl;
+    out << "----------------------" << std::endl << std::endl;
+    return out;
 }

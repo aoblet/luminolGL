@@ -3,6 +3,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
+#include <iostream>
 
 /**
  * Freefly camera: free movement Camera. Like spectator FPS game camera.
@@ -27,5 +28,8 @@ public:
     void setEye(const glm::vec3& eye);
     glm::vec3 getEye() const;
     const glm::mat4& getViewMatrix() const;
+    friend std::ostream& operator<<(std::ostream& out, const CameraFreefly& c);
 };
+
+std::ostream& operator<<(std::ostream& out, const CameraFreefly& c);
 
