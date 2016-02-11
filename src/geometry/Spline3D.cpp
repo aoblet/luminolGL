@@ -2,8 +2,8 @@
 // Created by mehdi on 10/02/16.
 //
 
-#include "Spline3D.h"
-#include "Interpolation.h"
+#include "geometry/Spline3D.h"
+#include "geometry/Interpolation.h"
 
 namespace Geometry
 {
