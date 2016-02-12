@@ -52,14 +52,33 @@ glm::vec3 CameraFreefly::getEye() const {
     return _eye;
 }
 
+glm::vec3 CameraFreefly::getFront() const {
+    return _front;
+}
+
+void CameraFreefly::setFront(const glm::vec3 &front) {
+    _front = front;
+}
+
+void CameraFreefly::updateFromTarget(const glm::vec3 &target) {
+    _front = glm::normalize(target - _eye);
+    _frontLeft.x = _front.x * glm::cos(glm::half_pi<float>()) - _front.z * glm::sin(glm::half_pi<float>());
+    _frontLeft.y = 0;
+    _frontLeft.z = _front.x * glm::sin(glm::half_pi<float>()) + _front.z * glm::cos(glm::half_pi<float>());
+
+    _frontLeft = glm::normalize(_frontLeft);
+    _up = glm::cross(_front, _frontLeft);
+    _matrix = glm::lookAt(_eye, _eye + _front, -_up);
+}
+
 std::ostream& View::operator<<(std::ostream& out, const CameraFreefly& c){
     out << "Camera" << std::endl;
     out << "----------------------" << std::endl;
     out << "Eye:\t\t "          << glm::to_string(c._eye)               << std::endl;
     out << "Angles:\t\t "       << glm::to_string(c._sphericalAngles)   << std::endl;
     out << "Front:\t\t "        << glm::to_string(c._front)             << std::endl;
-    out << "Front Left:\t "   << glm::to_string(c._frontLeft)         << std::endl;
-    out << "Up:\t\t\t "           << glm::to_string(c._up)                << std::endl;
+    out << "Front Left:\t "     << glm::to_string(c._frontLeft)         << std::endl;
+    out << "Up:\t\t\t "         << glm::to_string(c._up)                << std::endl;
     out << "----------------------" << std::endl << std::endl;
     return out;
 }

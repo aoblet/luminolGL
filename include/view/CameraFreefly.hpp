@@ -26,8 +26,14 @@ namespace View{
         void rotate(const glm::vec2& angles);
         void computeDirs();
         void update(const glm::vec2& angles, float speedFront, float speedLeft);
+        void updateFromTarget(const glm::vec3& target);  /** Useful for splines orientation */
+
+        void setFront(const glm::vec3& front);
+        glm::vec3 getFront() const;
+
         void setEye(const glm::vec3& eye);
         glm::vec3 getEye() const;
+
         const glm::mat4& getViewMatrix() const;
         friend std::ostream& operator<<(std::ostream& out, const CameraFreefly& c);
     };
