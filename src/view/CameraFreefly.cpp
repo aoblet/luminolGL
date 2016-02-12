@@ -2,6 +2,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/ext.hpp>
 
+using namespace View;
+
 void CameraFreefly::computeDirs() {
     // Spherical coordinates
     _front.x = glm::cos(_sphericalAngles.y) * glm::cos(_sphericalAngles.x);
@@ -50,7 +52,7 @@ glm::vec3 CameraFreefly::getEye() const {
     return _eye;
 }
 
-std::ostream& operator<<(std::ostream& out, const CameraFreefly& c){
+std::ostream& View::operator<<(std::ostream& out, const CameraFreefly& c){
     out << "Camera" << std::endl;
     out << "----------------------" << std::endl;
     out << "Eye:\t\t "          << glm::to_string(c._eye)               << std::endl;
