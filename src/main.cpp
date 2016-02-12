@@ -27,6 +27,7 @@
 #include <glm/gtc/random.hpp>
 
 #include "geometry/Spline3D.h"
+#include "view/CameraFreefly.hpp"
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -126,21 +127,6 @@ struct UniformCamera
     }
 };
 
-struct Camera
-{
-    float radius;
-    float theta;
-    float phi;
-    glm::vec3 o;
-    glm::vec3 eye;
-    glm::vec3 up;
-};
-
-void camera_defaults(Camera & c);
-void camera_zoom(Camera & c, float factor);
-void camera_turn(Camera & c, float phi, float theta);
-void camera_trav(Camera & c, float x, float y);
-
 struct GUIStates
 {
     bool panLock;
@@ -168,14 +154,16 @@ void printVec3(glm::vec3 vec){
 int main( int argc, char **argv )
 {
     Geometry::Spline3D spline;
-    spline.add(glm::vec3(0,0,0));
+    spline.add(glm::vec3(0,10,0)  );
+    spline.add(glm::vec3(10,10,0) );
     spline.add(glm::vec3(10,10,10));
-    spline.add(glm::vec3(20,0,20));
-    spline.add(glm::vec3(30,10,30));
-    spline.add(glm::vec3(40,0,0));
+    spline.add(glm::vec3(0,10,0)  );
+
+    Geometry::Spline3D splineTargetView;
+    splineTargetView.add(glm::vec3(0, 0, 0));
 
 
-    int width = 1800, height= 900;
+    int width = 1300, height= 700;
     float widthf = (float) width, heightf = (float) height;
 
     float fps = 0.f;
@@ -879,8 +867,7 @@ int main( int argc, char **argv )
     glBindBufferRange(GL_UNIFORM_BUFFER, CameraBindingPoint, ubo[1], 0, sizeof(UniformCamera));
 
     // Viewer Structures ----------------------------------------------------------------------------------------------------------------------
-    Camera camera;
-    camera_defaults(camera);
+    View::CameraFreefly camera;
     GUIStates guiStates;
     init_gui_states(guiStates);
 
@@ -895,7 +882,6 @@ int main( int argc, char **argv )
     {
         t = glfwGetTime();
 
-        camera.eye = spline.cubicInterpolation(glm::mod(t*0.05f,1.f));
 
         // Mouse states
         int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
@@ -939,22 +925,19 @@ int main( int argc, char **argv )
                     zoomDir = -1.f;
                 else if (diffLockPositionX < 0 )
                     zoomDir = 1.f;
-                camera_zoom(camera, zoomDir * GUIStates::MOUSE_ZOOM_SPEED);
             }
             else if (guiStates.turnLock)
             {
-                camera_turn(camera, diffLockPositionY * GUIStates::MOUSE_TURN_SPEED,
-                            diffLockPositionX * GUIStates::MOUSE_TURN_SPEED);
 
             }
             else if (guiStates.panLock)
             {
-                camera_trav(camera, diffLockPositionX * GUIStates::MOUSE_PAN_SPEED,
-                            diffLockPositionY * GUIStates::MOUSE_PAN_SPEED);
             }
             guiStates.lockPositionX = mousex;
             guiStates.lockPositionY = mousey;
         }
+        camera.setEye(spline.cubicInterpolation(glm::mod(t*0.05f, 1.f)));
+        camera.updateFromTarget(splineTargetView.cubicInterpolation(glm::mod(t * 0.05f, 1.f)));
 
 //        float speed = 0.005;
 //        float travX = speed;
@@ -968,7 +951,7 @@ int main( int argc, char **argv )
 
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 10000.f);
-        glm::mat4 worldToView = glm::lookAt(camera.eye, camera.o, camera.up);
+        glm::mat4 worldToView = camera.getViewMatrix();
         glm::mat4 objectToWorld;
         glm::mat4 mvp = projection * worldToView * objectToWorld;
         glm::mat4 mv = worldToView * objectToWorld;
@@ -1112,7 +1095,7 @@ int main( int argc, char **argv )
         glBlendFunc(GL_ONE, GL_ONE);
 
         // Update Camera pos and screenToWorld matrix to all light shaders
-        UniformCamera cam(camera.eye, glm::inverse(mvp), mvInverse);
+        UniformCamera cam(camera.getEye(), glm::inverse(mvp), mvInverse);
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo[1]);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformCamera), &cam);
@@ -1679,59 +1662,6 @@ bool checkError(const char* title)
         fprintf(stdout, "OpenGL Error(%s): %s\n", errorString.c_str(), title);
     }
     return error == GL_NO_ERROR;
-}
-
-void camera_compute(Camera & c)
-{
-    c.eye.x = cos(c.theta) * sin(c.phi) * c.radius + c.o.x;
-    c.eye.y = cos(c.phi) * c.radius + c.o.y ;
-    c.eye.z = sin(c.theta) * sin(c.phi) * c.radius + c.o.z;
-    c.up = glm::vec3(0.f, c.phi < M_PI ?1.f:-1.f, 0.f);
-}
-
-void camera_defaults(Camera & c)
-{
-    c.phi = 3.14/2.f;
-    c.theta = 3.14/2.f;
-    c.radius = 10.f;
-    camera_compute(c);
-}
-
-void camera_zoom(Camera & c, float factor)
-{
-    c.radius += factor * c.radius ;
-    if (c.radius < 0.1)
-    {
-        c.radius = 10.f;
-        c.o = c.eye + glm::normalize(c.o - c.eye) * c.radius;
-    }
-    camera_compute(c);
-}
-
-void camera_turn(Camera & c, float phi, float theta)
-{
-    c.theta += 1.f * theta;
-    c.phi   -= 1.f * phi;
-    if (c.phi >= (2 * M_PI) - 0.1 )
-        c.phi = 0.00001;
-    else if (c.phi <= 0 )
-        c.phi = 2 * M_PI - 0.1;
-    camera_compute(c);
-}
-
-void camera_trav(Camera & c, float x, float y)
-{
-    glm::vec3 up(0.f, c.phi < M_PI ?1.f:-1.f, 0.f);
-    glm::vec3 fwd = glm::normalize(c.o - c.eye);
-    glm::vec3 side = glm::normalize(glm::cross(fwd, up));
-    c.up = glm::normalize(glm::cross(side, fwd));
-    c.o[0] += up[0] * y * c.radius * 2;
-    c.o[1] += up[1] * y * c.radius * 2;
-    c.o[2] += up[2] * y * c.radius * 2;
-    c.o[0] -= side[0] * x * c.radius * 2;
-    c.o[1] -= side[1] * x * c.radius * 2;
-    c.o[2] -= side[2] * x * c.radius * 2;
-    camera_compute(c);
 }
 
 void init_gui_states(GUIStates & guiStates)
