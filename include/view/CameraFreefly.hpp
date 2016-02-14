@@ -5,12 +5,13 @@
 #include <glm/mat4x4.hpp>
 #include <iostream>
 
-/**
- * Freefly camera: free movement Camera. Like spectator FPS game camera.
- * Looks by default in Z direction.
- */
 
 namespace View{
+    /**
+    * Freefly camera: free movement Camera. Like spectator FPS game camera.
+    * Looks by default in Z direction.
+    */
+
     class CameraFreefly {
         glm::mat4 _matrix;          /** Transform matrix obtained by glm::lookAt */
         glm::vec3 _eye;             /** World camera position */
