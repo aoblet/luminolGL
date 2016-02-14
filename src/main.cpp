@@ -30,6 +30,7 @@
 
 #include "graphics/Texture.h"
 #include "graphics/TextureHandler.h"
+#include "graphics/VertexDescriptor.h"
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -382,9 +383,72 @@ int main( int argc, char **argv )
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
     int cube_triangleCount = 12;
     int cube_triangleList[] = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 19, 17, 20, 21, 22, 23, 24, 25, 26, };
-    float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
+
     float cube_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
     float cube_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
+    float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
+
+    /* ------------------ TEST ------------------- */
+
+    std::vector<Graphics::VertexDescriptor> test_vertex_tab;
+
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, 0, 1, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, 0, 1, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 0, 1, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 0, 1, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 1, 0, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 1, 0, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 1, 0, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 1, 0, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 0, -1, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 0, -1, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, 0, -1, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, 0, -1, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, -1, 0, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, -1, 0, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, -1, 0, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, -1, 0, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 1, 0, 0, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 1, 0, 0, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 1, 0, 0, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, -1, 0, 0, 0.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, -1, 0, 0, 1.f, 0.f));
+
+    GLuint test_vao;
+    GLuint text_vbo_vertex;
+    GLuint text_vbo_ids;
+    glGenVertexArrays(1, &test_vao);
+    glGenBuffers(1, &text_vbo_vertex);
+    glGenBuffers(1, &text_vbo_ids);
+
+    glBindVertexArray(test_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text_vbo_ids);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_triangleList), cube_triangleList, GL_STATIC_DRAW);
+
+    // position
+    glBindBuffer(GL_ARRAY_BUFFER, text_vbo_vertex);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)0);
+
+    // normal
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)(3*sizeof(GL_FLOAT)));
+
+    // uv
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)(6*sizeof(GL_FLOAT)));
+
+    glBufferData(GL_ARRAY_BUFFER, test_vertex_tab.size() * sizeof(Graphics::VertexDescriptor), test_vertex_tab.data(), GL_STATIC_DRAW);
+
+    /* ------------------------------------------- */
+
+
 
     // Bind the VAO
     glBindVertexArray(vao[0]);
@@ -1042,10 +1106,10 @@ int main( int argc, char **argv )
 
         //-------------------------------------Render Cubes
 
-        glBindVertexArray(vao[0]);
+        glBindVertexArray(test_vao);
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glDrawElementsInstanced(GL_TRIANGLES, test_vertex_tab.size() + 9, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
 
