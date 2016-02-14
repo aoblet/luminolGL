@@ -25,9 +25,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
+#include <libgen.h>
+#include <graphics/UBO.hpp>
 
 #include "geometry/Spline3D.h"
 #include "view/CameraFreefly.hpp"
+#include "graphics/ShaderProgram.hpp"
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -52,10 +55,7 @@ extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
 
 // Shader utils
-int check_link_error(GLuint program);
 int check_compile_error(GLuint shader, const char ** sourceBuffer);
-GLuint compile_shader(GLenum shaderType, const char * sourceBuffer, int bufferSize);
-GLuint compile_shader_from_file(GLenum shaderType, const char * fileName);
 
 // OpenGL utils
 bool checkError(const char* title);
@@ -74,7 +74,11 @@ struct Light
     float _intensity;
     float _attenuation;
 
-    Light(glm::vec3 pos = glm::vec3(0,0,0), glm::vec3 color = glm::vec3(1,1,1), float intensity = 1, float attenuation = 2){
+    Light(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2){
+        update(pos, color, intensity, attenuation);
+    }
+
+    void update(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
         _pos = pos;
         _color = color;
         _intensity = intensity;
@@ -103,6 +107,12 @@ struct SpotLight
     float _falloff; //68
 
     SpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff){
+        update(pos, dir, color, intensity, attenuation, angle, falloff);
+    }
+
+    SpotLight(){};
+
+    void update(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff){
         _pos = pos;
         _dir = dir;
         _color = color;
@@ -120,11 +130,17 @@ struct UniformCamera
     glm::mat4 _screenToWorld;
     glm::mat4 _viewToWorld;
 
+    UniformCamera(){}
     UniformCamera(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
+        update(pos, screenToWorld, viewToWorld);
+    }
+
+    void update(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
         _pos = pos;
         _screenToWorld = screenToWorld;
         _viewToWorld = viewToWorld;
     }
+
 };
 
 struct GUIStates
@@ -172,7 +188,7 @@ int main( int argc, char **argv )
     if( !glfwInit() )
     {
         fprintf( stderr, "Failed to initialize GLFW\n" );
-        exit( EXIT_FAILURE );
+        return EXIT_FAILURE;
     }
     glfwInit();
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -199,7 +215,7 @@ int main( int argc, char **argv )
     {
         fprintf( stderr, "Failed to open GLFW window\n" );
         glfwTerminate();
-        exit( EXIT_FAILURE );
+        return( EXIT_FAILURE );
     }
     glfwMakeContextCurrent(window);
 
@@ -210,7 +226,7 @@ int main( int argc, char **argv )
     {
         /* Problem: glewInit failed, something is seriously wrong. */
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-        exit( EXIT_FAILURE );
+        return EXIT_FAILURE;
     }
 
     // Ensure we can capture the escape key being pressed below
@@ -224,136 +240,23 @@ int main( int argc, char **argv )
     if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
     {
         fprintf(stderr, "Could not init GUI renderer.\n");
-        exit(EXIT_FAILURE);
+        return(EXIT_FAILURE);
     }
 
-    GLuint vertShaderId[4];
-    GLuint fragShaderId[12];
-    GLuint programObject[12];
+    Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "../shaders/aogl.geom", "../shaders/aogl.frag");
+    Graphics::ShaderProgram debugShader("../shaders/blit.vert", "", "../shaders/blit.frag");
+    Graphics::ShaderProgram pointLightShader(debugShader.vShader(), "../shaders/pointLight.frag");
+    Graphics::ShaderProgram directionalLightShader(debugShader.vShader(), "../shaders/directionnalLight.frag");
+    Graphics::ShaderProgram spotLightShader(debugShader.vShader(), "../shaders/spotLight.frag");
+    Graphics::ShaderProgram debugShapesShader("../shaders/debug.vert", "", "../shaders/debug.frag");
+    Graphics::ShaderProgram shadowShader("../shaders/shadow.vert", "", "../shaders/shadow.frag");
+    Graphics::ShaderProgram gammaShader(debugShader.vShader(), "../shaders/gammaCorrection.frag");
+    Graphics::ShaderProgram sobelShader(debugShader.vShader(), "../shaders/sobel.frag");
+    Graphics::ShaderProgram blurShader(debugShader.vShader(), "../shaders/blur.frag");
+    Graphics::ShaderProgram circleConfusionShader(debugShader.vShader(), "../shaders/coc.frag");
+    Graphics::ShaderProgram depthOfFieldShader(debugShader.vShader(), "../shaders/dof.frag");
 
-    // -------------------- Shader0 for Geometry, Normals, and so on
-    vertShaderId[0] = compile_shader_from_file(GL_VERTEX_SHADER, "../shaders/aogl.vert");
-    fragShaderId[0] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/aogl.frag");
-    GLuint geomShaderId = compile_shader_from_file(GL_GEOMETRY_SHADER, "../shaders/aogl.geom");
-    programObject[0] = glCreateProgram();
-    glAttachShader(programObject[0], vertShaderId[0]);
-    glAttachShader(programObject[0], geomShaderId);
-    glAttachShader(programObject[0], fragShaderId[0]);
-    glLinkProgram(programObject[0]);
-    if (check_link_error(programObject[0]) < 0)
-        exit(1);
-
-    // -------------------- Shader1 for Debug Drawing
-
-    vertShaderId[1] = compile_shader_from_file(GL_VERTEX_SHADER, "../shaders/blit.vert");
-    fragShaderId[1] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/blit.frag");
-    programObject[1] = glCreateProgram();
-    glAttachShader(programObject[1], vertShaderId[1]);
-    glAttachShader(programObject[1], fragShaderId[1]);
-    glLinkProgram(programObject[1]);
-    if (check_link_error(programObject[1]) < 0)
-        exit(1);
-
-    // -------------------- Shader2 for Point Light
-    fragShaderId[2] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/pointLight.frag");
-    programObject[2] = glCreateProgram();
-    glAttachShader(programObject[2], vertShaderId[1]);
-    glAttachShader(programObject[2], fragShaderId[2]);
-    glLinkProgram(programObject[2]);
-    if (check_link_error(programObject[2]) < 0)
-        exit(1);
-
-    // -------------------- Shader3 for Directionnal Light
-    fragShaderId[3] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/directionnalLight.frag");
-    programObject[3] = glCreateProgram();
-    glAttachShader(programObject[3], vertShaderId[1]);
-    glAttachShader(programObject[3], fragShaderId[3]);
-    glLinkProgram(programObject[3]);
-    if (check_link_error(programObject[3]) < 0)
-        exit(1);
-
-    // -------------------- Shader4 for Spot Light
-    fragShaderId[4] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/spotLight.frag");
-    programObject[4] = glCreateProgram();
-    glAttachShader(programObject[4], vertShaderId[1]);
-    glAttachShader(programObject[4], fragShaderId[4]);
-    glLinkProgram(programObject[4]);
-    if (check_link_error(programObject[4]) < 0)
-        exit(1);
-
-    // -------------------- Shader5 for Debug Shapes
-
-    vertShaderId[2] = compile_shader_from_file(GL_VERTEX_SHADER, "../shaders/debug.vert");
-    fragShaderId[5] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/debug.frag");
-    programObject[5] = glCreateProgram();
-    glAttachShader(programObject[5], vertShaderId[2]);
-    glAttachShader(programObject[5], fragShaderId[5]);
-    glLinkProgram(programObject[5]);
-    if (check_link_error(programObject[5]) < 0)
-        exit(1);
-
-    // -------------------- Shader6 for Debug Shapes
-
-    vertShaderId[3] = compile_shader_from_file(GL_VERTEX_SHADER, "../shaders/shadow.vert");
-    fragShaderId[6] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/shadow.frag");
-    programObject[6] = glCreateProgram();
-    glAttachShader(programObject[6], vertShaderId[3]);
-    glAttachShader(programObject[6], fragShaderId[6]);
-    glLinkProgram(programObject[6]);
-    if (check_link_error(programObject[6]) < 0)
-        exit(1);
-
-    // -------------------- Shader7 for Gamma Correction
-
-    fragShaderId[7] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/gammaCorrection.frag");
-    programObject[7] = glCreateProgram();
-    glAttachShader(programObject[7], vertShaderId[1]);
-    glAttachShader(programObject[7], fragShaderId[7]);
-    glLinkProgram(programObject[7]);
-    if (check_link_error(programObject[7]) < 0)
-        exit(1);
-
-    // -------------------- Shader8 for Sobel
-
-    fragShaderId[8] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/sobel.frag");
-    programObject[8] = glCreateProgram();
-    glAttachShader(programObject[8], vertShaderId[1]);
-    glAttachShader(programObject[8], fragShaderId[8]);
-    glLinkProgram(programObject[8]);
-    if (check_link_error(programObject[8]) < 0)
-        exit(1);
-
-    // -------------------- Shader9 for Blur
-
-    fragShaderId[9] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/blur.frag");
-    programObject[9] = glCreateProgram();
-    glAttachShader(programObject[9], vertShaderId[1]);
-    glAttachShader(programObject[9], fragShaderId[9]);
-    glLinkProgram(programObject[9]);
-    if (check_link_error(programObject[9]) < 0)
-        exit(1);
-
-    // -------------------- Shader10 for Circle of Confusion
-
-    fragShaderId[10] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/coc.frag");
-    programObject[10] = glCreateProgram();
-    glAttachShader(programObject[10], vertShaderId[1]);
-    glAttachShader(programObject[10], fragShaderId[10]);
-    glLinkProgram(programObject[10]);
-    if (check_link_error(programObject[10]) < 0)
-        exit(1);
-
-    // -------------------- Shader11 for Circle of Confusion
-
-    fragShaderId[11] = compile_shader_from_file(GL_FRAGMENT_SHADER, "../shaders/dof.frag");
-    programObject[11] = glCreateProgram();
-    glAttachShader(programObject[11], vertShaderId[1]);
-    glAttachShader(programObject[11], fragShaderId[11]);
-    glLinkProgram(programObject[11]);
-    if (check_link_error(programObject[11]) < 0)
-        exit(1);
-
-    // Viewport 
+    // Viewport
     glViewport( 0, 0, width, height );
 
     // Create Vao & vbo -------------------------------------------------------------------------------------------------------------------------------
@@ -487,126 +390,100 @@ int main( int argc, char **argv )
     // spotLights.push_back(SpotLight(glm::vec3(-10,1,-10), glm::vec3(1,-1,1), glm::vec3(0.5,1,1), 10, 1, 60, 90));
 
     // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
+    const std::string UNIFORM_NAME_MVP              = "MVP";
+    const std::string UNIFORM_NAME_MV               = "MV";
+    const std::string UNIFORM_NAME_MV_INVERSE       = "MVInverse";
+    const std::string UNIFORM_NAME_TIME             = "Time";
+    const std::string UNIFORM_NAME_SLIDER           = "Slider";
+    const std::string UNIFORM_NAME_SLIDER_MULT      = "SliderMult";
+    const std::string UNIFORM_NAME_SPECULAR_POWER   = "SpecularPower";
+    const std::string UNIFORM_NAME_INSTANCE_NUMBER  = "InstanceNumber";
+
+    const std::string UNIFORM_NAME_SHADOW_MVP       = "ShadowMVP";
+    const std::string UNIFORM_NAME_SHADOW_MV        = "ShadowMV";
+    const std::string UNIFORM_NAME_SHADOW_BIAS      = "ShadowBias";
+    const std::string UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN = "WorldToLightScreen";
+    const std::string UNIFORM_NAME_SCREEN_TO_VIEW  = "ScreenToView";
+
+    const std::string UNIFORM_NAME_FOCUS            = "Focus";
+    const std::string UNIFORM_NAME_SHADOW_BUFFER    = "ShadowBuffer";
+    const std::string UNIFORM_NAME_GAMMA            = "Gamma";
+    const std::string UNIFORM_NAME_SOBEL_INTENSITY  = "SobelIntensity";
+    const std::string UNIFORM_NAME_BLUR_SAMPLE_COUNT= "SampleCount";
+    const std::string UNIFORM_NAME_BLUR_DIRECTION   = "BlurDirection";
+
+    const std::string UNIFORM_NAME_DOF_COLOR        = "Color";
+    const std::string UNIFORM_NAME_DOF_COC          = "CoC";
+    const std::string UNIFORM_NAME_DOF_BLUR         = "Blur";
+
+    const std::string UNIFORM_NAME_COLOR_BUFFER     = "ColorBuffer";
+    const std::string UNIFORM_NAME_NORMAL_BUFFER    = "NormalBuffer";
+    const std::string UNIFORM_NAME_DEPTH_BUFFER     = "DepthBuffer";
+    const std::string UNIFORM_NAME_DIFFUSE          = "Diffuse";
+    const std::string UNIFORM_NAME_SPECULAR         = "Specular";
+
 
     // ---------------------- For Geometry Shading
-    GLint mvpLocation = glGetUniformLocation(programObject[0], "MVP");
-    GLint mvLocation = glGetUniformLocation(programObject[0], "MV");
-
-    GLint mvInverseLocation = glGetUniformLocation(programObject[1], "MVInverse");
-
     float t = 0;
-    GLint timeLocation = glGetUniformLocation(programObject[0], "Time");
-
     float SliderValue = 0.3;
-    GLint sliderLocation = glGetUniformLocation(programObject[0], "Slider");
-
     float SliderMult = 80;
-    GLint sliderMultLocation = glGetUniformLocation(programObject[0], "SliderMult");
-
     float specularPower = 20;
-    GLint specularPowerLocation = glGetUniformLocation(programObject[0], "SpecularPower");
-
-    GLint diffuseLocation = glGetUniformLocation(programObject[0], "Diffuse");
-    glProgramUniform1i(programObject[0], diffuseLocation, 0);
-
-    GLint specularLocation = glGetUniformLocation(programObject[0], "Specular");
-    glProgramUniform1i(programObject[0], specularLocation, 1);
-
     float instanceNumber = 100;
-    GLint instanceNumberLocation = glGetUniformLocation(programObject[0], "InstanceNumber");
-    glProgramUniform1i(programObject[0], instanceNumberLocation, int(instanceNumber));
 
-    GLint instanceNumberShadowLocation = glGetUniformLocation(programObject[6], "InstanceNumber");
-    glProgramUniform1i(programObject[6], instanceNumberShadowLocation, int(instanceNumber));
+    mainShader.updateUniform(UNIFORM_NAME_DIFFUSE, 0);
+    mainShader.updateUniform(UNIFORM_NAME_SPECULAR, 1);
+    mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+    shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
 
     if (!checkError("Uniforms"))
-        exit(1);
+        return(1);
 
     // ---------------------- For Light Pass Shading
+    directionalLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
+    spotLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
+    pointLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
 
-    for(int i = 2; i < 5; ++i){
-        GLint colorBufferLocation = glGetUniformLocation(programObject[i], "ColorBuffer");
-        glProgramUniform1i(programObject[i], colorBufferLocation, 0);
+    directionalLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
+    spotLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
+    pointLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
 
-        GLint normalBufferLocation = glGetUniformLocation(programObject[i], "NormalBuffer");
-        glProgramUniform1i(programObject[i], normalBufferLocation, 1);
+    directionalLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
+    spotLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
+    pointLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
 
-        GLint depthBufferLocation = glGetUniformLocation(programObject[i], "DepthBuffer");
-        glProgramUniform1i(programObject[i], depthBufferLocation, 2);
-    }
 
     if (!checkError("Uniforms"))
-        exit(1);
+        return(1);
 
-
-    // ---------------------- For Debug Shading
-
-    GLint mvpDebugLocation = glGetUniformLocation(programObject[5], "MVP");
-
-    if (!checkError("Uniforms"))
-        exit(1);
-
-    // ---------------------- For Shadow Pass Shading
-
-    GLint shadowMVPLocation = glGetUniformLocation(programObject[6], "ShadowMVP");
-    GLint shadowMVLocation = glGetUniformLocation(programObject[6], "ShadowMV");
-
-    GLint shadowWorldToLightScreenLocation = glGetUniformLocation(programObject[4], "WorldToLightScreen");
-
-    GLint shadowBufferLocation = glGetUniformLocation(programObject[4], "ShadowBuffer");
-    glProgramUniform1i(programObject[4], shadowBufferLocation, 3);
-
+    GLint blurDirectionLocation = glGetUniformLocation(blurShader.id(), "BlurDirection");
+    // ---------------------- FX Variables
     float shadowBias = 0.00001;
-    GLint shadowBiasLocation = glGetUniformLocation(programObject[4], "ShadowBias");
-
-    if (!checkError("Uniforms"))
-        exit(1);
-
-    // ---------------------- For Gamma Correction
-
     float gamma = 1.22;
-    GLint gammaLocation = glGetUniformLocation(programObject[7], "Gamma");
-    glProgramUniform1f(programObject[7], gammaLocation, gamma);
-
-
-    // ---------------------- For Sobel Correction
-
     float sobelIntensity = 0.5;
-    GLint sobelIntensityLocation = glGetUniformLocation(programObject[8], "SobelIntensity");
-    glProgramUniform1f(programObject[8], sobelIntensityLocation, sobelIntensity);
+    int sampleCount = 8; // blur
+    glm::vec3 focus(0, 1, 10);
 
-    // ---------------------- For Blur Correction
 
-    int sampleCount = 8;
-    GLint sampleCountLocation = glGetUniformLocation(programObject[9], "SampleCount");
-    glProgramUniform1i(programObject[9], sampleCountLocation, sampleCount);
+    // ---------------------- FX uniform update
+    // For shadow pass shading
+    spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BUFFER, 3);
 
-    int blurDirection[2] = {1,0};
-    GLint blurDirectionLocation = glGetUniformLocation(programObject[9], "BlurDirection");
-    glProgramUniform2i(programObject[9], blurDirectionLocation, blurDirection[0], blurDirection[1]);
+    gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
+    sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
+    blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
+    blurShader.updateUniform(UNIFORM_NAME_BLUR_DIRECTION, glm::ivec2(1,0));
 
     // ---------------------- For coc Correction
-
-    GLint screenToViewLocation = glGetUniformLocation(programObject[10], "ScreenToView");
-
-    glm::vec3 focus(0, 1, 10);
-    GLint focusLocation = glGetUniformLocation(programObject[10], "Focus");
-    glProgramUniform3f(programObject[10], focusLocation, focus[0], focus[1], focus[2]);
+    circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
 
     // ---------------------- For dof Correction
-
-    GLint colorBufferDOFLocation = glGetUniformLocation(programObject[11], "Color");
-    glProgramUniform1i(programObject[11], colorBufferDOFLocation, 0);
-
-    GLint coCBufferDOFLocation = glGetUniformLocation(programObject[11], "CoC");
-    glProgramUniform1i(programObject[11], coCBufferDOFLocation, 1);
-
-    GLint blurBufferDOFLocation = glGetUniformLocation(programObject[11], "Blur");
-    glProgramUniform1i(programObject[11], blurBufferDOFLocation, 2);
+    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COLOR, 0);
+    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COC, 1);
+    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_BLUR, 2);
 
 
     if (!checkError("Uniforms"))
-        exit(1);
+        return(1);
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -658,7 +535,7 @@ int main( int argc, char **argv )
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         fprintf(stderr, "Error on building framebuffer\n");
-        exit( EXIT_FAILURE );
+        return( EXIT_FAILURE );
     }
 
     // Back to the default framebuffer
@@ -700,7 +577,7 @@ int main( int argc, char **argv )
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         fprintf(stderr, "Error on building shadow framebuffer\n");
-        exit( EXIT_FAILURE );
+        return( EXIT_FAILURE );
     }
 
     // Fall back to default framebuffer
@@ -736,7 +613,7 @@ int main( int argc, char **argv )
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         fprintf(stderr, "Error on building framebuffer\n");
-        exit( EXIT_FAILURE );
+        return( EXIT_FAILURE );
     }
 
     // Back to the default framebuffer
@@ -822,49 +699,27 @@ int main( int argc, char **argv )
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         fprintf(stderr, "Error on building framebuffern");
-        exit( EXIT_FAILURE );
+        return( EXIT_FAILURE );
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
-
     // Create two ubo for light and camera
-    GLuint ubo[2];
-    glGenBuffers(2, ubo);
+    const GLuint LightBindingPoint = 0;
+    const GLuint CameraBindingPoint = 1;
+
+    Graphics::UBO uboLight(LightBindingPoint, sizeof(SpotLight));
+    Graphics::UBO uboCamera(CameraBindingPoint, sizeof(UniformCamera));
 
     // LIGHT
-    GLuint PointLightUniformIndex = glGetUniformBlockIndex(programObject[2], "Light");
-    GLuint DirectionnalLightUniformIndex = glGetUniformBlockIndex(programObject[3], "Light");
-    GLuint SpotLightUniformIndex = glGetUniformBlockIndex(programObject[4], "Light");
-
-    GLuint LightBindingPoint = 0;
-
-    glUniformBlockBinding(programObject[2], PointLightUniformIndex, LightBindingPoint);
-    glUniformBlockBinding(programObject[3], DirectionnalLightUniformIndex, LightBindingPoint);
-    glUniformBlockBinding(programObject[4], SpotLightUniformIndex, LightBindingPoint);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotLight), 0, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, LightBindingPoint, ubo[0], 0, sizeof(SpotLight));
+    pointLightShader.updateBindingPointUBO("Light", uboLight.bindingPoint());
+    directionalLightShader.updateBindingPointUBO("Light", uboLight.bindingPoint());
+    spotLightShader.updateBindingPointUBO("Light", uboLight.bindingPoint());
 
     // CAM
-    GLuint CamUniformIndex1 = glGetUniformBlockIndex(programObject[2], "Camera");
-    GLuint CamUniformIndex2 = glGetUniformBlockIndex(programObject[3], "Camera");
-    GLuint CamUniformIndex3 = glGetUniformBlockIndex(programObject[4], "Camera");
-
-    GLuint CameraBindingPoint = 1;
-
-    glUniformBlockBinding(programObject[2], CamUniformIndex1, CameraBindingPoint);
-    glUniformBlockBinding(programObject[3], CamUniformIndex2, CameraBindingPoint);
-    glUniformBlockBinding(programObject[4], CamUniformIndex3, CameraBindingPoint);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo[1]);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformCamera), 0, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, CameraBindingPoint, ubo[1], 0, sizeof(UniformCamera));
+    pointLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
+    directionalLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
+    spotLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
 
     // Viewer Structures ----------------------------------------------------------------------------------------------------------------------
     View::CameraFreefly camera;
@@ -939,16 +794,6 @@ int main( int argc, char **argv )
         camera.setEye(spline.cubicInterpolation(glm::mod(t*0.05f, 1.f)));
         camera.updateFromTarget(splineTargetView.cubicInterpolation(glm::mod(t * 0.05f, 1.f)));
 
-//        float speed = 0.005;
-//        float travX = speed;
-//        float travY = 0;
-//
-//        float turnX = 0.0025 * glm::sin(0.7*t);
-//        float turnY = speed;
-//
-//        camera_trav(camera, travX, travY);
-//        camera_turn(camera, turnX, turnY);
-
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 10000.f);
         glm::mat4 worldToView = camera.getViewMatrix();
@@ -978,52 +823,44 @@ int main( int argc, char **argv )
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Select shader
-        glUseProgram(programObject[0]);
+        mainShader.useProgram();
 
         //-------------------------------------Upload Uniforms
 
-        glProgramUniformMatrix4fv(programObject[0], mvpLocation, 1, 0, glm::value_ptr(mvp));
-        glProgramUniformMatrix4fv(programObject[5], mvpDebugLocation, 1, 0, glm::value_ptr(mvp));
-        glProgramUniformMatrix4fv(programObject[0], mvLocation, 1, 0, glm::value_ptr(mv));
-        glProgramUniformMatrix4fv(programObject[1], mvInverseLocation, 1, 0, glm::value_ptr(mvInverse));
+        mainShader.updateUniform(UNIFORM_NAME_MVP, mvp);
+        mainShader.updateUniform(UNIFORM_NAME_MV, mv);
+        debugShapesShader.updateUniform(UNIFORM_NAME_MVP, mvp);
+        debugShapesShader.updateUniform(UNIFORM_NAME_MV_INVERSE, mvInverse);
 
         // Upload value
-        glProgramUniform1f(programObject[0], timeLocation, t);
-        glProgramUniform1f(programObject[0], sliderLocation, SliderValue);
-        glProgramUniform1f(programObject[0], sliderMultLocation, SliderMult);
+        mainShader.updateUniform(UNIFORM_NAME_TIME, t);
+        mainShader.updateUniform(UNIFORM_NAME_SLIDER, SliderValue);
+        mainShader.updateUniform(UNIFORM_NAME_SLIDER_MULT, SliderMult);
+        mainShader.updateUniform(UNIFORM_NAME_SPECULAR_POWER, specularPower);
+        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
 
-        glProgramUniform1f(programObject[0], specularPowerLocation,specularPower);
-        glProgramUniform1i(programObject[0], instanceNumberLocation, int(instanceNumber));
-
-        glProgramUniform1i(programObject[6], instanceNumberShadowLocation, int(instanceNumber));
 
         // Update scene uniforms
-        glProgramUniformMatrix4fv(programObject[6], shadowMVPLocation, 1, 0, glm::value_ptr(objectToLightScreen));
-        glProgramUniformMatrix4fv(programObject[6], shadowMVLocation, 1, 0, glm::value_ptr(objectToLight));
-        glProgramUniformMatrix4fv(programObject[4], shadowWorldToLightScreenLocation, 1, 0, glm::value_ptr(worldToLightScreen));
+        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MVP, objectToLightScreen);
+        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MV, objectToLight);
 
-        glProgramUniform1f(programObject[4], shadowBiasLocation, shadowBias);
-
-        glProgramUniform1f(programObject[7], gammaLocation, gamma);
-
-        glProgramUniform1f(programObject[8], sobelIntensityLocation, sobelIntensity);
-
-        glProgramUniform1i(programObject[9], sampleCountLocation, sampleCount);
-
-        glProgramUniformMatrix4fv(programObject[10], screenToViewLocation, 1, 0, glm::value_ptr(screenToView));
-
-        glProgramUniform3f(programObject[10], focusLocation, focus[0], focus[1], focus[2]);
+        spotLightShader.updateUniform(UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN, worldToLightScreen);
+        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BIAS, shadowBias);
+        gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
+        sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
+        blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
+        circleConfusionShader.updateUniform(UNIFORM_NAME_SCREEN_TO_VIEW, screenToView);
+        circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
 
         //******************************************************* FIRST PASS
-
         //-------------------------------------Bind gbuffer
-
         glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
+
         // Clear the gbuffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //-------------------------------------Render Cubes
-
         glBindVertexArray(vao[0]);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -1032,8 +869,7 @@ int main( int argc, char **argv )
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
-
-        glProgramUniform1i(programObject[0], instanceNumberLocation, -1);
+        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
         glBindVertexArray(vao[1]);
         glActiveTexture(GL_TEXTURE0);
@@ -1044,13 +880,12 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //-------------------------------------Unbind the frambuffer
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+
         //******************************************************* SECOND PASS
-
         //-------------------------------------Shadow pass
-
         glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
 
         // Set the viewport corresponding to shadow texture resolution
@@ -1060,14 +895,14 @@ int main( int argc, char **argv )
         glClear(GL_DEPTH_BUFFER_BIT);
 
         // Render the scene
-        glUseProgram(programObject[6]);
+        shadowShader.useProgram();
 
         //cubes
         glBindVertexArray(vao[0]);
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
-        glProgramUniform1i(programObject[6], instanceNumberShadowLocation, -1);
+        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
         glBindVertexArray(vao[1]);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -1095,15 +930,12 @@ int main( int argc, char **argv )
         glBlendFunc(GL_ONE, GL_ONE);
 
         // Update Camera pos and screenToWorld matrix to all light shaders
-        UniformCamera cam(camera.getEye(), glm::inverse(mvp), mvInverse);
-
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo[1]);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformCamera), &cam);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
+        uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
         //------------------------------------ Point Lights
 //        // point light shaders
-//        glUseProgram(programObject[2]);
+//        pointLightShader.useProgram();
 //
 //        // Bind quad vao
 //        glBindVertexArray(vao[2]);
@@ -1169,7 +1001,7 @@ int main( int argc, char **argv )
         //------------------------------------ Directionnal Lights
 
         //directionnal light shaders
-        glUseProgram(programObject[3]);
+        directionalLightShader.useProgram();
 
         // Bind quad vao
         glBindVertexArray(vao[2]);
@@ -1182,18 +1014,14 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
 
         for(size_t i = 0; i < directionnalLights.size(); ++i){
-
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &directionnalLights[i]);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+            uboLight.updateBuffer(&directionnalLights[i], sizeof(Light));
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
 //        ------------------------------------ Spot Lights
 
         // spot light shaders
-        glUseProgram(programObject[4]);
+        spotLightShader.useProgram();
 
         // Bind quad vao
         glBindVertexArray(vao[2]);
@@ -1208,10 +1036,7 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[3]);
 
         for(size_t i = 0; i < spotLights.size(); ++i){
-            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SpotLight), &spotLights[i]);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+            uboLight.updateBuffer(&spotLights[i], sizeof(SpotLight));
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -1238,7 +1063,7 @@ int main( int argc, char **argv )
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBindVertexArray(vao[2]);
-        glUseProgram(programObject[8]);
+        sobelShader.useProgram();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, beautyTexture);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -1246,9 +1071,9 @@ int main( int argc, char **argv )
         // ------- BLUR ------
         if(sampleCount > 0){
             // Use blur program shader
-            glUseProgram(programObject[9]);
+            blurShader.useProgram();
 
-            glProgramUniform2i(programObject[9], blurDirectionLocation, 1,0);
+            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 1,0);
             // Write into Vertical Blur Texture
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
             // Clear the content of texture
@@ -1258,7 +1083,7 @@ int main( int argc, char **argv )
             glBindTexture(GL_TEXTURE_2D, fxTextures[0]);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-            glProgramUniform2i(programObject[9], blurDirectionLocation, 0,1);
+            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 0,1);
 
             // Write into Horizontal Blur Texture
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[2], 0);
@@ -1272,7 +1097,7 @@ int main( int argc, char **argv )
 
         // ------- COC ------
         // Use circle of confusion program shader
-        glUseProgram(programObject[10]);
+        circleConfusionShader.useProgram();
 
         // Write into Circle of Confusion Texture
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
@@ -1290,7 +1115,7 @@ int main( int argc, char **argv )
         // Only the color buffer is used
         glClear(GL_COLOR_BUFFER_BIT);
         // Use the Depth of Field shader
-        glUseProgram(programObject[11]);
+        sobelShader.useProgram();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fxTextures[0]); // Color
         glActiveTexture(GL_TEXTURE1);
@@ -1303,7 +1128,7 @@ int main( int argc, char **argv )
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glUseProgram(programObject[7]);
+        gammaShader.useProgram();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, fxTextures[3]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -1312,7 +1137,7 @@ int main( int argc, char **argv )
 
         //------------------------------------ Debug Shape Drawing
 
-        glUseProgram(programObject[5]);
+        debugShapesShader.useProgram();
         glPointSize(10);
         glBindVertexArray(vao[3]);
 
@@ -1353,7 +1178,7 @@ int main( int argc, char **argv )
         glViewport( 0, 0, width/screenNumber, height/screenNumber );
 
         // Select shader
-        glUseProgram(programObject[1]);
+        debugShader.useProgram();
 
 
         // --------------- Color Buffer
@@ -1526,111 +1351,8 @@ int main( int argc, char **argv )
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
 
-    exit( EXIT_SUCCESS );
+    return EXIT_SUCCESS;
 }
-
-// No windows implementation of strsep
-char * strsep_custom(char **stringp, const char *delim)
-{
-    register char *s;
-    register const char *spanp;
-    register int c, sc;
-    char *tok;
-    if ((s = *stringp) == NULL)
-        return (NULL);
-    for (tok = s; ; ) {
-        c = *s++;
-        spanp = delim;
-        do {
-            if ((sc = *spanp++) == c) {
-                if (c == 0)
-                    s = NULL;
-                else
-                    s[-1] = 0;
-                *stringp = s;
-                return (tok);
-            }
-        } while (sc != 0);
-    }
-    return 0;
-}
-
-int check_compile_error(GLuint shader, const char ** sourceBuffer)
-{
-    // Get error log size and print it eventually
-    int logLength;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-    if (logLength > 1)
-    {
-        char * log = new char[logLength];
-        glGetShaderInfoLog(shader, logLength, &logLength, log);
-        char *token, *string;
-        string = strdup(sourceBuffer[0]);
-        int lc = 0;
-        while ((token = strsep_custom(&string, "\n")) != NULL) {
-            printf("%3d : %s\n", lc, token);
-            ++lc;
-        }
-        fprintf(stderr, "Compile : %s", log);
-        delete[] log;
-    }
-    // If an error happend quit
-    int status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status == GL_FALSE)
-        return -1;
-    return 0;
-}
-
-int check_link_error(GLuint program)
-{
-    // Get link error log size and print it eventually
-    int logLength;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
-    if (logLength > 1)
-    {
-        char * log = new char[logLength];
-        glGetProgramInfoLog(program, logLength, &logLength, log);
-        fprintf(stderr, "Link : %s \n", log);
-        delete[] log;
-    }
-    int status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE)
-        return -1;
-    return 0;
-}
-
-
-GLuint compile_shader(GLenum shaderType, const char * sourceBuffer, int bufferSize)
-{
-    GLuint shaderObject = glCreateShader(shaderType);
-    const char * sc[1] = { sourceBuffer };
-    glShaderSource(shaderObject,
-                   1,
-                   sc,
-                   NULL);
-    glCompileShader(shaderObject);
-    check_compile_error(shaderObject, sc);
-    return shaderObject;
-}
-
-GLuint compile_shader_from_file(GLenum shaderType, const char * path)
-{
-    FILE * shaderFileDesc = fopen( path, "rb" );
-    if (!shaderFileDesc)
-        return 0;
-    fseek ( shaderFileDesc , 0 , SEEK_END );
-    long fileSize = ftell ( shaderFileDesc );
-    rewind ( shaderFileDesc );
-    char * buffer = new char[fileSize + 1];
-    fread( buffer, 1, fileSize, shaderFileDesc );
-    buffer[fileSize] = '\0';
-    GLuint shaderObject = compile_shader(shaderType, buffer, fileSize );
-    delete[] buffer;
-    return shaderObject;
-}
-
 
 bool checkError(const char* title)
 {

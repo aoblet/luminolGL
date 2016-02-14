@@ -52,7 +52,7 @@ void main()
 	else{
 		worldPos.y += 0.5;
 	}
-	
+
 	Out.TexCoord = TexCoord;
 	Out.Normal = Normal;
 	Out.Position = worldPos;
