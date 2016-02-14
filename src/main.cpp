@@ -31,6 +31,7 @@
 #include "graphics/Texture.h"
 #include "graphics/TextureHandler.h"
 #include "graphics/VertexDescriptor.h"
+#include "graphics/VertexBufferObject.h"
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -177,7 +178,6 @@ int main( int argc, char **argv )
     spline.add(glm::vec3(20,0,20));
     spline.add(glm::vec3(30,10,30));
     spline.add(glm::vec3(40,0,0));
-
 
     int width = 1800, height= 900;
     float widthf = (float) width, heightf = (float) height;
@@ -372,154 +372,140 @@ int main( int argc, char **argv )
     // Viewport 
     glViewport( 0, 0, width, height );
 
-    // Create Vao & vbo -------------------------------------------------------------------------------------------------------------------------------
-
-    GLuint vao[4];
-    glGenVertexArrays(4, vao);
-
-    GLuint vbo[12];
-    glGenBuffers(12, vbo);
-
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
-    int cube_triangleCount = 12;
     int cube_triangleList[] = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 19, 17, 20, 21, 22, 23, 24, 25, 26, };
 
-    float cube_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
-    float cube_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
-    float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
+    std::vector<int> cubeIds(cube_triangleList, cube_triangleList + sizeof(cube_triangleList) / sizeof (cube_triangleList[0]));
 
-    /* ------------------ TEST ------------------- */
+    std::vector<Graphics::VertexDescriptor> cubeVertices;
 
-    std::vector<Graphics::VertexDescriptor> test_vertex_tab;
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, 0, 1, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, 0, 1, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 0, 1, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 0, 1, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 1, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 1, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 1, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 1, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 0, -1, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 0, -1, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, 0, -1, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, 0, -1, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, -1, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, -1, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, -1, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, -1, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 1, 0, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, -1, 0, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, -1, 0, 0, 1.f, 0.f));
 
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, 0, 1, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, 0, 1, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 0, 1, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 0, 1, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 1, 0, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 1, 0, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 1, 0, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 1, 0, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 0, -1, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 0, -1, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, 0, -1, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, 0, -1, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, -1, 0, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, -1, 0, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, -1, 0, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, -1, 0, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 1, 0, 0, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 1, 0, 0, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 1, 0, 0, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, -1, 0, 0, 0.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
-    test_vertex_tab.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, -1, 0, 0, 1.f, 0.f));
+    Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    GLuint test_vao;
-    GLuint text_vbo_vertex;
-    GLuint text_vbo_ids;
-    glGenVertexArrays(1, &test_vao);
-    glGenBuffers(1, &text_vbo_vertex);
-    glGenBuffers(1, &text_vbo_ids);
+    GLuint cubeVao;
+    glGenVertexArrays(1, &cubeVao);
+    glBindVertexArray(cubeVao);
 
-    glBindVertexArray(test_vao);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text_vbo_ids);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_triangleList), cube_triangleList, GL_STATIC_DRAW);
+    cubeVerticesVbo.init();
+    cubeIdsVbo.init();
 
-    // position
-    glBindBuffer(GL_ARRAY_BUFFER, text_vbo_vertex);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)0);
-
-    // normal
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)(3*sizeof(GL_FLOAT)));
-
-    // uv
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Graphics::VertexDescriptor), (void*)(6*sizeof(GL_FLOAT)));
-
-    glBufferData(GL_ARRAY_BUFFER, test_vertex_tab.size() * sizeof(Graphics::VertexDescriptor), test_vertex_tab.data(), GL_STATIC_DRAW);
-
-    /* ------------------------------------------- */
-
-
-
-    // Bind the VAO
-    glBindVertexArray(vao[0]);
-
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_triangleList), cube_triangleList, GL_STATIC_DRAW);
-
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
-    // Bind normals and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_normals), cube_normals, GL_STATIC_DRAW);
-
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_uvs), cube_uvs, GL_STATIC_DRAW);
-
-    // Unbind everything
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
+    cubeVerticesVbo.updateData(cubeVertices);
+    cubeIdsVbo.updateData(cubeIds);
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
 
     int plane_triangleCount = 2;
     float textureLoop = 15;
     int plane_triangleList[] = {0, 1, 2, 2, 1, 3};
-    float plane_uvs[] = {0.f, 0.f, 0.f, textureLoop, textureLoop, 0.f, textureLoop, textureLoop};
-    float plane_vertices[] = {-5.0, 0, 5.0, 5.0, 0, 5.0, -5.0, 0, -5.0, 5.0, 0, -5.0};
-    float plane_normals[] = {0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
 
-    // Bind the VAO
-    glBindVertexArray(vao[1]);
+    std::vector<int> planeIds(plane_triangleList, plane_triangleList + sizeof(plane_triangleList) / sizeof (plane_triangleList[0]));
 
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[4]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_triangleList), plane_triangleList, GL_STATIC_DRAW);
+    std::vector<Graphics::VertexDescriptor> planeVertices;
+    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, 5.0, 0, 1, 0, 0.f, 0.f));
+    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, 5.0, 0, 1, 0, 0.f, textureLoop));
+    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, -5.0, 0, 1, 0, textureLoop, 0.f));
+    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, -5.0, 0, 1, 0, textureLoop, textureLoop));
 
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), plane_vertices, GL_STATIC_DRAW);
+    Graphics::VertexBufferObject planeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject planeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    // Bind normals and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_normals), plane_normals, GL_STATIC_DRAW);
+    GLuint planeVao;
+    glGenVertexArrays(1, &planeVao);
+    glBindVertexArray(planeVao);
 
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_uvs), plane_uvs, GL_STATIC_DRAW);
+    planeVerticesVbo.init();
+    planeIdsVbo.init();
 
-    // Unbind everything
+    planeVerticesVbo.updateData(planeVertices);
+    planeIdsVbo.updateData(planeIds);
+
+
+    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
+
+    int   quad_triangleCount = 2;
+    int   quad_triangleList[] = {0, 1, 2, 2, 1, 3};
+    float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
+
+    std::vector<glm::vec2> quadVertices;
+
+    quadVertices.push_back(glm::vec2(-1.0, -1.0));
+    quadVertices.push_back(glm::vec2(1.0, -1.0));
+    quadVertices.push_back(glm::vec2(-1.0, 1.0));
+    quadVertices.push_back(glm::vec2(1.0, 1.0));
+
+    std::vector<int> quadIds(quad_triangleList, quad_triangleList + sizeof(quad_triangleList) / sizeof (quad_triangleList[0]));
+
+    Graphics::VertexBufferObject quadVerticesVbo(Graphics::VEC2);
+    Graphics::VertexBufferObject quadIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    GLuint quadVao;
+    glGenVertexArrays(1, &quadVao);
+    glBindVertexArray(quadVao);
+
+    quadVerticesVbo.init();
+    quadIdsVbo.init();
+
+    quadVerticesVbo.updateData(quadVertices);
+    quadIdsVbo.updateData(quadIds);
+
+    // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<int> debugId;
+    debugId.push_back(0);
+    debugId.push_back(1);
+    debugId.push_back(2);
+    debugId.push_back(3);
+
+    std::vector<glm::vec3> debugVertices;
+    debugVertices.push_back(glm::vec3(1));
+    debugVertices.push_back(glm::vec3(2));
+    debugVertices.push_back(glm::vec3(3));
+    debugVertices.push_back(glm::vec3(4));
+
+    Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
+    Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    GLuint debugVao;
+    glGenVertexArrays(1, &debugVao);
+    glBindVertexArray(debugVao);
+
+    debugVerticesVbo.init();
+    debugIdsVbo.init();
+
+    debugVerticesVbo.updateData(debugVertices);
+    debugIdsVbo.updateData(debugId);
+
+    // unbind everything
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    Graphics::VertexBufferObject::unbindAll();
 
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
@@ -833,55 +819,6 @@ int main( int argc, char **argv )
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
-
-    int   quad_triangleCount = 2;
-    int   quad_triangleList[] = {0, 1, 2, 2, 1, 3};
-    float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
-
-    // Quad
-    glBindVertexArray(vao[2]);
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[8]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_triangleList), quad_triangleList, GL_STATIC_DRAW);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
-
-    std::vector<int> verticesId;
-    verticesId.push_back(0);
-    verticesId.push_back(1);
-    verticesId.push_back(2);
-    verticesId.push_back(3);
-
-    std::vector<glm::vec3> vertices;
-    vertices.push_back(glm::vec3(1));
-    vertices.push_back(glm::vec3(2));
-    vertices.push_back(glm::vec3(3));
-    vertices.push_back(glm::vec3(4));
-
-    // Quad
-    glBindVertexArray(vao[3]);
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[10]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * verticesId.size(), verticesId.data(), GL_STATIC_DRAW);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // Create FBO & textures For Post Processing -------------------------------------------------------------------------------------------------------------------------------
 
@@ -1021,16 +958,6 @@ int main( int argc, char **argv )
             guiStates.lockPositionY = mousey;
         }
 
-//        float speed = 0.005;
-//        float travX = speed;
-//        float travY = 0;
-//
-//        float turnX = 0.0025 * glm::sin(0.7*t);
-//        float turnY = speed;
-//
-//        camera_trav(camera, travX, travY);
-//        camera_turn(camera, turnX, turnY);
-
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 10000.f);
         glm::mat4 worldToView = glm::lookAt(camera.eye, camera.o, camera.up);
@@ -1106,16 +1033,16 @@ int main( int argc, char **argv )
 
         //-------------------------------------Render Cubes
 
-        glBindVertexArray(test_vao);
+        glBindVertexArray(cubeVao);
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        glDrawElementsInstanced(GL_TRIANGLES, test_vertex_tab.size() + 9, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
 
         glProgramUniform1i(programObject[0], instanceNumberLocation, -1);
 
-        glBindVertexArray(vao[1]);
+        glBindVertexArray(planeVao);
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -1141,13 +1068,13 @@ int main( int argc, char **argv )
         glUseProgram(programObject[6]);
 
         //cubes
-        glBindVertexArray(vao[0]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glBindVertexArray(cubeVao);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
         glProgramUniform1i(programObject[6], instanceNumberShadowLocation, -1);
 
-        glBindVertexArray(vao[1]);
+        glBindVertexArray(planeVao);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // Fallback to default framebuffer
@@ -1250,7 +1177,7 @@ int main( int argc, char **argv )
         glUseProgram(programObject[3]);
 
         // Bind quad vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         texHandler[normalBufferTexture].bind(GL_TEXTURE1);
@@ -1271,7 +1198,7 @@ int main( int argc, char **argv )
         glUseProgram(programObject[4]);
 
         // Bind quad vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         texHandler[normalBufferTexture].bind(GL_TEXTURE1);
@@ -1301,14 +1228,14 @@ int main( int argc, char **argv )
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
         // Set quad as vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         // ------- SOBEL ------
         glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         glUseProgram(programObject[8]);
 
@@ -1384,26 +1311,23 @@ int main( int argc, char **argv )
 
         glUseProgram(programObject[5]);
         glPointSize(10);
-        glBindVertexArray(vao[3]);
+        glBindVertexArray(debugVao);
 
         int id = 0;
 
-        vertices.clear();
-        verticesId.clear();
+        debugVertices.clear();
+        debugId.clear();
 
         for(float i = 0; i < 1; i +=0.01){
-            verticesId.push_back(id);
+            debugId.push_back(id);
             ++id;
-            vertices.push_back(spline.cubicInterpolation(i));
+            debugVertices.push_back(spline.cubicInterpolation(i));
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        debugVerticesVbo.updateData(debugVertices);
+        debugIdsVbo.updateData(debugId);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[10]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * verticesId.size(), verticesId.data(), GL_STATIC_DRAW);
-
-        glDrawElements(GL_LINE_STRIP, vertices.size(), GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(GL_LINE_STRIP, debugVertices.size(), GL_UNSIGNED_INT, (void*)0);
 
         int screenNumber = 6;
 
@@ -1416,7 +1340,7 @@ int main( int argc, char **argv )
         // --------------- Color Buffer
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
 //        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
@@ -1429,7 +1353,7 @@ int main( int argc, char **argv )
         glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
 //        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
@@ -1442,7 +1366,7 @@ int main( int argc, char **argv )
         glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
 //        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
@@ -1456,7 +1380,7 @@ int main( int argc, char **argv )
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
@@ -1469,7 +1393,7 @@ int main( int argc, char **argv )
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
 //        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
@@ -1482,7 +1406,7 @@ int main( int argc, char **argv )
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
 //        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
