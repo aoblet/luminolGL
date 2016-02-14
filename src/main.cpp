@@ -28,6 +28,9 @@
 
 #include "geometry/Spline3D.h"
 
+#include "graphics/Texture.h"
+#include "graphics/TextureHandler.h"
+
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
 #endif
@@ -454,33 +457,85 @@ int main( int argc, char **argv )
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-
-
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
-    int x;
-    int y;
-    int comp;
-    unsigned char * diffuse = stbi_load("../assets/textures/spnza_bricks_a_diff.tga", &x, &y, &comp, 3);
-    unsigned char * specular = stbi_load("../assets/textures/spnza_bricks_a_spec.tga", &x, &y, &comp, 3);
+    std::cout << "--------------- TEXTURES --------------- " << std::endl;
+    std::cout << std::endl;
 
-    GLuint texture[2];
-    glGenTextures(2, texture);
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, diffuse);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    Graphics::TextureHandler texHandler;
 
-    glBindTexture(GL_TEXTURE_2D, texture[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, specular);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    std::string TexBricksDiff = "bricks_diff";
+    std::string TexBricksSpec = "bricks_spec";
+    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_diff.tga"), TexBricksDiff);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : bricks_diff" << std::endl;
+        return -1;
+    }
+
+    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_spec.tga"), TexBricksSpec);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : bricks_spec" << std::endl;
+        return -1;
+    }
+
+    std::string colorBufferTexture = "color_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), colorBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : color_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string normalBufferTexture = "normal_buffer_texture";
+    Graphics::TexParams params(GL_RGBA8, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+    texHandler.add(Graphics::Texture(width, height, params), normalBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : color_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string depthBufferTexture = "depth_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_DEPTH), depthBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : depth_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    int shadowTexWidth = 2048;
+    int shadowTexHeight = 2048;
+    std::string shadowBufferTexture = "shadow_buffer_texture";
+    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
+    if (!checkError("Texture")){
+        std::cout << "Error : shadow_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string beautyBufferTexture = "beauty_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), beautyBufferTexture);
+    if (!checkError("Texture")){
+        std::cout << "Error : beauty_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    const int fxTextureCount = 4;
+    std::string fxBufferTexture = "fx_texture_";
+    for(int i = 0; i < fxTextureCount; ++i){
+        std::string currentFxBufferTexture = fxBufferTexture + std::to_string(i);
+        texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), currentFxBufferTexture);
+        if (!checkError("Texture")){
+            std::cout << "Error : fx_texture" << i << std::endl;
+            return -1;
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << "---------------------------------------- " << std::endl;
+    std::cout << std::endl;
+
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -495,10 +550,9 @@ int main( int argc, char **argv )
 
     std::vector<SpotLight> spotLights;
     spotLights.push_back(SpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66));
-    // spotLights.push_back(SpotLight(glm::vec3(20,1,20), glm::vec3(-1,-1,-1), glm::vec3(0.5,1,1), 10, 1, 60, 90));
-    // spotLights.push_back(SpotLight(glm::vec3(-10,1,-10), glm::vec3(1,-1,1), glm::vec3(0.5,1,1), 10, 1, 60, 90));
 
     // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
+
 
     // ---------------------- For Geometry Shading
     GLint mvpLocation = glGetUniformLocation(programObject[0], "MVP");
@@ -531,8 +585,10 @@ int main( int argc, char **argv )
     GLint instanceNumberShadowLocation = glGetUniformLocation(programObject[6], "InstanceNumber");
     glProgramUniform1i(programObject[6], instanceNumberShadowLocation, int(instanceNumber));
 
-    if (!checkError("Uniforms"))
-        exit(1);
+    if (!checkError("Uniforms")){
+        std::cout << "Error : geometry uniforms" << std::endl;
+        return -1;
+    }
 
     // ---------------------- For Light Pass Shading
 
@@ -547,16 +603,19 @@ int main( int argc, char **argv )
         glProgramUniform1i(programObject[i], depthBufferLocation, 2);
     }
 
-    if (!checkError("Uniforms"))
-        exit(1);
-
+    if (!checkError("Uniforms")){
+        std::cout << "Error : light_pass uniforms" << std::endl;
+        return -1;
+    }
 
     // ---------------------- For Debug Shading
 
     GLint mvpDebugLocation = glGetUniformLocation(programObject[5], "MVP");
 
-    if (!checkError("Uniforms"))
-        exit(1);
+    if (!checkError("Uniforms")){
+        std::cout << "Error : debug uniforms" << std::endl;
+        return -1;
+    }
 
     // ---------------------- For Shadow Pass Shading
 
@@ -571,8 +630,10 @@ int main( int argc, char **argv )
     float shadowBias = 0.00001;
     GLint shadowBiasLocation = glGetUniformLocation(programObject[4], "ShadowBias");
 
-    if (!checkError("Uniforms"))
-        exit(1);
+    if (!checkError("Uniforms")){
+        std::cout << "Error : shadow_pass uniforms" << std::endl;
+        return -1;
+    }
 
     // ---------------------- For Gamma Correction
 
@@ -617,42 +678,17 @@ int main( int argc, char **argv )
     glProgramUniform1i(programObject[11], blurBufferDOFLocation, 2);
 
 
-    if (!checkError("Uniforms"))
-        exit(1);
+    if (!checkError("Uniforms")){
+        std::cout << "Error : post_fx Uniforms" << std::endl;
+        return -1;
+    }
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Framebuffer object handle
     GLuint gbufferFbo;
-    // Texture handles
-    GLuint gbufferTextures[4];
-    glGenTextures(4, gbufferTextures);
     // 2 draw buffers for color and normal
     GLuint gbufferDrawBuffers[2];
-
-    // Create color texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Create normal texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Create depth texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Create Framebuffer Object
     glGenFramebuffers(1, &gbufferFbo);
@@ -663,9 +699,9 @@ int main( int argc, char **argv )
     glDrawBuffers(2, gbufferDrawBuffers);
 
     // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gbufferTextures[0], 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gbufferTextures[1], 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gbufferTextures[2], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[colorBufferTexture].glId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texHandler[normalBufferTexture].glId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[depthBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -676,15 +712,13 @@ int main( int argc, char **argv )
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
     // Create Shadow & Texture FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Create shadow FBO
     GLuint shadowFbo;
     glGenFramebuffers(1, &shadowFbo);
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-
-    int shadowTexWidth = 2048;
-    int shadowTexHeight = 2048;
 
     // Create a render buffer since we don't need to read shadow color
     // in a texture
@@ -695,19 +729,8 @@ int main( int argc, char **argv )
     // Attach the renderbuffer
     glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, shadowRenderBuffer);
 
-    // Create shadow texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[3]);
-    // Create empty texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    // Bilinear filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Color needs to be 0 outside of texture coordinates
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
     // Attach the shadow texture to the depth attachment
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gbufferTextures[3], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[shadowBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -718,22 +741,13 @@ int main( int argc, char **argv )
     // Fall back to default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
     // Create Beauty FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Create beauty FBO
     GLuint beautyFbo;
     // Texture handles
-    GLuint beautyTexture;
-    glGenTextures(1, &beautyTexture);
     GLuint beautyDrawBuffer;
-
-    // Create beauty texture
-    glBindTexture(GL_TEXTURE_2D, beautyTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Create Framebuffer Object
     glGenFramebuffers(1, &beautyFbo);
@@ -743,7 +757,7 @@ int main( int argc, char **argv )
     glDrawBuffers(1, &beautyDrawBuffer);
 
     // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, beautyTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[beautyBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -753,6 +767,7 @@ int main( int argc, char **argv )
 
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -814,26 +829,12 @@ int main( int argc, char **argv )
     fxDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, fxDrawBuffers);
 
-    // Create Fx textures
-    const int FX_TEXTURE_COUNT = 4;
-    GLuint fxTextures[FX_TEXTURE_COUNT];
-    glGenTextures(FX_TEXTURE_COUNT, fxTextures);
-    for (int i = 0; i < FX_TEXTURE_COUNT; ++i)
-    {
-        glBindTexture(GL_TEXTURE_2D, fxTextures[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
-
     // Attach first fx texture to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[0], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        fprintf(stderr, "Error on building framebuffern");
+        fprintf(stderr, "Error on building framebuffer");
         exit( EXIT_FAILURE );
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -895,7 +896,7 @@ int main( int argc, char **argv )
     {
         t = glfwGetTime();
 
-        camera.eye = spline.cubicInterpolation(glm::mod(t*0.05f,1.f));
+//        camera.eye = spline.cubicInterpolation(glm::mod(t*0.05f,1.f));
 
         // Mouse states
         int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
@@ -1042,10 +1043,8 @@ int main( int argc, char **argv )
         //-------------------------------------Render Cubes
 
         glBindVertexArray(vao[0]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
+        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
@@ -1053,10 +1052,8 @@ int main( int argc, char **argv )
         glProgramUniform1i(programObject[0], instanceNumberLocation, -1);
 
         glBindVertexArray(vao[1]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
+        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -1191,12 +1188,9 @@ int main( int argc, char **argv )
         // Bind quad vao
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
 
         for(size_t i = 0; i < directionnalLights.size(); ++i){
 
@@ -1215,14 +1209,10 @@ int main( int argc, char **argv )
         // Bind quad vao
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[3]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
 
         for(size_t i = 0; i < spotLights.size(); ++i){
             glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
@@ -1251,13 +1241,15 @@ int main( int argc, char **argv )
 
         // ------- SOBEL ------
         glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[0], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBindVertexArray(vao[2]);
+
         glUseProgram(programObject[8]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+
+        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- BLUR ------
@@ -1267,23 +1259,21 @@ int main( int argc, char **argv )
 
             glProgramUniform2i(programObject[9], blurDirectionLocation, 1,0);
             // Write into Vertical Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
             // Clear the content of texture
             glClear(GL_COLOR_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
             // Read the texture processed by the Sobel operator
-            glBindTexture(GL_TEXTURE_2D, fxTextures[0]);
+            texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
             glProgramUniform2i(programObject[9], blurDirectionLocation, 0,1);
 
             // Write into Horizontal Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[2], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(2)].glId(), 0);
             // Clear the content of texture
             glClear(GL_COLOR_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
             // Read the texture processed by the Vertical Blur
-            glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+            texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -1292,37 +1282,36 @@ int main( int argc, char **argv )
         glUseProgram(programObject[10]);
 
         // Write into Circle of Confusion Texture
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
         // Clear the content of  texture
         glClear(GL_COLOR_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
         // Read the depth texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
         // ------- DOF ------
         // Attach Depth of Field texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[3], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(3)].glId(), 0);
+
         // Only the color buffer is used
         glClear(GL_COLOR_BUFFER_BIT);
         // Use the Depth of Field shader
         glUseProgram(programObject[11]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[0]); // Color
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[1]); // CoC
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[2]); // Blur
+
+        texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0); // Color
+        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE1); // CoC
+        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE2); //Blur
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glUseProgram(programObject[7]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[3]);
+        texHandler[fxBufferTexture+std::to_string(3)].bind(GL_TEXTURE0);
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //-------------------------------------Debug Draw
@@ -1333,22 +1322,10 @@ int main( int argc, char **argv )
         glPointSize(10);
         glBindVertexArray(vao[3]);
 
-//        glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-//        vertices.clear();
-//        vertices.push_back(glm::vec3(0));
-//        vertices.push_back(glm::vec3(1));
-//        vertices.push_back(glm::vec3(2));
-//        vertices.push_back(glm::vec3(3));
-//        vertices.push_back(glm::vec3(4));
-//        vertices.push_back(glm::vec3(5));
-//        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-
         int id = 0;
 
         vertices.clear();
         verticesId.clear();
-
-
 
         for(float i = 0; i < 1; i +=0.01){
             verticesId.push_back(id);
@@ -1372,15 +1349,15 @@ int main( int argc, char **argv )
         // Select shader
         glUseProgram(programObject[1]);
 
-
         // --------------- Color Buffer
 
         // Bind quad VAO
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1390,9 +1367,10 @@ int main( int argc, char **argv )
         // Bind quad VAO
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1402,9 +1380,11 @@ int main( int argc, char **argv )
         // Bind quad VAO
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1416,7 +1396,8 @@ int main( int argc, char **argv )
 
         glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+//        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+        texHandler[beautyBufferTexture].bind();
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1426,9 +1407,10 @@ int main( int argc, char **argv )
         // Bind quad VAO
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+//        glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1438,9 +1420,10 @@ int main( int argc, char **argv )
         // Bind quad VAO
         glBindVertexArray(vao[2]);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, fxTextures[2]);
+//        glBindTexture(GL_TEXTURE_2D, fxTextures[2]);
+        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
