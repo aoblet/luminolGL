@@ -12,10 +12,10 @@ namespace Gui{
 
     class Gui {
 
-
+    	Gui();
     
 
-    }
+    };
 }
 
 
