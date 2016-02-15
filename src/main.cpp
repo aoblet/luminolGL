@@ -17,7 +17,6 @@
 #include "imgui/imgui.h"
 #include "imgui/imguiRenderGL3.h"
 
-#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -29,8 +28,15 @@
 #include <graphics/UBO.hpp>
 
 #include "geometry/Spline3D.h"
-#include "view/CameraFreefly.hpp"
+
 #include "graphics/ShaderProgram.hpp"
+#include "graphics/Texture.h"
+#include "graphics/TextureHandler.h"
+#include "graphics/VertexDescriptor.h"
+#include "graphics/VertexBufferObject.h"
+
+#include "view/CameraFreefly.hpp"
+
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -178,8 +184,8 @@ int main( int argc, char **argv )
     Geometry::Spline3D splineTargetView;
     splineTargetView.add(glm::vec3(0, 0, 0));
 
-
     int width = 1300, height= 700;
+
     float widthf = (float) width, heightf = (float) height;
 
     float fps = 0.f;
@@ -259,119 +265,220 @@ int main( int argc, char **argv )
     // Viewport
     glViewport( 0, 0, width, height );
 
-    // Create Vao & vbo -------------------------------------------------------------------------------------------------------------------------------
-
-    GLuint vao[4];
-    glGenVertexArrays(4, vao);
-
-    GLuint vbo[12];
-    glGenBuffers(12, vbo);
-
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
-    int cube_triangleCount = 12;
     int cube_triangleList[] = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 19, 17, 20, 21, 22, 23, 24, 25, 26, };
-    float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
-    float cube_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
-    float cube_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
 
-    // Bind the VAO
-    glBindVertexArray(vao[0]);
+    std::vector<int> cubeIds(cube_triangleList, cube_triangleList + sizeof(cube_triangleList) / sizeof (cube_triangleList[0]));
 
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_triangleList), cube_triangleList, GL_STATIC_DRAW);
+    std::vector<Graphics::VertexDescriptor> cubeVertices;
 
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, 0, 1, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, 0, 1, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 0, 1, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 0, 1, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 1, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 1, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 1, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 1, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 0, -1, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 0, -1, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, 0, -1, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, 0, -1, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, -1, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, -1, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, -1, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, -1, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 1, 0, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, -1, 0, 0, 0.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
+    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, -1, 0, 0, 1.f, 0.f));
 
-    // Bind normals and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_normals), cube_normals, GL_STATIC_DRAW);
+    Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_uvs), cube_uvs, GL_STATIC_DRAW);
+    GLuint cubeVao;
+    glGenVertexArrays(1, &cubeVao);
+    glBindVertexArray(cubeVao);
 
-    // Unbind everything
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    cubeVerticesVbo.init();
+    cubeIdsVbo.init();
 
-
+    cubeVerticesVbo.updateData(cubeVertices);
+    cubeIdsVbo.updateData(cubeIds);
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
 
     int plane_triangleCount = 2;
     float textureLoop = 15;
     int plane_triangleList[] = {0, 1, 2, 2, 1, 3};
-    float plane_uvs[] = {0.f, 0.f, 0.f, textureLoop, textureLoop, 0.f, textureLoop, textureLoop};
-    float plane_vertices[] = {-5.0, 0, 5.0, 5.0, 0, 5.0, -5.0, 0, -5.0, 5.0, 0, -5.0};
-    float plane_normals[] = {0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
 
-    // Bind the VAO
-    glBindVertexArray(vao[1]);
+    std::vector<int> planeIds(plane_triangleList, plane_triangleList + sizeof(plane_triangleList) / sizeof (plane_triangleList[0]));
 
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[4]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_triangleList), plane_triangleList, GL_STATIC_DRAW);
+    std::vector<Graphics::VertexDescriptor> planeVertices;
+    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, 5.0, 0, 1, 0, 0.f, 0.f));
+    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, 5.0, 0, 1, 0, 0.f, textureLoop));
+    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, -5.0, 0, 1, 0, textureLoop, 0.f));
+    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, -5.0, 0, 1, 0, textureLoop, textureLoop));
 
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), plane_vertices, GL_STATIC_DRAW);
+    Graphics::VertexBufferObject planeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject planeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    // Bind normals and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_normals), plane_normals, GL_STATIC_DRAW);
+    GLuint planeVao;
+    glGenVertexArrays(1, &planeVao);
+    glBindVertexArray(planeVao);
 
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_uvs), plane_uvs, GL_STATIC_DRAW);
+    planeVerticesVbo.init();
+    planeIdsVbo.init();
 
-    // Unbind everything
+    planeVerticesVbo.updateData(planeVertices);
+    planeIdsVbo.updateData(planeIds);
+
+
+    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
+
+    int   quad_triangleCount = 2;
+    int   quad_triangleList[] = {0, 1, 2, 2, 1, 3};
+    float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
+
+    std::vector<glm::vec2> quadVertices;
+
+    quadVertices.push_back(glm::vec2(-1.0, -1.0));
+    quadVertices.push_back(glm::vec2(1.0, -1.0));
+    quadVertices.push_back(glm::vec2(-1.0, 1.0));
+    quadVertices.push_back(glm::vec2(1.0, 1.0));
+
+    std::vector<int> quadIds(quad_triangleList, quad_triangleList + sizeof(quad_triangleList) / sizeof (quad_triangleList[0]));
+
+    Graphics::VertexBufferObject quadVerticesVbo(Graphics::VEC2);
+    Graphics::VertexBufferObject quadIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    GLuint quadVao;
+    glGenVertexArrays(1, &quadVao);
+    glBindVertexArray(quadVao);
+
+    quadVerticesVbo.init();
+    quadIdsVbo.init();
+
+    quadVerticesVbo.updateData(quadVertices);
+    quadIdsVbo.updateData(quadIds);
+
+    // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<int> debugId;
+    debugId.push_back(0);
+    debugId.push_back(1);
+    debugId.push_back(2);
+    debugId.push_back(3);
+
+    std::vector<glm::vec3> debugVertices;
+    debugVertices.push_back(glm::vec3(1));
+    debugVertices.push_back(glm::vec3(2));
+    debugVertices.push_back(glm::vec3(3));
+    debugVertices.push_back(glm::vec3(4));
+
+    Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
+    Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    GLuint debugVao;
+    glGenVertexArrays(1, &debugVao);
+    glBindVertexArray(debugVao);
+
+    debugVerticesVbo.init();
+    debugIdsVbo.init();
+
+    debugVerticesVbo.updateData(debugVertices);
+    debugIdsVbo.updateData(debugId);
+
+    // unbind everything
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
+    Graphics::VertexBufferObject::unbindAll();
 
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
-    int x;
-    int y;
-    int comp;
-    unsigned char * diffuse = stbi_load("../assets/textures/spnza_bricks_a_diff.tga", &x, &y, &comp, 3);
-    unsigned char * specular = stbi_load("../assets/textures/spnza_bricks_a_spec.tga", &x, &y, &comp, 3);
+    std::cout << "--------------- TEXTURES --------------- " << std::endl;
+    std::cout << std::endl;
 
-    GLuint texture[2];
-    glGenTextures(2, texture);
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, diffuse);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    Graphics::TextureHandler texHandler;
 
-    glBindTexture(GL_TEXTURE_2D, texture[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, specular);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    std::string TexBricksDiff = "bricks_diff";
+    std::string TexBricksSpec = "bricks_spec";
+    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_diff.tga"), TexBricksDiff);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : bricks_diff" << std::endl;
+        return -1;
+    }
+
+    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_spec.tga"), TexBricksSpec);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : bricks_spec" << std::endl;
+        return -1;
+    }
+
+    std::string colorBufferTexture = "color_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), colorBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : color_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string normalBufferTexture = "normal_buffer_texture";
+    Graphics::TexParams params(GL_RGBA8, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+    texHandler.add(Graphics::Texture(width, height, params), normalBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : color_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string depthBufferTexture = "depth_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_DEPTH), depthBufferTexture);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : depth_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    int shadowTexWidth = 2048;
+    int shadowTexHeight = 2048;
+    std::string shadowBufferTexture = "shadow_buffer_texture";
+    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
+    if (!checkError("Texture")){
+        std::cout << "Error : shadow_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    std::string beautyBufferTexture = "beauty_buffer_texture";
+    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), beautyBufferTexture);
+    if (!checkError("Texture")){
+        std::cout << "Error : beauty_buffer_texture" << std::endl;
+        return -1;
+    }
+
+    const int fxTextureCount = 4;
+    std::string fxBufferTexture = "fx_texture_";
+    for(int i = 0; i < fxTextureCount; ++i){
+        std::string currentFxBufferTexture = fxBufferTexture + std::to_string(i);
+        texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), currentFxBufferTexture);
+        if (!checkError("Texture")){
+            std::cout << "Error : fx_texture" << i << std::endl;
+            return -1;
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << "---------------------------------------- " << std::endl;
+    std::cout << std::endl;
+
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -386,8 +493,6 @@ int main( int argc, char **argv )
 
     std::vector<SpotLight> spotLights;
     spotLights.push_back(SpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66));
-    // spotLights.push_back(SpotLight(glm::vec3(20,1,20), glm::vec3(-1,-1,-1), glm::vec3(0.5,1,1), 10, 1, 60, 90));
-    // spotLights.push_back(SpotLight(glm::vec3(-10,1,-10), glm::vec3(1,-1,1), glm::vec3(0.5,1,1), 10, 1, 60, 90));
 
     // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
     const std::string UNIFORM_NAME_MVP              = "MVP";
@@ -435,8 +540,10 @@ int main( int argc, char **argv )
     mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
     shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
 
-    if (!checkError("Uniforms"))
-        return(1);
+    if (!checkError("Uniforms")){
+        std::cerr << "Error : geometry uniforms" << std::endl;
+        return -1;
+    }
 
     // ---------------------- For Light Pass Shading
     directionalLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
@@ -458,6 +565,7 @@ int main( int argc, char **argv )
     GLint blurDirectionLocation = glGetUniformLocation(blurShader.id(), "BlurDirection");
     // ---------------------- FX Variables
     float shadowBias = 0.00001;
+
     float gamma = 1.22;
     float sobelIntensity = 0.5;
     int sampleCount = 8; // blur
@@ -482,42 +590,17 @@ int main( int argc, char **argv )
     depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_BLUR, 2);
 
 
-    if (!checkError("Uniforms"))
-        return(1);
+    if (!checkError("Uniforms")){
+        std::cout << "Error : post_fx Uniforms" << std::endl;
+        return -1;
+    }
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Framebuffer object handle
     GLuint gbufferFbo;
-    // Texture handles
-    GLuint gbufferTextures[4];
-    glGenTextures(4, gbufferTextures);
     // 2 draw buffers for color and normal
     GLuint gbufferDrawBuffers[2];
-
-    // Create color texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Create normal texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Create depth texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Create Framebuffer Object
     glGenFramebuffers(1, &gbufferFbo);
@@ -528,9 +611,9 @@ int main( int argc, char **argv )
     glDrawBuffers(2, gbufferDrawBuffers);
 
     // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gbufferTextures[0], 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gbufferTextures[1], 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gbufferTextures[2], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[colorBufferTexture].glId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texHandler[normalBufferTexture].glId(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[depthBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -541,15 +624,13 @@ int main( int argc, char **argv )
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
     // Create Shadow & Texture FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Create shadow FBO
     GLuint shadowFbo;
     glGenFramebuffers(1, &shadowFbo);
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-
-    int shadowTexWidth = 2048;
-    int shadowTexHeight = 2048;
 
     // Create a render buffer since we don't need to read shadow color
     // in a texture
@@ -560,19 +641,8 @@ int main( int argc, char **argv )
     // Attach the renderbuffer
     glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, shadowRenderBuffer);
 
-    // Create shadow texture
-    glBindTexture(GL_TEXTURE_2D, gbufferTextures[3]);
-    // Create empty texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, shadowTexWidth, shadowTexHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    // Bilinear filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Color needs to be 0 outside of texture coordinates
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
     // Attach the shadow texture to the depth attachment
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gbufferTextures[3], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[shadowBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -583,22 +653,13 @@ int main( int argc, char **argv )
     // Fall back to default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
     // Create Beauty FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Create beauty FBO
     GLuint beautyFbo;
     // Texture handles
-    GLuint beautyTexture;
-    glGenTextures(1, &beautyTexture);
     GLuint beautyDrawBuffer;
-
-    // Create beauty texture
-    glBindTexture(GL_TEXTURE_2D, beautyTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Create Framebuffer Object
     glGenFramebuffers(1, &beautyFbo);
@@ -608,7 +669,7 @@ int main( int argc, char **argv )
     glDrawBuffers(1, &beautyDrawBuffer);
 
     // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, beautyTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[beautyBufferTexture].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -619,55 +680,7 @@ int main( int argc, char **argv )
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
-    int   quad_triangleCount = 2;
-    int   quad_triangleList[] = {0, 1, 2, 2, 1, 3};
-    float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
-
-    // Quad
-    glBindVertexArray(vao[2]);
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[8]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_triangleList), quad_triangleList, GL_STATIC_DRAW);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
-
-    std::vector<int> verticesId;
-    verticesId.push_back(0);
-    verticesId.push_back(1);
-    verticesId.push_back(2);
-    verticesId.push_back(3);
-
-    std::vector<glm::vec3> vertices;
-    vertices.push_back(glm::vec3(1));
-    vertices.push_back(glm::vec3(2));
-    vertices.push_back(glm::vec3(3));
-    vertices.push_back(glm::vec3(4));
-
-    // Quad
-    glBindVertexArray(vao[3]);
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[10]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * verticesId.size(), verticesId.data(), GL_STATIC_DRAW);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // Create FBO & textures For Post Processing -------------------------------------------------------------------------------------------------------------------------------
 
@@ -679,22 +692,8 @@ int main( int argc, char **argv )
     fxDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, fxDrawBuffers);
 
-    // Create Fx textures
-    const int FX_TEXTURE_COUNT = 4;
-    GLuint fxTextures[FX_TEXTURE_COUNT];
-    glGenTextures(FX_TEXTURE_COUNT, fxTextures);
-    for (int i = 0; i < FX_TEXTURE_COUNT; ++i)
-    {
-        glBindTexture(GL_TEXTURE_2D, fxTextures[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
-
     // Attach first fx texture to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[0], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -736,7 +735,6 @@ int main( int argc, char **argv )
     do
     {
         t = glfwGetTime();
-
 
         // Mouse states
         int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
@@ -791,6 +789,7 @@ int main( int argc, char **argv )
             guiStates.lockPositionX = mousex;
             guiStates.lockPositionY = mousey;
         }
+
         camera.setEye(spline.cubicInterpolation(glm::mod(t*0.05f, 1.f)));
         camera.updateFromTarget(splineTargetView.cubicInterpolation(glm::mod(t * 0.05f, 1.f)));
 
@@ -861,21 +860,18 @@ int main( int argc, char **argv )
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //-------------------------------------Render Cubes
-        glBindVertexArray(vao[0]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+
+        glBindVertexArray(cubeVao);
+        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
+        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
-        glBindVertexArray(vao[1]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        glBindVertexArray(planeVao);
+        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
+        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -898,13 +894,13 @@ int main( int argc, char **argv )
         shadowShader.useProgram();
 
         //cubes
-        glBindVertexArray(vao[0]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glBindVertexArray(cubeVao);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
         shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
-        glBindVertexArray(vao[1]);
+        glBindVertexArray(planeVao);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // Fallback to default framebuffer
@@ -1004,14 +1000,11 @@ int main( int argc, char **argv )
         directionalLightShader.useProgram();
 
         // Bind quad vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
 
         for(size_t i = 0; i < directionnalLights.size(); ++i){
             uboLight.updateBuffer(&directionnalLights[i], sizeof(Light));
@@ -1024,16 +1017,12 @@ int main( int argc, char **argv )
         spotLightShader.useProgram();
 
         // Bind quad vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[3]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
 
         for(size_t i = 0; i < spotLights.size(); ++i){
             uboLight.updateBuffer(&spotLights[i], sizeof(SpotLight));
@@ -1055,17 +1044,17 @@ int main( int argc, char **argv )
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
         // Set quad as vao
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         // ------- SOBEL ------
         glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[0], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
         sobelShader.useProgram();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- BLUR ------
@@ -1075,23 +1064,21 @@ int main( int argc, char **argv )
 
             glProgramUniform2i(blurShader.id(), blurDirectionLocation, 1,0);
             // Write into Vertical Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
             // Clear the content of texture
             glClear(GL_COLOR_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
             // Read the texture processed by the Sobel operator
-            glBindTexture(GL_TEXTURE_2D, fxTextures[0]);
+            texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
             glProgramUniform2i(blurShader.id(), blurDirectionLocation, 0,1);
 
             // Write into Horizontal Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[2], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(2)].glId(), 0);
             // Clear the content of texture
             glClear(GL_COLOR_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
             // Read the texture processed by the Vertical Blur
-            glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+            texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -1100,37 +1087,37 @@ int main( int argc, char **argv )
         circleConfusionShader.useProgram();
 
         // Write into Circle of Confusion Texture
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[1], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
         // Clear the content of  texture
         glClear(GL_COLOR_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
         // Read the depth texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
         // ------- DOF ------
         // Attach Depth of Field texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, fxTextures[3], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(3)].glId(), 0);
+
         // Only the color buffer is used
         glClear(GL_COLOR_BUFFER_BIT);
         // Use the Depth of Field shader
-        sobelShader.useProgram();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[0]); // Color
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[1]); // CoC
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[2]); // Blur
+
+        depthOfFieldShader.useProgram();
+
+        texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0); // Color
+        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE1); // CoC
+        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE2); //Blur
+
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         gammaShader.useProgram();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, fxTextures[3]);
+        texHandler[fxBufferTexture+std::to_string(3)].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //-------------------------------------Debug Draw
@@ -1139,38 +1126,23 @@ int main( int argc, char **argv )
 
         debugShapesShader.useProgram();
         glPointSize(10);
-        glBindVertexArray(vao[3]);
-
-//        glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-//        vertices.clear();
-//        vertices.push_back(glm::vec3(0));
-//        vertices.push_back(glm::vec3(1));
-//        vertices.push_back(glm::vec3(2));
-//        vertices.push_back(glm::vec3(3));
-//        vertices.push_back(glm::vec3(4));
-//        vertices.push_back(glm::vec3(5));
-//        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        glBindVertexArray(debugVao);
 
         int id = 0;
 
-        vertices.clear();
-        verticesId.clear();
-
-
+        debugVertices.clear();
+        debugId.clear();
 
         for(float i = 0; i < 1; i +=0.01){
-            verticesId.push_back(id);
+            debugId.push_back(id);
             ++id;
-            vertices.push_back(spline.cubicInterpolation(i));
+            debugVertices.push_back(spline.cubicInterpolation(i));
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        debugVerticesVbo.updateData(debugVertices);
+        debugIdsVbo.updateData(debugId);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[10]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * verticesId.size(), verticesId.data(), GL_STATIC_DRAW);
-
-        glDrawElements(GL_LINE_STRIP, vertices.size(), GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(GL_LINE_STRIP, debugVertices.size(), GL_UNSIGNED_INT, (void*)0);
 
         int screenNumber = 6;
 
@@ -1180,15 +1152,15 @@ int main( int argc, char **argv )
         // Select shader
         debugShader.useProgram();
 
-
         // --------------- Color Buffer
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1196,11 +1168,12 @@ int main( int argc, char **argv )
         glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1208,11 +1181,13 @@ int main( int argc, char **argv )
         glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1220,11 +1195,12 @@ int main( int argc, char **argv )
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
         glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+//        glBindTexture(GL_TEXTURE_2D, beautyTexture);
+        texHandler[beautyBufferTexture].bind();
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1232,11 +1208,12 @@ int main( int argc, char **argv )
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+//        glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
+        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1244,11 +1221,12 @@ int main( int argc, char **argv )
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         // Bind quad VAO
-        glBindVertexArray(vao[2]);
+        glBindVertexArray(quadVao);
 
-        glActiveTexture(GL_TEXTURE0);
+//        glActiveTexture(GL_TEXTURE0);
         // Bind gbuffer color texture
-        glBindTexture(GL_TEXTURE_2D, fxTextures[2]);
+//        glBindTexture(GL_TEXTURE_2D, fxTextures[2]);
+        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
         // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
