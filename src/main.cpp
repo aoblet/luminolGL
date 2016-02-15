@@ -1093,7 +1093,6 @@ int main( int argc, char **argv )
         // Read the depth texture
         texHandler[depthBufferTexture].bind(GL_TEXTURE0);
 
-
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
@@ -1154,82 +1153,44 @@ int main( int argc, char **argv )
 
         // --------------- Color Buffer
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-//        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
-        // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Normal Buffer
         glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-//        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
         texHandler[normalBufferTexture].bind(GL_TEXTURE0);
-        // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Depth Buffer
         glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-//        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
         texHandler[depthBufferTexture].bind(GL_TEXTURE0);
-
-        // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Beauty Buffer
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, beautyTexture);
-        texHandler[beautyBufferTexture].bind();
-        // Draw quad
+        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Circle of confusion Buffer
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-//        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, fxTextures[1]);
         texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
-        // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Blur Buffer
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        // Bind quad VAO
         glBindVertexArray(quadVao);
-
-//        glActiveTexture(GL_TEXTURE0);
-        // Bind gbuffer color texture
-//        glBindTexture(GL_TEXTURE_2D, fxTextures[2]);
         texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
-        // Draw quad
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
 
         //****************************************** EVENTS *******************************************
 #if 1
