@@ -176,10 +176,10 @@ void printVec3(glm::vec3 vec){
 int main( int argc, char **argv )
 {
     Geometry::Spline3D spline;
-    spline.add(glm::vec3(0,10,0)  );
-    spline.add(glm::vec3(10,10,0) );
+    spline.add(glm::vec3(0,10.0,0)  );
+    spline.add(glm::vec3(10,10.35,0.0) );
     spline.add(glm::vec3(10,10,10));
-    spline.add(glm::vec3(0,10,0)  );
+    spline.add(glm::vec3(0.7,10.52,0)  );
 
     Geometry::Spline3D splineTargetView;
     splineTargetView.add(glm::vec3(0, 0, 0));

@@ -7,12 +7,13 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <string>
 
 namespace Geometry
 {
     class Spline3D{
     private:
-        std::vector<glm::vec3> points;
+        std::vector<glm::vec3> _points;
 
         int findIndex(float t);
 
@@ -36,6 +37,9 @@ namespace Geometry
         glm::vec3 linearInterpolation(float t);
 
         glm::vec3 cubicInterpolation(float t);
+
+        void load(const std::string & filePath);
+        void save(const std::string & filePath) const;
     };
 }
 
