@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <map>
 #include <iostream>
 #include <vector>
 
@@ -116,6 +117,7 @@ void printVec3(glm::vec3 vec){
     std::cout << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]" << std::endl;
 }
 
+
 int main( int argc, char **argv )
 {
     Geometry::Spline3D spline;
@@ -186,7 +188,7 @@ int main( int argc, char **argv )
     GLenum glerr = GL_NO_ERROR;
     glerr = glGetError();
 
-    // Gui::Gui gui();
+    Gui::Gui gui(DPI, width, height);
     if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
     {
         fprintf(stderr, "Could not init GUI renderer.\n");
@@ -663,9 +665,6 @@ int main( int argc, char **argv )
     GUIStates guiStates;
     init_gui_states(guiStates);
 
-    // GUI vars -------------------------------------------------------------------------------------------------------------------------------
-
-    int logScroll = 0;
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -1138,75 +1137,40 @@ int main( int argc, char **argv )
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
 
-        unsigned char mbut = 0;
-        int mscroll = 0;
-        double mousex; double mousey;
-        glfwGetCursorPos(window, &mousex, &mousey);
-        mousex*=DPI;
-        mousey*=DPI;
-        mousey = height - mousey;
 
-        if( leftButton == GLFW_PRESS )
-            mbut |= IMGUI_MBUT_LEFT;
+        
+        gui.beginFrame();
+        gui.getCursorPos(window);
+        gui.updateFrame();
 
-        imguiBeginFrame(mousex, mousey, mbut, mscroll);
-        char lineBuffer[512];
-        // imguiBeginScrollArea("aogl", width - 210, height - 310, 200, 300, &logScroll);
+        bool leftButtonPress = false;
+        if( leftButton == GLFW_PRESS ) leftButtonPress = true;
 
-        float xwidth = 400;
-        float ywidth = 550;
+        gui.updateMbut(leftButtonPress);   
 
-        imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
-        sprintf(lineBuffer, "FPS %f", fps);
-        imguiLabel(lineBuffer);
-        imguiSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
-        imguiSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
-        imguiSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
-        imguiSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
-        imguiSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
-        imguiSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
-        imguiSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
-        imguiSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
-        imguiSlider("Gamma", &gamma, 1, 8, 0.01);
-        imguiSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
         float sample = sampleCount;
-        imguiSlider("Blur Sample Count", &sample, 0, 32, 1);
+        std::map<std::string,float*> imguiParams = {
+            { "FPS", &fps },
+            { "Slider", &SliderValue },
+            { "InstanceNumber", &instanceNumber },
+            { "SliderMultiply", &SliderMult }, 
+            { "Shadow Bias", &shadowBias }, 
+            { "Gamma", &gamma }, 
+            { "SobelIntensity", &sobelIntensity }, 
+            { "BlurSampleCount", &sample }, 
+            { "FocusNear", &focus[0] }, 
+            { "FocusPosition", &focus[1] }, 
+            { "FocusFar", &focus[2] }
+        };
         sampleCount = sample;
 
-        imguiSlider("Focus Near", &focus[0], 0, 10, 0.01);
-        imguiSlider("Focus Position", &focus[1], 0, 100, 0.01);
-        imguiSlider("Focus Far", &focus[2], 0, 100, 0.01);
+        gui.scrollArea(imguiParams, lightHandler, spline);
+        gui.scrollAreaEnd();
+        
 
-        imguiLabel("Spline Handler");
-        for(size_t i = 0; i < spline.size(); ++i){
-            imguiLabel("point");
-            imguiSlider("x", &spline[i].x, -100, 100, 0.1);
-            imguiSlider("y", &spline[i].y, -100, 100, 0.1);
-            imguiSlider("z", &spline[i].z, -100, 100, 0.1);
-        }
+        imguiSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
 
-        if(imguiButton("Add Spline")){
-            spline.add(spline[spline.size()-1]);
-        }
-
-        for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
-            imguiSlider("pos.x", &lightHandler._spotLights[i]._pos.x, -50, 50, 0.001);
-            imguiSlider("pos.y", &lightHandler._spotLights[i]._pos.y, -50, 50, 0.001);
-            imguiSlider("pos.z", &lightHandler._spotLights[i]._pos.z, -50, 50, 0.001);
-
-            imguiSlider("dir.x", &lightHandler._spotLights[i]._dir.x, -1, 1, 0.001);
-            imguiSlider("dir.y", &lightHandler._spotLights[i]._dir.y, -1, 1, 0.001);
-            imguiSlider("dir.z", &lightHandler._spotLights[i]._dir.z, -1, 1, 0.001);
-
-            imguiSlider("angle", &lightHandler._spotLights[i]._angle, 0, 180, 0.001);
-            imguiSlider("falloff", &lightHandler._spotLights[i]._falloff, 0, 180, 0.001);
-            imguiSlider("intensity", &lightHandler._spotLights[i]._intensity, 0, 10, 0.001);
-            imguiSlider("attenuation", &lightHandler._spotLights[i]._attenuation, 0, 10, 0.001);
-        }
-
-        imguiEndScrollArea();
-        imguiEndFrame();
-        imguiRenderGLDraw(width, height);
+        
 
         glDisable(GL_BLEND);
 #endif
