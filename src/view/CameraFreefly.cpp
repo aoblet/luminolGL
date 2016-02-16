@@ -6,9 +6,9 @@ using namespace View;
 
 void CameraFreefly::computeDirs() {
     // Spherical coordinates
-    _front.x = glm::cos(_sphericalAngles.y) * glm::cos(_sphericalAngles.x);
+    _front.x = glm::cos(_sphericalAngles.y) * glm::sin(_sphericalAngles.x);
     _front.y = glm::sin(_sphericalAngles.y);
-    _front.z = glm::cos(_sphericalAngles.x) * glm::cos(_sphericalAngles.y);
+    _front.z = glm::cos(_sphericalAngles.y) * glm::cos(_sphericalAngles.x);
 
     // Simply compute the left vector of front: rotate of _sphericalAngles.x + PI/2 with y equals to 0
     _frontLeft.x = glm::sin(_sphericalAngles.x + glm::half_pi<float>());
@@ -16,7 +16,7 @@ void CameraFreefly::computeDirs() {
     _frontLeft.z = glm::cos(_sphericalAngles.x + glm::half_pi<float>());
 
     // Cross product to find _up from _front and _frontLeft
-    _up = glm::cross(_front, _frontLeft);
+    _up = glm::normalize(glm::cross(_front, _frontLeft));
 
 }
 
@@ -24,23 +24,21 @@ const glm::mat4& CameraFreefly::getViewMatrix() const {
     return _matrix;
 }
 
-void CameraFreefly::moveFront(float speed) {
-    _eye += (_front * speed);
-}
-
-void CameraFreefly::moveLeft(float speed) {
-    _eye += (_frontLeft * speed);
+void CameraFreefly::move(const glm::vec3& movement) {
+    _eye += _front * movement.z + _frontLeft * movement.x + _up * movement.y;
 }
 
 void CameraFreefly::rotate(const glm::vec2& angles) {
-    _sphericalAngles += angles;
-}
+    _sphericalAngles.x += angles.x;
 
-void CameraFreefly::update(const glm::vec2 &angles, float speedFront, float speedLeft) {
+    // Block y rotate
+    if(glm::abs(_sphericalAngles.y + angles.y) < glm::half_pi<float>())
+        _sphericalAngles.y += angles.y;
+}
+void CameraFreefly::update(const glm::vec2 &angles, const glm::vec3& movement) {
     rotate(angles);
     computeDirs();
-    moveFront(speedFront);
-    moveLeft(speedLeft);
+    move(movement);
     _matrix = glm::lookAt(_eye, _eye + _front, _up);
 }
 

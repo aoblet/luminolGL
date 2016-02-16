@@ -20,13 +20,12 @@ namespace View{
         glm::vec3 _frontLeft;       /** Left vector from front: used for Up*/
         glm::vec2 _sphericalAngles; /** In radians */
 
-    public:
-        //TODO: think about pos and speed splines attachement
-        void moveFront(float speed);
-        void moveLeft(float speed);
+        void move(const glm::vec3& movement);
         void rotate(const glm::vec2& angles);
+
+    public:
         void computeDirs();
-        void update(const glm::vec2& angles, float speedFront, float speedLeft);
+        void update(const glm::vec2& angles, const glm::vec3& movement);
         void updateFromTarget(const glm::vec3& target);  /** Useful for splines orientation */
 
         void setFront(const glm::vec3& front);
