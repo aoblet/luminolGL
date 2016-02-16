@@ -87,27 +87,27 @@ namespace Graphics
         return _glId;
     }
 
-    void VertexBufferObject::updateData(const std::vector<VertexDescriptor> data){
+    void VertexBufferObject::updateData(const std::vector<VertexDescriptor>& data){
         bind();
         glBufferData(_target, data.size() * sizeof(Graphics::VertexDescriptor), data.data(), GL_STATIC_DRAW);
     }
 
-    void VertexBufferObject::updateData(const std::vector<glm::vec3> data){
+    void VertexBufferObject::updateData(const std::vector<glm::vec3>& data){
         bind();
         glBufferData(_target, data.size() * 3 * sizeof(GL_FLOAT), data.data(), GL_STATIC_DRAW);
     }
 
-    void VertexBufferObject::updateData(const std::vector<glm::vec2> data){
+    void VertexBufferObject::updateData(const std::vector<glm::vec2>& data){
         bind();
         glBufferData(_target, data.size() * 2 * sizeof(GL_FLOAT), data.data(), GL_STATIC_DRAW);
     }
 
-    void VertexBufferObject::updateData(const std::vector<float> data){
+    void VertexBufferObject::updateData(const std::vector<float>& data){
         bind();
         glBufferData(_target, data.size() * sizeof(GL_FLOAT), data.data(), GL_STATIC_DRAW);
     }
 
-    void VertexBufferObject::updateData(const std::vector<int> data){
+    void VertexBufferObject::updateData(const std::vector<int>& data){
         bind();
         glBufferData(_target, data.size() * sizeof(GL_INT), data.data(), GL_STATIC_DRAW);
     }
