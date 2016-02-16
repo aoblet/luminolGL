@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 
-namespace UI{
+namespace GUI {
     /**
      * Represents User input as "flags". Updated in main loop.
      */

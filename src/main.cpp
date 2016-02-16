@@ -1,17 +1,13 @@
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#endif
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <iostream>
 #include <vector>
-
 #include <cmath>
-
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 #include "stb/stb_image.h"
 #include "imgui/imgui.h"
@@ -25,18 +21,17 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
-#include <graphics/UBO.hpp>
-#include <view/CameraController.hpp>
 
 #include "geometry/Spline3D.h"
-
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Texture.h"
 #include "graphics/TextureHandler.h"
 #include "graphics/VertexDescriptor.h"
 #include "graphics/VertexBufferObject.h"
-
+#include "graphics/UBO.hpp"
 #include "view/CameraFreefly.hpp"
+#include "view/CameraController.hpp"
+#include "gui/UserInput.hpp"
 
 
 #ifndef DEBUG_PRINT
@@ -46,15 +41,9 @@
 #if DEBUG_PRINT == 0
 #define debug_print(FORMAT, ...) ((void)0)
 #else
-#ifdef _MSC_VER
 #define debug_print(FORMAT, ...) \
     fprintf(stderr, "%s() in %s, line %i: " FORMAT "\n", \
         __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#else
-#define debug_print(FORMAT, ...) \
-    fprintf(stderr, "%s() in %s, line %i: " FORMAT "\n", \
-        __func__, __FILE__, __LINE__, __VA_ARGS__)
-#endif
 #endif
 
 // Font buffers
@@ -179,7 +168,7 @@ int main( int argc, char **argv )
     int width = 1300, height= 700;
     float fps = 0.f;
 
-    UI::UserInput userInput;
+    GUI::UserInput userInput;
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
     View::CameraController cameraController(camera, userInput, 0.05);
 

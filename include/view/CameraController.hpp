@@ -2,12 +2,12 @@
 
 #include "view/CameraFreefly.hpp"
 #include "geometry/Spline3D.h"
-#include "ui/UserInput.hpp"
+#include "gui/UserInput.hpp"
 
 namespace View{
     class CameraController{
         CameraFreefly& _camera;
-        UI::UserInput& _userInput;
+        GUI::UserInput& _userInput;
 
         Geometry::Spline3D _cameraPositions;
         Geometry::Spline3D _cameraSpeeds;
@@ -16,13 +16,13 @@ namespace View{
         float _velocitySplines;
 
         void updateFromSplines(float time);
-        void updateFromInput(const UI::UserInput& userInput);
+        void updateFromInput(const GUI::UserInput& userInput);
 
     public:
-        CameraController(CameraFreefly& camera, UI::UserInput& userInput, float velocitySplines=1, bool isSpectator=false);
+        CameraController(CameraFreefly& camera, GUI::UserInput& userInput, float velocitySplines=1, bool isSpectator=false);
 
         void setCamera(CameraFreefly& c);
-        void setUserInput(UI::UserInput& u);
+        void setUserInput(GUI::UserInput& u);
         void setVelocitySplines(float velocity);
         void update(float time);
         void setSpectator(bool isSpectator);
@@ -32,7 +32,7 @@ namespace View{
 
         bool isSpectator() const;
         CameraFreefly& camera() const;
-        UI::UserInput& userInput() const;
+        GUI::UserInput& userInput() const;
 
         Geometry::Spline3D& positions();
         Geometry::Spline3D& speeds();

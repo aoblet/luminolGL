@@ -2,7 +2,7 @@
 
 using namespace View;
 
-CameraController::CameraController(CameraFreefly &camera, UI::UserInput& userInput, float velocitySplines, bool isSpectator):
+CameraController::CameraController(CameraFreefly &camera, GUI::UserInput& userInput, float velocitySplines, bool isSpectator):
         _camera(camera), _userInput(userInput), _isSpectatorMode(isSpectator), _velocitySplines(velocitySplines){}
 
 void CameraController::setCamera(CameraFreefly &c) {
@@ -25,7 +25,7 @@ void CameraController::updateFromSplines(float time) {
     _camera.updateFromTarget(_cameraViewTargets.cubicInterpolation(indexSpline));
 }
 
-void CameraController::updateFromInput(const UI::UserInput& userInput) {
+void CameraController::updateFromInput(const GUI::UserInput& userInput) {
     glm::vec3 movement;
     movement.z = userInput.is_PRESSED_Z ? 1 : (userInput.is_PRESSED_S ? -1 : 0) ;
     movement.x  = userInput.is_PRESSED_Q ? 1 : (userInput.is_PRESSED_D ? -1 : 0) ;
@@ -54,11 +54,11 @@ bool CameraController::isSpectator() const {
     return _isSpectatorMode;
 }
 
-void CameraController::setUserInput(UI::UserInput &u) {
+void CameraController::setUserInput(GUI::UserInput &u) {
     _userInput = u;
 }
 
-UI::UserInput &CameraController::userInput() const {
+GUI::UserInput &CameraController::userInput() const {
     return _userInput;
 }
 

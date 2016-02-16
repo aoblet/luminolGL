@@ -1,6 +1,6 @@
-#include "ui/UserInput.hpp"
+#include "gui/UserInput.hpp"
 
-using namespace UI;
+using namespace GUI;
 
 UserInput::UserInput(float _velocityRotate): velocityRotate(_velocityRotate) { }
 
