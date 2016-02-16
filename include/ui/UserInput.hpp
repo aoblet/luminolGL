@@ -17,8 +17,9 @@ namespace UI{
         float velocityMovement;
         float velocityRotate;
         glm::vec2 rotate;
+        glm::dvec2 mousePosition;
 
-        UserInput(float velocityRotate=0.005f);
+        UserInput(float _velocityRotate=0.08f);
         float& getVelocityRotate(); //imgui
         void setVelocityRotate(float v);
         void update(GLFWwindow * window);

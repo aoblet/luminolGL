@@ -752,9 +752,10 @@ int main( int argc, char **argv )
         userInput.update(window);
         cameraController.update(t);
 
+
         int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
         int rightButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_RIGHT );
-        int middleButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_MIDDLE );
+        int middleButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_MIDDLE);
 
         // Camera movements
         int altPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);

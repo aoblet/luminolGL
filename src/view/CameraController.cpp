@@ -31,7 +31,7 @@ void CameraController::updateFromInput(const UI::UserInput& userInput) {
     movement.x  = userInput.is_PRESSED_Q ? 1 : (userInput.is_PRESSED_D ? -1 : 0) ;
     movement.y  = userInput.is_PRESSED_SPACE ? 1 : (userInput.is_PRESSED_ALT ? -1 : 0) ;
     movement *= 0.05f;
-    _camera.update(userInput.rotate * userInput.velocityRotate, movement*userInput.velocityMovement);
+    _camera.update(userInput.rotate * userInput.velocityRotate, movement * userInput.velocityMovement);
 }
 
 Geometry::Spline3D& CameraController::positions() {
