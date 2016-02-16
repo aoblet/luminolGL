@@ -35,6 +35,7 @@
 #include "graphics/TextureHandler.h"
 #include "graphics/VertexDescriptor.h"
 #include "graphics/VertexBufferObject.h"
+#include "graphics/VertexArrayObject.h"
 
 #include "view/CameraFreefly.hpp"
 
@@ -304,15 +305,18 @@ int main( int argc, char **argv )
     Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
     Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    GLuint cubeVao;
-    glGenVertexArrays(1, &cubeVao);
-    glBindVertexArray(cubeVao);
-
-    cubeVerticesVbo.init();
-    cubeIdsVbo.init();
+    Graphics::VertexArrayObject cubeVAO;
+    cubeVAO.addVBO(&cubeVerticesVbo);
+    cubeVAO.addVBO(&cubeIdsVbo);
+    cubeVAO.init();
 
     cubeVerticesVbo.updateData(cubeVertices);
     cubeIdsVbo.updateData(cubeIds);
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : cube vao" << std::endl;
+        return -1;
+    }
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
 
@@ -331,15 +335,18 @@ int main( int argc, char **argv )
     Graphics::VertexBufferObject planeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
     Graphics::VertexBufferObject planeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    GLuint planeVao;
-    glGenVertexArrays(1, &planeVao);
-    glBindVertexArray(planeVao);
-
-    planeVerticesVbo.init();
-    planeIdsVbo.init();
+    Graphics::VertexArrayObject planeVAO;
+    planeVAO.addVBO(&planeVerticesVbo);
+    planeVAO.addVBO(&planeIdsVbo);
+    planeVAO.init();
 
     planeVerticesVbo.updateData(planeVertices);
     planeIdsVbo.updateData(planeIds);
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : plane vao" << std::endl;
+        return -1;
+    }
 
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -360,12 +367,10 @@ int main( int argc, char **argv )
     Graphics::VertexBufferObject quadVerticesVbo(Graphics::VEC2);
     Graphics::VertexBufferObject quadIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    GLuint quadVao;
-    glGenVertexArrays(1, &quadVao);
-    glBindVertexArray(quadVao);
-
-    quadVerticesVbo.init();
-    quadIdsVbo.init();
+    Graphics::VertexArrayObject quadVAO;
+    quadVAO.addVBO(&quadVerticesVbo);
+    quadVAO.addVBO(&quadIdsVbo);
+    quadVAO.init();
 
     quadVerticesVbo.updateData(quadVertices);
     quadIdsVbo.updateData(quadIds);
@@ -387,19 +392,22 @@ int main( int argc, char **argv )
     Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
     Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
-    GLuint debugVao;
-    glGenVertexArrays(1, &debugVao);
-    glBindVertexArray(debugVao);
-
-    debugVerticesVbo.init();
-    debugIdsVbo.init();
+    Graphics::VertexArrayObject debugVAO;
+    debugVAO.addVBO(&debugVerticesVbo);
+    debugVAO.addVBO(&debugIdsVbo);
+    debugVAO.init();
 
     debugVerticesVbo.updateData(debugVertices);
     debugIdsVbo.updateData(debugId);
 
     // unbind everything
-    glBindVertexArray(0);
+    Graphics::VertexArrayObject::unbindAll();
     Graphics::VertexBufferObject::unbindAll();
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : debug vao" << std::endl;
+        return -1;
+    }
 
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
@@ -695,8 +703,6 @@ int main( int argc, char **argv )
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
     // Create FBO & textures For Post Processing -------------------------------------------------------------------------------------------------------------------------------
 
     // Create Fx Framebuffer Object
@@ -830,7 +836,7 @@ int main( int argc, char **argv )
 
         //-------------------------------------Render Cubes
 
-        glBindVertexArray(cubeVao);
+        cubeVAO.bind();
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         texHandler[TexBricksNormal].bind(GL_TEXTURE2);
@@ -839,7 +845,7 @@ int main( int argc, char **argv )
         //-------------------------------------Render Plane
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
-        glBindVertexArray(planeVao);
+        planeVAO.bind();
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
         texHandler[TexBricksNormal].bind(GL_TEXTURE2);
@@ -865,13 +871,13 @@ int main( int argc, char **argv )
         shadowShader.useProgram();
 
         //cubes
-        glBindVertexArray(cubeVao);
+        cubeVAO.bind();
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
         shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
-        glBindVertexArray(planeVao);
+        planeVAO.bind();
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // Fallback to default framebuffer
@@ -971,7 +977,7 @@ int main( int argc, char **argv )
         directionalLightShader.useProgram();
 
         // Bind quad vao
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
 
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         texHandler[normalBufferTexture].bind(GL_TEXTURE1);
@@ -988,7 +994,7 @@ int main( int argc, char **argv )
         spotLightShader.useProgram();
 
         // Bind quad vao
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
 
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         texHandler[normalBufferTexture].bind(GL_TEXTURE1);
@@ -1015,14 +1021,14 @@ int main( int argc, char **argv )
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
         // Set quad as vao
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
 
         // ------- SOBEL ------
         glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         sobelShader.useProgram();
         texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
 
@@ -1096,7 +1102,7 @@ int main( int argc, char **argv )
 
         debugShapesShader.useProgram();
         glPointSize(10);
-        glBindVertexArray(debugVao);
+        debugVAO.bind();
 
         int id = 0;
 
@@ -1124,42 +1130,42 @@ int main( int argc, char **argv )
 
         // --------------- Color Buffer
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[colorBufferTexture].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Normal Buffer
         glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[normalBufferTexture].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Depth Buffer
         glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[depthBufferTexture].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Beauty Buffer
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Circle of confusion Buffer
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Blur Buffer
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        glBindVertexArray(quadVao);
+        quadVAO.bind();
         texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
