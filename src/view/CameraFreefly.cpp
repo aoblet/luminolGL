@@ -21,7 +21,11 @@ void CameraFreefly::computeDirs() {
 }
 
 const glm::mat4& CameraFreefly::getViewMatrix() const {
-    return _matrix;
+    return _viewMatrix;
+}
+
+const glm::mat4& CameraFreefly::getProjectionMatrix() const {
+    return _projectionMatrix;
 }
 
 void CameraFreefly::move(const glm::vec3& movement) {
@@ -39,7 +43,7 @@ void CameraFreefly::update(const glm::vec2 &angles, const glm::vec3& movement) {
     rotate(angles);
     computeDirs();
     move(movement);
-    _matrix = glm::lookAt(_eye, _eye + _front, _up);
+    _viewMatrix = glm::lookAt(_eye, _eye + _front, _up);
 }
 
 void CameraFreefly::setEye(const glm::vec3 &eye) {
@@ -66,7 +70,7 @@ void CameraFreefly::updateFromTarget(const glm::vec3 &target) {
 
     _frontLeft = glm::normalize(_frontLeft);
     _up = glm::cross(_front, _frontLeft);
-    _matrix = glm::lookAt(_eye, _eye + _front, -_up);
+    _viewMatrix = glm::lookAt(_eye, _eye + _front, -_up);
 }
 
 std::ostream& View::operator<<(std::ostream& out, const CameraFreefly& c){
@@ -79,4 +83,32 @@ std::ostream& View::operator<<(std::ostream& out, const CameraFreefly& c){
     out << "Up:\t\t\t "         << glm::to_string(c._up)                << std::endl;
     out << "----------------------" << std::endl << std::endl;
     return out;
+}
+
+CameraFreefly::CameraFreefly(const glm::vec2 &viewPort, const glm::vec2 &nearFar, float fov):
+        _fov(fov), _viewPort(viewPort), _nearFar(nearFar){
+    updateProjection();
+}
+
+void CameraFreefly::updateProjection(){
+    _projectionMatrix = glm::perspective(_fov, _viewPort.x / _viewPort.y, _nearFar.x, _nearFar.y);
+}
+
+void CameraFreefly::updateProjectionProperties(const glm::vec2 &viewPort, const glm::vec2 &nearFar, float fov) {
+    _viewPort = viewPort;
+    _nearFar = nearFar;
+    _fov = fov;
+    updateProjection();
+}
+
+glm::vec2 CameraFreefly::getViewPort() const {
+    return _viewPort;
+}
+
+float CameraFreefly::getFOV() const {
+    return _fov;
+}
+
+glm::vec2 CameraFreefly::getNearFar() const {
+    return _nearFar;
 }

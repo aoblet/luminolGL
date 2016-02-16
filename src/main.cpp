@@ -176,8 +176,11 @@ void printVec3(glm::vec3 vec){
 
 int main( int argc, char **argv )
 {
+    int width = 1300, height= 700;
+    float fps = 0.f;
+
     UI::UserInput userInput;
-    View::CameraFreefly camera;
+    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
     View::CameraController cameraController(camera, userInput, 0.05);
 
     cameraController.positions().add(glm::vec3(0,10,0)  );
@@ -186,11 +189,7 @@ int main( int argc, char **argv )
     cameraController.positions().add(glm::vec3(0,10,0)  );
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
 
-    int width = 1300, height= 700;
 
-    float widthf = (float) width, heightf = (float) height;
-
-    float fps = 0.f;
 
     // Initialise GLFW
     if( !glfwInit() )
@@ -761,7 +760,7 @@ int main( int argc, char **argv )
         int altPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
 
         // Get camera matrices
-        glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 10000.f);
+        glm::mat4 projection = camera.getProjectionMatrix();
         glm::mat4 worldToView = camera.getViewMatrix();
         glm::mat4 objectToWorld;
         glm::mat4 mvp = projection * worldToView * objectToWorld;
