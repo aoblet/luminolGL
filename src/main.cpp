@@ -26,6 +26,7 @@
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
 #include <graphics/UBO.hpp>
+#include <view/CameraController.hpp>
 
 #include "geometry/Spline3D.h"
 
@@ -175,14 +176,15 @@ void printVec3(glm::vec3 vec){
 
 int main( int argc, char **argv )
 {
-    Geometry::Spline3D spline;
-    spline.add(glm::vec3(0,10,0)  );
-    spline.add(glm::vec3(10,10,0) );
-    spline.add(glm::vec3(10,10,10));
-    spline.add(glm::vec3(0,10,0)  );
+    UI::UserInput userInput;
+    View::CameraFreefly camera;
+    View::CameraController cameraController(camera, userInput, 0.05);
 
-    Geometry::Spline3D splineTargetView;
-    splineTargetView.add(glm::vec3(0, 0, 0));
+    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.positions().add(glm::vec3(10,10,0) );
+    cameraController.positions().add(glm::vec3(10,10,10));
+    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.viewTargets().add(glm::vec3(0, 0, 0));
 
     int width = 1300, height= 700;
 
@@ -721,7 +723,6 @@ int main( int argc, char **argv )
     spotLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
 
     // Viewer Structures ----------------------------------------------------------------------------------------------------------------------
-    View::CameraFreefly camera;
     GUIStates guiStates;
     init_gui_states(guiStates);
 
@@ -735,63 +736,15 @@ int main( int argc, char **argv )
     do
     {
         t = glfwGetTime();
+        userInput.update(window);
+        cameraController.update(t);
 
-        // Mouse states
         int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
         int rightButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_RIGHT );
         int middleButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_MIDDLE );
 
-        if( leftButton == GLFW_PRESS )
-            guiStates.turnLock = true;
-        else
-            guiStates.turnLock = false;
-
-        if( rightButton == GLFW_PRESS )
-            guiStates.zoomLock = true;
-        else
-            guiStates.zoomLock = false;
-
-        if( middleButton == GLFW_PRESS )
-            guiStates.panLock = true;
-        else
-            guiStates.panLock = false;
-
         // Camera movements
         int altPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
-        if (!altPressed && (leftButton == GLFW_PRESS || rightButton == GLFW_PRESS || middleButton == GLFW_PRESS))
-        {
-            double x; double y;
-            glfwGetCursorPos(window, &x, &y);
-            guiStates.lockPositionX = x;
-            guiStates.lockPositionY = y;
-        }
-        if (altPressed == GLFW_PRESS)
-        {
-            double mousex; double mousey;
-            glfwGetCursorPos(window, &mousex, &mousey);
-            int diffLockPositionX = mousex - guiStates.lockPositionX;
-            int diffLockPositionY = mousey - guiStates.lockPositionY;
-            if (guiStates.zoomLock)
-            {
-                float zoomDir = 0.0;
-                if (diffLockPositionX > 0)
-                    zoomDir = -1.f;
-                else if (diffLockPositionX < 0 )
-                    zoomDir = 1.f;
-            }
-            else if (guiStates.turnLock)
-            {
-
-            }
-            else if (guiStates.panLock)
-            {
-            }
-            guiStates.lockPositionX = mousex;
-            guiStates.lockPositionY = mousey;
-        }
-
-        camera.setEye(spline.cubicInterpolation(glm::mod(t*0.05f, 1.f)));
-        camera.updateFromTarget(splineTargetView.cubicInterpolation(glm::mod(t * 0.05f, 1.f)));
 
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 10000.f);
@@ -1135,7 +1088,7 @@ int main( int argc, char **argv )
         for(float i = 0; i < 1; i +=0.01){
             debugId.push_back(id);
             ++id;
-            debugVertices.push_back(spline.cubicInterpolation(i));
+            debugVertices.push_back(cameraController.positions().cubicInterpolation(i));
         }
 
         debugVerticesVbo.updateData(debugVertices);
@@ -1221,6 +1174,14 @@ int main( int argc, char **argv )
         imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
+
+        if(imguiButton("Camera Spectator"))
+            cameraController.setSpectator(!cameraController.isSpectator());
+        imguiSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+        imguiSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
+
+        imguiSeparatorLine();
+
         imguiSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
         imguiSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
         imguiSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
@@ -1240,15 +1201,15 @@ int main( int argc, char **argv )
         imguiSlider("Focus Far", &focus[2], 0, 100, 0.01);
 
         imguiLabel("Spline Handler");
-        for(size_t i = 0; i < spline.size(); ++i){
+        for(size_t i = 0; i < cameraController.positions().size(); ++i){
             imguiLabel("point");
-            imguiSlider("x", &spline[i].x, -100, 100, 0.1);
-            imguiSlider("y", &spline[i].y, -100, 100, 0.1);
-            imguiSlider("z", &spline[i].z, -100, 100, 0.1);
+            imguiSlider("x", &cameraController.positions()[i].x, -100, 100, 0.1);
+            imguiSlider("y", &cameraController.positions()[i].y, -100, 100, 0.1);
+            imguiSlider("z", &cameraController.positions()[i].z, -100, 100, 0.1);
         }
 
         if(imguiButton("Add Spline")){
-            spline.add(spline[spline.size()-1]);
+            cameraController.positions().add(cameraController.positions()[cameraController.positions().size()-1]);
         }
 
         for(size_t i = 0; i < spotLights.size(); ++i){
