@@ -410,7 +410,6 @@ int main( int argc, char **argv )
     Graphics::TextureHandler texHandler;
 
     std::string TexBricksDiff = "bricks_diff";
-    std::string TexBricksSpec = "bricks_spec";
     texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_diff.tga"), TexBricksDiff);
 
     if (!checkError("Texture")){
@@ -418,10 +417,19 @@ int main( int argc, char **argv )
         return -1;
     }
 
+    std::string TexBricksSpec = "bricks_spec";
     texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_spec.tga"), TexBricksSpec);
 
     if (!checkError("Texture")){
         std::cout << "Error : bricks_spec" << std::endl;
+        return -1;
+    }
+
+    std::string TexBricksNormal = "bricks_normal";
+    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_normal.tga"), TexBricksNormal);
+
+    if (!checkError("Texture")){
+        std::cout << "Error : bricks_normal" << std::endl;
         return -1;
     }
 
@@ -491,7 +499,7 @@ int main( int argc, char **argv )
     std::vector<Light> pointLights;
 
     std::vector<Light> directionnalLights;
-    directionnalLights.push_back(Light(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2));
+    directionnalLights.push_back(Light(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.3));
 
     std::vector<SpotLight> spotLights;
     spotLights.push_back(SpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66));
@@ -528,6 +536,9 @@ int main( int argc, char **argv )
     const std::string UNIFORM_NAME_DEPTH_BUFFER     = "DepthBuffer";
     const std::string UNIFORM_NAME_DIFFUSE          = "Diffuse";
     const std::string UNIFORM_NAME_SPECULAR         = "Specular";
+    const std::string UNIFORM_NAME_NORMAL_MAP       = "NormalMap";
+    const std::string UNIFORM_NAME_CAMERA_POSITION  = "CamPos";
+    const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE = "IsNormalMapActive";
 
 
     // ---------------------- For Geometry Shading
@@ -536,10 +547,13 @@ int main( int argc, char **argv )
     float SliderMult = 80;
     float specularPower = 20;
     float instanceNumber = 100;
+    int isNormalMapActive = 1;
 
     mainShader.updateUniform(UNIFORM_NAME_DIFFUSE, 0);
     mainShader.updateUniform(UNIFORM_NAME_SPECULAR, 1);
+    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP, 2);
     mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, isNormalMapActive);
     shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
 
     if (!checkError("Uniforms")){
@@ -781,8 +795,10 @@ int main( int argc, char **argv )
 
         mainShader.updateUniform(UNIFORM_NAME_MVP, mvp);
         mainShader.updateUniform(UNIFORM_NAME_MV, mv);
+        mainShader.updateUniform(UNIFORM_NAME_CAMERA_POSITION, camera.getEye());
         debugShapesShader.updateUniform(UNIFORM_NAME_MVP, mvp);
         debugShapesShader.updateUniform(UNIFORM_NAME_MV_INVERSE, mvInverse);
+
 
         // Upload value
         mainShader.updateUniform(UNIFORM_NAME_TIME, t);
@@ -817,6 +833,7 @@ int main( int argc, char **argv )
         glBindVertexArray(cubeVao);
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
+        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
@@ -825,6 +842,7 @@ int main( int argc, char **argv )
         glBindVertexArray(planeVao);
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
+        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -1181,6 +1199,8 @@ int main( int argc, char **argv )
         imguiSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
 
         imguiSeparatorLine();
+        if(imguiButton("IsNormalMapActive"))
+            mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
         imguiSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
         imguiSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
