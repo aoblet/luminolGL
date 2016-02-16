@@ -18,17 +18,6 @@ namespace Graphics
     {
     }
 
-    Mesh::Mesh(MeshPrimitive primitive) {
-        switch (primitive){
-            case CUBE:
-                genCube();
-                break;
-            case PLANE:
-                genPlane();
-                break;
-        }
-    }
-
     const std::vector<VertexDescriptor> &Mesh::getVertices() const {
         return _vertices;
     }
@@ -45,6 +34,15 @@ namespace Graphics
 
     int Mesh::getTriangleCount() const {
         return _triangleCount;
+    }
+
+
+    bool Mesh::isVisible(const View::CameraFreefly& camera) const {
+        return _boundaries.isVisible(camera);
+    }
+
+    void Mesh::computeBoundingBox() {
+        _boundaries.compute(_vertices);
     }
 
     Mesh Mesh::genCube() {
@@ -98,6 +96,10 @@ namespace Graphics
         mesh._triangleCount = 12;
         mesh._vertexCount = mesh._triangleCount * 3;
 
+        std::cout << "vertexCount before : " << mesh._vertices.size() << std::endl;
+
+        mesh.computeBoundingBox();
+
         return mesh;
     }
 
@@ -119,6 +121,12 @@ namespace Graphics
         mesh._triangleCount = 2;
         mesh._vertexCount = mesh._triangleCount * 3;
 
+        mesh.computeBoundingBox();
+
         return mesh;
+    }
+
+    const Geometry::BoundingBox &Mesh::getBoundingBox() {
+        return _boundaries;
     }
 }

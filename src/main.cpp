@@ -278,6 +278,7 @@ int main( int argc, char **argv )
     cubeVAO.addVBO(&cubeIdsVbo);
     cubeVAO.init();
 
+
     Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
 
     cubeVerticesVbo.updateData(cubeMesh.getVertices());
@@ -864,7 +865,7 @@ int main( int argc, char **argv )
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
         //------------------------------------ Point Lights
-        
+
 //        // point light shaders
 //        pointLightShader.useProgram();
 //
@@ -1072,6 +1073,7 @@ int main( int argc, char **argv )
             ++id;
             debugVertices.push_back(cameraController.positions().cubicInterpolation(i));
         }
+
 
         debugVerticesVbo.updateData(debugVertices);
         debugIdsVbo.updateData(debugId);
