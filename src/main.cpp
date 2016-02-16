@@ -431,7 +431,8 @@ int main( int argc, char **argv )
     Light::LightHandler lightHandler;
 
     lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2);
-    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
+    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0.1, 0, 60, 66);
+    lightHandler.addPointLight(glm::vec3(-4,1,-4), glm::vec3(0.2,0.95,0.2), 0.9);
 
     
 
@@ -866,72 +867,72 @@ int main( int argc, char **argv )
         UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
-        //------------------------------------ Point Lights
+//         //------------------------------------ Point Lights
 //        // point light shaders
 //        pointLightShader.useProgram();
-//
+
 //        // Bind quad vao
 //        glBindVertexArray(vao[2]);
-//
+
 //        glActiveTexture(GL_TEXTURE0);
 //        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
 //        glActiveTexture(GL_TEXTURE1);
 //        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
 //        glActiveTexture(GL_TEXTURE2);
 //        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-//
+
 //        unsigned int nbLightsByCircle[] = {6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78};
 //        int counterCircle = 0;
 //        unsigned int nbPointLights = 30;
 //        float xOffset = glm::sqrt(float(instanceNumber))/2;
 //        float zOffset = glm::sqrt(float(instanceNumber))/2;
-//
+
 //        float rayon = sqrt(xOffset*2 + zOffset*2);
-//
-//
+
+
 //        int cptVisiblePointLight = 0;
-//
+
 //        std::vector<Light> lights;
-//
+
 //        for(size_t i = 0; i < nbPointLights; ++i){
-//
+
 //            Light light(glm::vec3(0,0,0), glm::vec3(1,1,1), lightIntensity, lightAttenuation);
-//
+
 //            if( i == nbLightsByCircle[counterCircle] ){
 //              counterCircle++;
 //              rayon += 3;
 //            }
-//
-//
+
+
 //            float coeff = rayon * sin(t);
 //            float w = t + t;
-//
-////            coeff = 20;
-////            w = 0;
-//
+
+// //            coeff = 20;
+// //            w = 0;
+
 //            light._pos = glm::vec3(
 //                coeff * cos(i+ M_PI /nbPointLights) + xOffset,
 //                pointLightsYOffset,
 //                coeff * sin(i+ M_PI /nbPointLights) + zOffset);
-//
+
 //            light._color.x = cos(i);
 //            light._color.y = sin(3*i);
 //            light._color.y = cos(i*2);
-//
-//
+
+
 //            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
 //            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &light);
 //            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-////            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//
-//            lights.push_back(light);
-//
-//        }
-//
 
-//
-        //------------------------------------ Directionnal Lights
+// //            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+//            lights.push_back(light);
+
+//        }
+
+
+
+        // ------------------------------------ Directionnal Lights
 
         //directionnal light shaders
         directionalLightShader.useProgram();
@@ -948,7 +949,7 @@ int main( int argc, char **argv )
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
-//        ------------------------------------ Spot Lights
+        // ------------------------------------ Spot Lights
 
         // spot light shaders
         spotLightShader.useProgram();
@@ -965,6 +966,38 @@ int main( int argc, char **argv )
             uboLight.updateBuffer(&lightHandler._spotLights[i], sizeof(Light::SpotLight));
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
+
+        // ------------------------------------ Point Lights
+
+        // point light shaders
+        pointLightShader.useProgram();
+
+        // Bind quad vao
+        glBindVertexArray(quadVao);
+
+        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
+
+        for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
+            std::vector<glm::vec2> littleQuadVertices;
+
+            if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity)){
+
+                //quad size reduction according to the light
+
+                quadVerticesVbo.updateData(littleQuadVertices);
+                quadIdsVbo.updateData(quadIds);
+
+                uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
+                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            }
+        
+        }
+        quadVerticesVbo.updateData(quadVertices);
+        quadIdsVbo.updateData(quadIds);
+
 
         //------------------------------------- Post FX Draw
 

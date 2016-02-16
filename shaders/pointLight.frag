@@ -116,5 +116,7 @@ void main(void)
 
 	vec3 color = computeFragmentColor(PointLight.Color, PointLight.Intensity, computeIlluminationParams(PointLight.Position));
 
+
+	// color += vec3(0.5,0.0,0.0); // test quad reduction
     Color = vec4(color, 1);
 }

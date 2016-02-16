@@ -80,6 +80,10 @@ namespace Gui{
             imguiSlider("attenuation", &lightHandler._spotLights[i]._attenuation, 0, 10, 0.001);
         }
 
+        imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -50, 50, 0.001);
+        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -50, 50, 0.001);
+        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -50, 50, 0.001);
+
 
 
         imguiLabel("Spline Handler");

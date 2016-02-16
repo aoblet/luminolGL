@@ -14,6 +14,26 @@ namespace Light{
 	    SPOT
 	};
 
+	struct PointLight
+	{
+	    glm::vec3 _pos;
+	    int _padding;
+	    glm::vec3 _color;
+	    float _intensity;
+	    float _attenuation;
+
+	    PointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2){
+	        update(pos, color, intensity, attenuation);
+	    }
+
+	    void update(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
+	        _pos = pos;
+	        _color = color;
+	        _intensity = intensity;
+	        _attenuation = attenuation;
+	    }
+	};
+
 	struct DirectionalLight
 	{
 	    glm::vec3 _pos;
@@ -37,7 +57,7 @@ namespace Light{
 	struct SpotLight
 	{
 	    glm::vec3 _pos;
-	    int _padding1; //16
+	    int _pad6ding1; //16
 
 	    glm::vec3 _color;
 
@@ -75,12 +95,29 @@ namespace Light{
 
 	class LightHandler{
 
-   	 	public:
+		public:
+
+		    float _lightAttenuation = 8;
+		    float _lightIntensity = 1;
+		    float _lightAttenuationThreshold = 0.01;
+		    float _specularPower = 20;
+
+
+		    std::vector<PointLight> _pointLights;
+   	 		std::vector<DirectionalLight> _directionnalLights;
+   	 		std::vector<SpotLight> _spotLights;
 
 			LightHandler();
 
+   	 		void addPointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2);
+   	 		void addPointLight(PointLight pl);
    	 		void addDirectionalLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2);
+   	 		void addDirectionalLight(DirectionalLight dl);
    	 		void addSpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff);	
+			void addSpotLight(SpotLight sl);
+
+			bool isOnScreen(const glm::mat4 & mvp, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 & pos, const glm::vec3 & color, const float & intensity);
+
 
 			float getSpecularPower(){ return _specularPower; }
 			float getLightAttenuation(){ return _lightAttenuation; }
@@ -93,16 +130,6 @@ namespace Light{
 			void setLightAttenuationTreshold(float lightAttenuationTreshold){ _lightAttenuationThreshold = lightAttenuationTreshold; }
 
 
-
-		    float _lightAttenuation = 8;
-		    float _lightIntensity = 1;
-		    float _lightAttenuationThreshold = 0.01;
-		    float _specularPower = 20;
-
-
-		    // std::vector<PointLight> _pointLights;
-   	 		std::vector<DirectionalLight> _directionnalLights;
-   	 		std::vector<SpotLight> _spotLights;
 
 	};
 
