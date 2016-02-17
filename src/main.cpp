@@ -21,6 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
+#include <graphics/GeometricBuffer.hpp>
 
 #include "geometry/Spline3D.h"
 #include "graphics/ShaderProgram.hpp"
@@ -429,30 +430,6 @@ int main( int argc, char **argv )
         return -1;
     }
 
-    std::string colorBufferTexture = "color_buffer_texture";
-    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), colorBufferTexture);
-
-    if (!checkError("Texture")){
-        std::cout << "Error : color_buffer_texture" << std::endl;
-        return -1;
-    }
-
-    std::string normalBufferTexture = "normal_buffer_texture";
-    Graphics::TexParams params(GL_RGBA8, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
-    texHandler.add(Graphics::Texture(width, height, params), normalBufferTexture);
-
-    if (!checkError("Texture")){
-        std::cout << "Error : color_buffer_texture" << std::endl;
-        return -1;
-    }
-
-    std::string depthBufferTexture = "depth_buffer_texture";
-    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_DEPTH), depthBufferTexture);
-
-    if (!checkError("Texture")){
-        std::cout << "Error : depth_buffer_texture" << std::endl;
-        return -1;
-    }
 
     int shadowTexWidth = 2048;
     int shadowTexHeight = 2048;
@@ -610,31 +587,7 @@ int main( int argc, char **argv )
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
 
     // Framebuffer object handle
-    GLuint gbufferFbo;
-    // 2 draw buffers for color and normal
-    GLuint gbufferDrawBuffers[2];
-
-    // Create Framebuffer Object
-    glGenFramebuffers(1, &gbufferFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
-    // Initialize DrawBuffers
-    gbufferDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
-    gbufferDrawBuffers[1] = GL_COLOR_ATTACHMENT1;
-    glDrawBuffers(2, gbufferDrawBuffers);
-
-    // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[colorBufferTexture].glId(), 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texHandler[normalBufferTexture].glId(), 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[depthBufferTexture].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building framebuffer\n");
-        return( EXIT_FAILURE );
-    }
-
-    // Back to the default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    Graphics::GeometricBuffer gBufferFBO(width, height);
 
 
     // Create Shadow & Texture FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -818,7 +771,7 @@ int main( int argc, char **argv )
 
         //******************************************************* FIRST PASS
         //-------------------------------------Bind gbuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
+        gBufferFBO.bind();
 
         // Clear the gbuffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -968,9 +921,9 @@ int main( int argc, char **argv )
         // Bind quad vao
         quadVAO.bind();
 
-        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
-        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
-        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        gBufferFBO.color().bind(GL_TEXTURE0);
+        gBufferFBO.normal().bind(GL_TEXTURE1);
+        gBufferFBO.depth().bind(GL_TEXTURE2);
 
         for(size_t i = 0; i < directionnalLights.size(); ++i){
             uboLight.updateBuffer(&directionnalLights[i], sizeof(Light));
@@ -984,10 +937,9 @@ int main( int argc, char **argv )
 
         // Bind quad vao
         quadVAO.bind();
-
-        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
-        texHandler[normalBufferTexture].bind(GL_TEXTURE1);
-        texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        gBufferFBO.color().bind(GL_TEXTURE0);
+        gBufferFBO.normal().bind(GL_TEXTURE1);
+        gBufferFBO.depth().bind(GL_TEXTURE2);
         texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
 
         for(size_t i = 0; i < spotLights.size(); ++i){
@@ -1057,7 +1009,7 @@ int main( int argc, char **argv )
         // Clear the content of  texture
         glClear(GL_COLOR_BUFFER_BIT);
         // Read the depth texture
-        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+        gBufferFBO.depth().bind(GL_TEXTURE0);
 
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -1120,21 +1072,21 @@ int main( int argc, char **argv )
         // --------------- Color Buffer
 
         quadVAO.bind();
-        texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        gBufferFBO.color().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Normal Buffer
         glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[normalBufferTexture].bind(GL_TEXTURE0);
+        gBufferFBO.normal().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Depth Buffer
         glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[depthBufferTexture].bind(GL_TEXTURE0);
+        gBufferFBO.depth().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Beauty Buffer
