@@ -14,8 +14,6 @@ namespace Graphics
     }
 
     void VertexBufferObject::init() {
-        std::cout << "init()" << std::endl;
-
         switch(_dataType){
             case VERTEX_DESCRIPTOR:
                 initVboVertexDescriptor();
