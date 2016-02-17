@@ -18,6 +18,16 @@ namespace Graphics
     {
     }
 
+    void Mesh::attachTexture(Graphics::Texture *tex, GLenum textureNumber) {
+        _textures.insert({textureNumber, tex});
+    }
+
+    void Mesh::bindTextures() {
+        for(auto& tex : _textures){
+            tex.second->bind(tex.first);
+        }
+    }
+
     const std::vector<VertexDescriptor> &Mesh::getVertices() const {
         return _vertices;
     }

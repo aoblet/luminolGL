@@ -457,6 +457,13 @@ int main( int argc, char **argv )
     std::cout << "---------------------------------------- " << std::endl;
     std::cout << std::endl;
 
+    cubeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    cubeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    cubeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+
+    planeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    planeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    planeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -797,18 +804,14 @@ int main( int argc, char **argv )
         //-------------------------------------Render Cubes
 
         cubeVAO.bind();
-        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
-        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
+        cubeMesh.bindTextures();
         glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
-        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
-        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
+        planeMesh.bindTextures();
         glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 

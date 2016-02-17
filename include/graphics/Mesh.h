@@ -6,6 +6,7 @@
 #define LUMINOLGL_MESH_H
 
 #include <vector>
+#include <map>
 #include "graphics/VertexDescriptor.h"
 #include "graphics/Texture.h"
 #include "view/CameraFreefly.hpp"
@@ -19,11 +20,13 @@ namespace Graphics
         unsigned int _triangleCount;
         std::vector<VertexDescriptor> _vertices;
         std::vector<int> _elementIndex;
-        std::vector<Texture*> _textures;
         Geometry::BoundingBox _boundaries;
+        std::map<GLenum, Texture*> _textures;
     public:
         Mesh();
         Mesh(Mesh&& mesh);
+        void attachTexture(Graphics::Texture* tex, GLenum textureNumber);
+        void bindTextures();
         const std::vector<VertexDescriptor>& getVertices() const;
         const std::vector<int>& getElementIndex() const;
         int getVertexCount() const;
