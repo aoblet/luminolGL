@@ -45,12 +45,18 @@ namespace Graphics
         static TexParams rgbaFBO(){
             return TexParams(GL_RGBA8,  GL_RGBA, GL_UNSIGNED_BYTE, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
         }
+
+        static TexParams normalEncodedFBO(){
+            return TexParams(GL_RGBA,  GL_RGB, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+
+        }
     };
 
     enum TextureType{
         DEFAULT,
         FRAMEBUFFER_DEPTH,
         FRAMEBUFFER_RGBA,
+        FRAMEBUFFER_NORMAL_ENCODED,
         FROM_FILE
     };
 
