@@ -19,7 +19,9 @@ namespace Graphics
         std::unordered_map<std::string, Texture> _map;
     public:
         TextureHandler();
-        void add(const Texture& tex, const std::string & textureName);
+        void add(const Texture& texture, const std::string & textureName);
+        void add(Texture&& texture, const std::string & textureName);
+        const Texture& operator[](const std::string& textureName) const;
         Texture& operator[](const std::string& textureName);
     };
 }
