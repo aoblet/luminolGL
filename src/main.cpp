@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <map>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -31,6 +32,11 @@
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
+
+#include "gui/Gui.hpp"
+
+#include "lights/Light.hpp"
+
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
 #include "gui/UserInput.hpp"
@@ -58,68 +64,7 @@ int check_compile_error(GLuint shader, const char ** sourceBuffer);
 // OpenGL utils
 bool checkError(const char* title);
 
-enum LightType{
-    POINT,
-    DIRECTIONNAL,
-    SPOT
-};
 
-struct Light
-{
-    glm::vec3 _pos;
-    int _padding;
-    glm::vec3 _color;
-    float _intensity;
-    float _attenuation;
-
-    Light(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2){
-        update(pos, color, intensity, attenuation);
-    }
-
-    void update(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
-        _pos = pos;
-        _color = color;
-        _intensity = intensity;
-        _attenuation = attenuation;
-    }
-};
-
-struct SpotLight
-{
-    glm::vec3 _pos;
-    int _padding1; //16
-
-    glm::vec3 _color;
-
-    float _intensity; //32
-
-    float _attenuation;
-    int _padding2;
-    int _padding3;
-    int _padding4; //48
-
-    glm::vec3 _dir;
-
-    float _angle; //64
-
-    float _falloff; //68
-
-    SpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff){
-        update(pos, dir, color, intensity, attenuation, angle, falloff);
-    }
-
-    SpotLight(){};
-
-    void update(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff){
-        _pos = pos;
-        _dir = dir;
-        _color = color;
-        _intensity = intensity;
-        _attenuation = attenuation;
-        _angle = angle;
-        _falloff = falloff;
-    }
-};
 
 struct UniformCamera
 {
@@ -164,6 +109,7 @@ void init_gui_states(GUIStates & guiStates);
 void printVec3(glm::vec3 vec){
     std::cout << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]" << std::endl;
 }
+
 
 int main( int argc, char **argv )
 {
@@ -235,6 +181,7 @@ int main( int argc, char **argv )
     GLenum glerr = GL_NO_ERROR;
     glerr = glGetError();
 
+    Gui::Gui gui(DPI, width, height);
     if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
     {
         fprintf(stderr, "Could not init GUI renderer.\n");
@@ -465,17 +412,13 @@ int main( int argc, char **argv )
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
-    float lightAttenuation = 8;
-    float lightIntensity = 1;
-    float lightAttenuationThreshold = 0.01;
+    Light::LightHandler lightHandler;
 
-    std::vector<Light> pointLights;
+    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2);
+    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0.1, 0, 60, 66);
+    lightHandler.addPointLight(glm::vec3(-4,1,-4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
 
-    std::vector<Light> directionnalLights;
-    directionnalLights.push_back(Light(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.3));
-
-    std::vector<SpotLight> spotLights;
-    spotLights.push_back(SpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66));
+    
 
     // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
     const std::string UNIFORM_NAME_MVP              = "MVP";
@@ -518,7 +461,6 @@ int main( int argc, char **argv )
     float t = 0;
     float SliderValue = 0.3;
     float SliderMult = 80;
-    float specularPower = 20;
     float instanceNumber = 100;
     int isNormalMapActive = 1;
 
@@ -670,7 +612,7 @@ int main( int argc, char **argv )
     const GLuint LightBindingPoint = 0;
     const GLuint CameraBindingPoint = 1;
 
-    Graphics::UBO uboLight(LightBindingPoint, sizeof(SpotLight));
+    Graphics::UBO uboLight(LightBindingPoint, sizeof(Light::SpotLight));
     Graphics::UBO uboCamera(CameraBindingPoint, sizeof(UniformCamera));
 
     // LIGHT
@@ -687,9 +629,6 @@ int main( int argc, char **argv )
     GUIStates guiStates;
     init_gui_states(guiStates);
 
-    // GUI vars -------------------------------------------------------------------------------------------------------------------------------
-
-    int logScroll = 0;
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -719,9 +658,9 @@ int main( int argc, char **argv )
 
         // Light space matrices
         // From light space to shadow map screen space
-        glm::mat4 proj = glm::perspective(glm::radians(spotLights[0]._falloff*2.f), 1.0f, 0.1f, 100.f);
+        glm::mat4 proj = glm::perspective(glm::radians(lightHandler._spotLights[0]._falloff*2.f), 1.0f, 0.1f, 100.f);
         // From world to light
-        glm::mat4 worldToLight = glm::lookAt(spotLights[0]._pos, spotLights[0]._pos + spotLights[0]._dir, glm::vec3(0.f, 1.f, 0.f));
+        glm::mat4 worldToLight = glm::lookAt(lightHandler._spotLights[0]._pos, lightHandler._spotLights[0]._pos + lightHandler._spotLights[0]._dir, glm::vec3(0.f, 1.f, 0.f));
         // From object to light (MV for light)
         glm::mat4 objectToLight = worldToLight * objectToWorld;
         // From object to shadow map screen space (MVP for light)
@@ -752,7 +691,7 @@ int main( int argc, char **argv )
         mainShader.updateUniform(UNIFORM_NAME_TIME, t);
         mainShader.updateUniform(UNIFORM_NAME_SLIDER, SliderValue);
         mainShader.updateUniform(UNIFORM_NAME_SLIDER_MULT, SliderMult);
-        mainShader.updateUniform(UNIFORM_NAME_SPECULAR_POWER, specularPower);
+        mainShader.updateUniform(UNIFORM_NAME_SPECULAR_POWER, lightHandler._specularPower);
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
 
 
@@ -848,104 +787,65 @@ int main( int argc, char **argv )
         UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
-        //------------------------------------ Point Lights
-//        // point light shaders
-//        pointLightShader.useProgram();
-//
-//        // Bind quad vao
-//        glBindVertexArray(vao[2]);
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-//        glActiveTexture(GL_TEXTURE2);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-//
-//        unsigned int nbLightsByCircle[] = {6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78};
-//        int counterCircle = 0;
-//        unsigned int nbPointLights = 30;
-//        float xOffset = glm::sqrt(float(instanceNumber))/2;
-//        float zOffset = glm::sqrt(float(instanceNumber))/2;
-//
-//        float rayon = sqrt(xOffset*2 + zOffset*2);
-//
-//
-//        int cptVisiblePointLight = 0;
-//
-//        std::vector<Light> lights;
-//
-//        for(size_t i = 0; i < nbPointLights; ++i){
-//
-//            Light light(glm::vec3(0,0,0), glm::vec3(1,1,1), lightIntensity, lightAttenuation);
-//
-//            if( i == nbLightsByCircle[counterCircle] ){
-//              counterCircle++;
-//              rayon += 3;
-//            }
-//
-//
-//            float coeff = rayon * sin(t);
-//            float w = t + t;
-//
-////            coeff = 20;
-////            w = 0;
-//
-//            light._pos = glm::vec3(
-//                coeff * cos(i+ M_PI /nbPointLights) + xOffset,
-//                pointLightsYOffset,
-//                coeff * sin(i+ M_PI /nbPointLights) + zOffset);
-//
-//            light._color.x = cos(i);
-//            light._color.y = sin(3*i);
-//            light._color.y = cos(i*2);
-//
-//
-//            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-//            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &light);
-//            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-////            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//
-//            lights.push_back(light);
-//
-//        }
-//
 
-//
-        //------------------------------------ Directionnal Lights
 
-        //directionnal light shaders
-        directionalLightShader.useProgram();
 
-        // Bind quad vao
-        quadVAO.bind();
+        // // ------------------------------------ Directionnal Lights
 
-        gBufferFBO.color().bind(GL_TEXTURE0);
-        gBufferFBO.normal().bind(GL_TEXTURE1);
-        gBufferFBO.depth().bind(GL_TEXTURE2);
+        // directionalLightShader.useProgram(); //directionnal light shaders
+        // quadVAO.bind(); // Bind quad vao
 
-        for(size_t i = 0; i < directionnalLights.size(); ++i){
-            uboLight.updateBuffer(&directionnalLights[i], sizeof(Light));
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
+        // gBufferFBO.color().bind(GL_TEXTURE0);
+        // gBufferFBO.normal().bind(GL_TEXTURE1);
+        // gBufferFBO.depth().bind(GL_TEXTURE2);
 
-//        ------------------------------------ Spot Lights
+        // for(size_t i = 0; i < lightHandler._directionnalLights.size(); ++i){
+        //     uboLight.updateBuffer(&lightHandler._directionnalLights[i], sizeof(Light::DirectionalLight));
+        //     glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        // }
 
-        // spot light shaders
-        spotLightShader.useProgram();
+        // // ------------------------------------ Spot Lights
+        
+        // spotLightShader.useProgram(); // spot light shaders    
+        // quadVAO.bind(); // Bind quad vao
 
-        // Bind quad vao
-        quadVAO.bind();
-        gBufferFBO.color().bind(GL_TEXTURE0);
-        gBufferFBO.normal().bind(GL_TEXTURE1);
-        gBufferFBO.depth().bind(GL_TEXTURE2);
-        texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
+        // texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        // texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        // texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        // texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
 
-        for(size_t i = 0; i < spotLights.size(); ++i){
-            uboLight.updateBuffer(&spotLights[i], sizeof(SpotLight));
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
+        // for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
+        //     uboLight.updateBuffer(&lightHandler._spotLights[i], sizeof(Light::SpotLight));
+        //     glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        // }
+
+
+        // // ------------------------------------ Point Lights
+
+        // pointLightShader.useProgram(); // point light shaders
+        // quadVAO.bind(); // Bind quad vao
+
+        // texHandler[colorBufferTexture].bind(GL_TEXTURE0);
+        // texHandler[normalBufferTexture].bind(GL_TEXTURE1);
+        // texHandler[depthBufferTexture].bind(GL_TEXTURE2);
+        // texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
+
+        // for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
+        //     std::vector<glm::vec2> littleQuadVertices;
+        //     if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation)){
+        //         //quad size reduction and frustum according to the light position, intensity, color and attenuation
+        //         quadVerticesVbo.updateData(littleQuadVertices);
+        //         quadIdsVbo.updateData(quadIds);
+        //         uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
+        //         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        //     }        
+        // }
+        // quadVerticesVbo.updateData(quadVertices);
+        // quadIdsVbo.updateData(quadIds);
+
+
+
+
 
         //------------------------------------- Post FX Draw
 
@@ -1118,85 +1018,50 @@ int main( int argc, char **argv )
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
 
-        unsigned char mbut = 0;
-        int mscroll = 0;
-        double mousex; double mousey;
-        glfwGetCursorPos(window, &mousex, &mousey);
-        mousex*=DPI;
-        mousey*=DPI;
-        mousey = height - mousey;
 
-        if( leftButton == GLFW_PRESS )
-            mbut |= IMGUI_MBUT_LEFT;
 
-        imguiBeginFrame(mousex, mousey, mbut, mscroll);
-        char lineBuffer[512];
-        // imguiBeginScrollArea("aogl", width - 210, height - 310, 200, 300, &logScroll);
+     
+        gui.beginFrame();
+        gui.getCursorPos(window);
+        gui.updateFrame();
 
-        float xwidth = 400;
-        float ywidth = 550;
+        bool leftButtonPress = false;
+        if( leftButton == GLFW_PRESS ) leftButtonPress = true;
 
-        imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
-        sprintf(lineBuffer, "FPS %f", fps);
-        imguiLabel(lineBuffer);
+        gui.updateMbut(leftButtonPress);   
 
-        if(imguiButton("Camera Spectator"))
-            cameraController.setSpectator(!cameraController.isSpectator());
-        imguiSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
-        imguiSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
 
-        imguiSeparatorLine();
-        if(imguiButton("IsNormalMapActive"))
-            mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
-
-        imguiSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
-        imguiSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
-        imguiSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
-        imguiSlider("Specular Power", &specularPower, 0, 100, 0.1);
-        imguiSlider("Attenuation", &lightAttenuation, 0, 16, 0.1);
-        imguiSlider("Intensity", &lightIntensity, 0, 10, 0.1);
-        imguiSlider("Threshold", &lightAttenuationThreshold, 0, 0.5, 0.0001);
-        imguiSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
-        imguiSlider("Gamma", &gamma, 1, 8, 0.01);
-        imguiSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
         float sample = sampleCount;
-        imguiSlider("Blur Sample Count", &sample, 0, 32, 1);
+        std::map<std::string,float*> imguiParams = {
+            { "FPS", &fps },
+            { "Slider", &SliderValue },
+            { "InstanceNumber", &instanceNumber },
+            { "SliderMultiply", &SliderMult }, 
+            { "Shadow Bias", &shadowBias }, 
+            { "Gamma", &gamma }, 
+            { "SobelIntensity", &sobelIntensity }, 
+            { "BlurSampleCount", &sample }, 
+            { "FocusNear", &focus[0] }, 
+            { "FocusPosition", &focus[1] }, 
+            { "FocusFar", &focus[2] },
+            // { "isNormalMapActive", &isNormalMapActive }
+        };
         sampleCount = sample;
 
-        imguiSlider("Focus Near", &focus[0], 0, 10, 0.01);
-        imguiSlider("Focus Position", &focus[1], 0, 100, 0.01);
-        imguiSlider("Focus Far", &focus[2], 0, 100, 0.01);
+        // const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE
+        // Graphics::ShaderProgram mainShader
+        std::map<std::string, Graphics::ShaderProgram*> imguiShaders = {
+            { "mainShader", &mainShader }
+        };
+        std::map<std::string,std::string> imguiUniforms = {
+            {"UNIFORM_NAME_NORMAL_MAP_ACTIVE", UNIFORM_NAME_NORMAL_MAP_ACTIVE}
+        };
 
-        imguiLabel("Spline Handler");
-        for(size_t i = 0; i < cameraController.positions().size(); ++i){
-            imguiLabel("point");
-            imguiSlider("x", &cameraController.positions()[i].x, -100, 100, 0.1);
-            imguiSlider("y", &cameraController.positions()[i].y, -100, 100, 0.1);
-            imguiSlider("z", &cameraController.positions()[i].z, -100, 100, 0.1);
-        }
+        gui.scrollArea(imguiParams, lightHandler, cameraController.viewTargets(), cameraController, userInput, imguiShaders, imguiUniforms);
+        gui.scrollAreaEnd();
+        
 
-        if(imguiButton("Add Spline")){
-            cameraController.positions().add(cameraController.positions()[cameraController.positions().size()-1]);
-        }
-
-        for(size_t i = 0; i < spotLights.size(); ++i){
-            imguiSlider("pos.x", &spotLights[i]._pos.x, -50, 50, 0.001);
-            imguiSlider("pos.y", &spotLights[i]._pos.y, -50, 50, 0.001);
-            imguiSlider("pos.z", &spotLights[i]._pos.z, -50, 50, 0.001);
-
-            imguiSlider("dir.x", &spotLights[i]._dir.x, -1, 1, 0.001);
-            imguiSlider("dir.y", &spotLights[i]._dir.y, -1, 1, 0.001);
-            imguiSlider("dir.z", &spotLights[i]._dir.z, -1, 1, 0.001);
-
-            imguiSlider("angle", &spotLights[i]._angle, 0, 180, 0.001);
-            imguiSlider("falloff", &spotLights[i]._falloff, 0, 180, 0.001);
-            imguiSlider("intensity", &spotLights[i]._intensity, 0, 10, 0.001);
-            imguiSlider("attenuation", &spotLights[i]._attenuation, 0, 10, 0.001);
-        }
-
-        imguiEndScrollArea();
-        imguiEndFrame();
-        imguiRenderGLDraw(width, height);
+        
 
         glDisable(GL_BLEND);
 #endif
