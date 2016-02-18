@@ -47,7 +47,7 @@ namespace Graphics
         }
 
         static TexParams normalEncodedFBO(){
-            return TexParams(GL_RGBA,  GL_RGB, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+            return TexParams(GL_RGB,  GL_RGB, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
 
         }
     };
