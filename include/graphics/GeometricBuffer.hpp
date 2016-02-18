@@ -7,12 +7,9 @@
 
 namespace Graphics{
     class GeometricBuffer : public FrameBufferObject{
-        const static std::string TEXTURE_COLOR;
-        const static std::string TEXTURE_NORMAL;
-        const static std::string TEXTURE_DEPTH;
-
-        const static std::string DRAW_BUFFER_COLOR;
-        const static std::string DRAW_BUFFER_NORMAL;
+        Texture _color;
+        Texture _normal;
+        Texture _depth;
     public:
         GeometricBuffer(int widthTexture, int heightTexture);
         virtual void build() override;

@@ -9,7 +9,6 @@ namespace Graphics{
     class FrameBufferObject{
     protected:
         GLuint _id;
-        TextureHandler _textures;
         std::vector<GLuint> _drawBuffers;
         int _widthTextures;
         int _heightTextures;
