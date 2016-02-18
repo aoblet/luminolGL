@@ -31,6 +31,8 @@
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
+#include "graphics/Mesh.h"
+
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
 #include "gui/UserInput.hpp"
@@ -258,39 +260,6 @@ int main( int argc, char **argv )
     glViewport( 0, 0, width, height );
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
-    int cube_triangleList[] = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 19, 17, 20, 21, 22, 23, 24, 25, 26, };
-
-    std::vector<int> cubeIds(cube_triangleList, cube_triangleList + sizeof(cube_triangleList) / sizeof (cube_triangleList[0]));
-
-    std::vector<Graphics::VertexDescriptor> cubeVertices;
-
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, 0, 1, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, 0, 1, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 0, 1, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 0, 1, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, 0, 1, 0, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 0, 1, 0, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 1, 0, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 1, 0, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, 0, 0, -1, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 0, 0, -1, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, 0, -1, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, 0, -1, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, 0, -1, 0, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 0, -1, 0, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, 0, -1, 0, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 0, -1, 0, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, 0.5, 1, 0, 0, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, -0.5, -0.5, 1, 0, 0, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, 0.5, 1, 0, 0, 1.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(0.5, 0.5, -0.5, 1, 0, 0, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, -0.5, -1, 0, 0, 0.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, -0.5, -1, 0, 0, 0.f, 0.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, -0.5, 0.5, -1, 0, 0, 1.f, 1.f));
-    cubeVertices.push_back(Graphics::VertexDescriptor(-0.5, 0.5, 0.5, -1, 0, 0, 1.f, 0.f));
 
     Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
     Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
@@ -300,8 +269,11 @@ int main( int argc, char **argv )
     cubeVAO.addVBO(&cubeIdsVbo);
     cubeVAO.init();
 
-    cubeVerticesVbo.updateData(cubeVertices);
-    cubeIdsVbo.updateData(cubeIds);
+
+    Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
+
+    cubeVerticesVbo.updateData(cubeMesh.getVertices());
+    cubeIdsVbo.updateData(cubeMesh.getElementIndex());
 
     if (!checkError("VAO/VBO")){
         std::cerr << "Error : cube vao" << std::endl;
@@ -309,18 +281,6 @@ int main( int argc, char **argv )
     }
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
-
-    int plane_triangleCount = 2;
-    float textureLoop = 15;
-    int plane_triangleList[] = {0, 1, 2, 2, 1, 3};
-
-    std::vector<int> planeIds(plane_triangleList, plane_triangleList + sizeof(plane_triangleList) / sizeof (plane_triangleList[0]));
-
-    std::vector<Graphics::VertexDescriptor> planeVertices;
-    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, 5.0, 0, 1, 0, 0.f, 0.f));
-    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, 5.0, 0, 1, 0, 0.f, textureLoop));
-    planeVertices.push_back(Graphics::VertexDescriptor(-5.0, 0, -5.0, 0, 1, 0, textureLoop, 0.f));
-    planeVertices.push_back(Graphics::VertexDescriptor(5.0, 0, -5.0, 0, 1, 0, textureLoop, textureLoop));
 
     Graphics::VertexBufferObject planeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
     Graphics::VertexBufferObject planeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
@@ -330,14 +290,35 @@ int main( int argc, char **argv )
     planeVAO.addVBO(&planeIdsVbo);
     planeVAO.init();
 
-    planeVerticesVbo.updateData(planeVertices);
-    planeIdsVbo.updateData(planeIds);
+    Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
+
+    planeVerticesVbo.updateData(planeMesh.getVertices());
+    planeIdsVbo.updateData(planeMesh.getElementIndex());
 
     if (!checkError("VAO/VBO")){
         std::cerr << "Error : plane vao" << std::endl;
         return -1;
     }
 
+    // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
+
+    Graphics::VertexBufferObject sphereVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject sphereIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    Graphics::VertexArrayObject sphereVAO;
+    sphereVAO.addVBO(&sphereVerticesVbo);
+    sphereVAO.addVBO(&sphereIdsVbo);
+    sphereVAO.init();
+
+    Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(30,30,1,glm::vec3(2,0,2)));
+
+    sphereVerticesVbo.updateData(sphereMesh.getVertices());
+    sphereIdsVbo.updateData(sphereMesh.getElementIndex());
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : sphere vao" << std::endl;
+        return -1;
+    }
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -462,6 +443,17 @@ int main( int argc, char **argv )
     std::cout << "---------------------------------------- " << std::endl;
     std::cout << std::endl;
 
+    cubeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    cubeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    cubeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+
+    planeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    planeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    planeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+
+    sphereMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    sphereMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    sphereMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -779,25 +771,27 @@ int main( int argc, char **argv )
         //-------------------------------------Render Cubes
 
         cubeVAO.bind();
-        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
-        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
-        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        cubeMesh.bindTextures();
+        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
-        texHandler[TexBricksDiff].bind(GL_TEXTURE0);
-        texHandler[TexBricksSpec].bind(GL_TEXTURE1);
-        texHandler[TexBricksNormal].bind(GL_TEXTURE2);
-        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        planeMesh.bindTextures();
+        glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        //-------------------------------------Render Sphere
+        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+
+        sphereVAO.bind();
+        sphereMesh.bindTextures();
+        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //-------------------------------------Unbind the frambuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 
         //******************************************************* SECOND PASS
         //-------------------------------------Shadow pass
@@ -814,13 +808,17 @@ int main( int argc, char **argv )
 
         //cubes
         cubeVAO.bind();
-        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
         shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
-        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
+
+
+        sphereVAO.bind();
+        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -849,6 +847,7 @@ int main( int argc, char **argv )
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
         //------------------------------------ Point Lights
+
 //        // point light shaders
 //        pointLightShader.useProgram();
 //
@@ -1055,6 +1054,7 @@ int main( int argc, char **argv )
             ++id;
             debugVertices.push_back(cameraController.positions().cubicInterpolation(i));
         }
+
 
         debugVerticesVbo.updateData(debugVertices);
         debugIdsVbo.updateData(debugId);
