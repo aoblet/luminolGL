@@ -53,8 +53,17 @@ Illumination computeIlluminationParams(vec3 pos){
 
 	illu.lNormed = normalize(illu.l);
 
+
+	// float linear = 1.7;
+    // float quadratic = PointLight.Attenuation; 
+    // float radius = (-linear + sqrt(linear * linear -
+    //     4 * quadratic * (quadratic - 256 * 0.9 * PointLight.Intensity)))
+    //         /
+    //     (2 * quadratic);
+
 	illu.diffuseAttenuation = pow(length(illu.l), PointLight.Attenuation);
-	illu.specularAttenuation = pow(length(illu.l), PointLight.Attenuation / 4);
+	// illu.specularAttenuation = pow(length(illu.l), PointLight.Attenuation / 4);
+	illu.specularAttenuation = 1;
 
 	illu.ndotl =  clamp(dot(point.Normal, illu.lNormed), 0.0, 1.0);
 
@@ -101,6 +110,7 @@ void main(void)
 	point.Diffuse = colorBuffer.rgb;
 	point.Specular = colorBuffer.aaa;
 	point.SpecularPower = normalBuffer.w * 100;
+	point.SpecularPower = 1000; // No SpecularPower for point light (for now)
 
 	//passing normal from screen to world coordinate
 	vec4 normal = vec4(decodeNormal(normalBuffer.xyz), 0);
@@ -117,6 +127,6 @@ void main(void)
 	vec3 color = computeFragmentColor(PointLight.Color, PointLight.Intensity, computeIlluminationParams(PointLight.Position));
 
 
-	// color += vec3(0.5,0.0,0.0); // test quad reduction
+	color += vec3(0.05,0.0,0.0); // test quad reduction
     Color = vec4(color, 1);
 }

@@ -7,6 +7,10 @@
 
 namespace Light{
 	
+	/**
+    * Gui class: Handler for all the Lights.
+    */
+
 
 	enum LightType{
 	    POINT,
@@ -22,7 +26,7 @@ namespace Light{
 	    float _intensity;
 	    float _attenuation;
 
-	    PointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2){
+	    PointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.8, float attenuation=2.0){
 	        update(pos, color, intensity, attenuation);
 	    }
 
@@ -32,11 +36,12 @@ namespace Light{
 	        _intensity = intensity;
 	        _attenuation = attenuation;
 	    }
+
 	};
 
 	struct DirectionalLight
 	{
-	    glm::vec3 _pos;
+	    glm::vec3 _pos; // Direction
 	    int _padding;
 	    glm::vec3 _color;
 	    float _intensity;
@@ -97,15 +102,14 @@ namespace Light{
 
 		public:
 
-		    float _lightAttenuation = 8;
-		    float _lightIntensity = 1;
-		    float _lightAttenuationThreshold = 0.01;
-		    float _specularPower = 20;
+		    float _lightAttenuation = 8; 							/** Global attenuation for all the light */
+		    float _lightIntensity = 1; 								/** Global intensity for all the light */
+		    float _lightAttenuationThreshold = 0.01;				/** Global attenuation threshold for all the light */
+		    float _specularPower = 20;								/** Global specular power for all the light */
 
-
-		    std::vector<PointLight> _pointLights;
-   	 		std::vector<DirectionalLight> _directionnalLights;
-   	 		std::vector<SpotLight> _spotLights;
+		    std::vector<PointLight> _pointLights;					/** A vector containing all the point lights that we want to render */
+   	 		std::vector<DirectionalLight> _directionnalLights;		/** A vector containing all the directionnal lights */	
+   	 		std::vector<SpotLight> _spotLights;						/** A vector containing all the spot lights */
 
 			LightHandler();
 
@@ -116,8 +120,7 @@ namespace Light{
    	 		void addSpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff);	
 			void addSpotLight(SpotLight sl);
 
-			bool isOnScreen(const glm::mat4 & mvp, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 & pos, const glm::vec3 & color, const float & intensity);
-
+			bool isOnScreen(const glm::mat4 & mvp, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 & pos, const glm::vec3 & color, const float & intensity, const float & attenuation);
 
 			float getSpecularPower(){ return _specularPower; }
 			float getLightAttenuation(){ return _lightAttenuation; }

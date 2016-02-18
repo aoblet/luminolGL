@@ -16,6 +16,11 @@ namespace Gui{
 
     /**
     * Gui class: Handler for imgui.
+    * If you want to add a parameter that is not in the LightHandler or in the Splide3D Handler you need to
+    * add the float variable in the map<std::string, float*> & imguiParams in the main loop of the main.
+    * Look for imguiParams
+    * This class allow us to draw a block, get the cursor position and any associated event.
+    * According to the event the class will update the frame and the variables.
     */
 
     class Gui {

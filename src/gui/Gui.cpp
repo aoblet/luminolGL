@@ -42,6 +42,9 @@ namespace Gui{
         else mbut = '0';
 	}
 
+
+
+
 	void Gui::scrollArea(std::map<std::string, float*> & imguiParams, Light::LightHandler & lightHandler, Geometry::Spline3D & spline){
 
 		imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
@@ -52,6 +55,7 @@ namespace Gui{
 		imguiSlider("InstanceNumber", imguiParams["InstanceNumber"], 100, 100000, 1);
 		imguiSlider("SliderMultiply", imguiParams["SliderMultiply"], 0.0, 1000.0, 0.1);
 
+		imguiLabel("Post-FX parameters");
         imguiSlider("Shadow Bias", imguiParams["Shadow Bias"], 0, 0.001, 0.00000001);
         imguiSlider("Gamma", imguiParams["Gamma"], 1, 8, 0.01);
         imguiSlider("Sobel Intensity", imguiParams["SobelIntensity"], 0, 4, 0.01);
@@ -60,12 +64,26 @@ namespace Gui{
         imguiSlider("Focus Position", imguiParams["FocusPosition"], 0, 100, 0.01);
         imguiSlider("Focus Far", imguiParams["FocusFar"], 0, 100, 0.01);
 
-
+		sprintf(lineBuffer, "General Lights Parameters");
+		imguiLabel(lineBuffer);
 		imguiSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
-        imguiSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
+		imguiSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
         imguiSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
         imguiSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+
+		sprintf(lineBuffer, "Point Light [0]");
+		imguiLabel(lineBuffer);
+		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -50, 50, 0.001);
+        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -50, 50, 0.001);
+        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -50, 50, 0.001);
+        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 5, 0.001);
+        imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 3, 0.001);
+
+
+        
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
+        	sprintf(lineBuffer, "Spot Light  %d", i );
+        	imguiLabel(lineBuffer);
             imguiSlider("pos.x", &lightHandler._spotLights[i]._pos.x, -50, 50, 0.001);
             imguiSlider("pos.y", &lightHandler._spotLights[i]._pos.y, -50, 50, 0.001);
             imguiSlider("pos.z", &lightHandler._spotLights[i]._pos.z, -50, 50, 0.001);
@@ -80,9 +98,6 @@ namespace Gui{
             imguiSlider("attenuation", &lightHandler._spotLights[i]._attenuation, 0, 10, 0.001);
         }
 
-        imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -50, 50, 0.001);
-        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -50, 50, 0.001);
-        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -50, 50, 0.001);
 
 
 
