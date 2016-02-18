@@ -94,22 +94,34 @@ namespace Gui{
         imguiSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
         imguiSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
 
+		sprintf(lineBuffer, "Directional Light [0]");
+		imguiLabel(lineBuffer); 
+		imguiSlider("DL: dir.x", &lightHandler._directionnalLights[0]._pos.x, -150, 300, 0.001);
+        imguiSlider("DL: dir.y", &lightHandler._directionnalLights[0]._pos.y, -150, 300, 0.001);
+        imguiSlider("DL: dir.z", &lightHandler._directionnalLights[0]._pos.z, -150, 300, 0.001);
+        imguiSlider("DL: col.R", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01);
+        imguiSlider("DL: col.G", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01);
+        imguiSlider("DL: col.B", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01);
+        imguiSlider("DL: intensity", &lightHandler._directionnalLights[0]._intensity, 0, 1, 0.001);
+        imguiSlider("DL: attenuation", &lightHandler._directionnalLights[0]._attenuation, 0.01, 3, 0.001);
+
 		sprintf(lineBuffer, "Point Light [0]");
 		imguiLabel(lineBuffer);
-		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -50, 50, 0.001);
-        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -50, 50, 0.001);
-        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -50, 50, 0.001);
-        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 5, 0.001);
+		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -150, 300, 0.001);
+        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -150, 300, 0.001);
+        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -150, 300, 0.001);
+        imguiSlider("PL: col.R", &lightHandler._pointLights[0]._color.r, 0, 1, 0.01);
+        imguiSlider("PL: col.G", &lightHandler._pointLights[0]._color.g, 0, 1, 0.01);
+        imguiSlider("PL: col.B", &lightHandler._pointLights[0]._color.b, 0, 1, 0.01);
+        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 1, 0.001);
         imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 3, 0.001);
-
-
         
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
         	sprintf(lineBuffer, "Spot Light  %d", i );
         	imguiLabel(lineBuffer);
-            imguiSlider("pos.x", &lightHandler._spotLights[i]._pos.x, -50, 50, 0.001);
-            imguiSlider("pos.y", &lightHandler._spotLights[i]._pos.y, -50, 50, 0.001);
-            imguiSlider("pos.z", &lightHandler._spotLights[i]._pos.z, -50, 50, 0.001);
+            imguiSlider("pos.x", &lightHandler._spotLights[i]._pos.x, -150, 300, 0.001);
+            imguiSlider("pos.y", &lightHandler._spotLights[i]._pos.y, -150, 300, 0.001);
+            imguiSlider("pos.z", &lightHandler._spotLights[i]._pos.z, -150, 300, 0.001);
 
             imguiSlider("dir.x", &lightHandler._spotLights[i]._dir.x, -1, 1, 0.001);
             imguiSlider("dir.y", &lightHandler._spotLights[i]._dir.y, -1, 1, 0.001);
@@ -117,7 +129,7 @@ namespace Gui{
 
             imguiSlider("angle", &lightHandler._spotLights[i]._angle, 0, 180, 0.001);
             imguiSlider("falloff", &lightHandler._spotLights[i]._falloff, 0, 180, 0.001);
-            imguiSlider("intensity", &lightHandler._spotLights[i]._intensity, 0, 10, 0.001);
+            imguiSlider("intensity", &lightHandler._spotLights[i]._intensity, 0, 1, 0.001);
             imguiSlider("attenuation", &lightHandler._spotLights[i]._attenuation, 0, 10, 0.001);
         }
 

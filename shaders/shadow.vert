@@ -46,7 +46,7 @@ void main()
 	vec3 worldPos = Position + pos;
 
 	if(InstanceNumber==-1){
-		worldPos.xz *= 10;
+//		worldPos.xz *= 10;
 	}
 	else{
 		worldPos.y += 0.5;
