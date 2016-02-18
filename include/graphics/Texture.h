@@ -42,13 +42,19 @@ namespace Graphics
             return TexParams(GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_LINEAR, false);
         }
 
+        static TexParams depthShadowFBO(){
+            TexParams t = depthFBO();
+            t.wrapMode = GL_CLAMP_TO_BORDER;
+            return t;
+        }
+
+
         static TexParams rgbaFBO(){
             return TexParams(GL_RGBA8,  GL_RGBA, GL_UNSIGNED_BYTE, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
         }
 
         static TexParams normalEncodedFBO(){
             return TexParams(GL_RGB,  GL_RGB, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
-
         }
     };
 
@@ -89,7 +95,8 @@ namespace Graphics
         void bind(GLenum textureBindingIndex);  /** set glActiveTexture to textureBindingIndex before calling glBindTexture() */
         void unbind();
 
-        GLuint glId();
+        GLuint& glId();
+        GLuint glId() const;
         int width();
         int height();
     };
