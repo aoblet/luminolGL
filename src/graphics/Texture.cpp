@@ -75,6 +75,7 @@ namespace Graphics
     }
 
     void Texture::genGlTex(){
+        glDeleteTextures(1, &_texId);
         glGenTextures(1, &_texId);
         bind();
         glTexImage2D(GL_TEXTURE_2D, 0, _texParams.internalFormat, _width, _height, 0, _texParams.format, _texParams.type, _data);
