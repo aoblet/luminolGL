@@ -7,6 +7,8 @@
 
 #include <vector>
 #include <map>
+#include <memory>
+
 #include "graphics/VertexDescriptor.h"
 #include "graphics/Texture.h"
 #include "view/CameraFreefly.hpp"
@@ -25,6 +27,11 @@ namespace Graphics
     public:
         Mesh();
         Mesh(Mesh&& mesh);
+        void addVertices(const std::vector<VertexDescriptor>& vertices);
+        void addVertices(std::vector<VertexDescriptor> &&vertices);
+        void addElementIndexes(const std::vector<int>& vertices);
+        void addElementIndexes(std::vector<int> &&vertices);
+        void setTriangleCount(unsigned int value);
         void attachTexture(Graphics::Texture* tex, GLenum textureNumber);
         void bindTextures();
         const std::vector<VertexDescriptor>& getVertices() const;
@@ -35,7 +42,9 @@ namespace Graphics
         void computeBoundingBox();
         const Geometry::BoundingBox& getBoundingBox();
         static Mesh genCube();
-        static Mesh genPlane(float width = 1.f, float height = 1.f, float textureLoop = 1);
+        static Mesh genPlane(float width = 1.f, float height = 1.f, float textureLoop = 1, const glm::vec3 & offset = glm::vec3(0,0,0));
+        static Mesh genSphere(int latitudeBands, int longitudeBands, float radius = 1.f, const glm::vec3 & offset = glm::vec3(0,0,0));
+        static Mesh loadMesh(const std::string& filePath);
     };
 }
 

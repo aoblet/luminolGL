@@ -2,6 +2,7 @@
 // Created by mehdi on 16/02/16.
 //
 
+#include <glm/gtc/constants.hpp>
 #include "graphics/Mesh.h"
 
 namespace Graphics
@@ -18,7 +19,7 @@ namespace Graphics
     {
     }
 
-    void Mesh::attachTexture(Graphics::Texture *tex, GLenum textureNumber) {
+    void Mesh::attachTexture(Graphics::Texture* tex, GLenum textureNumber) {
         _textures.insert({textureNumber, tex});
     }
 
@@ -113,14 +114,14 @@ namespace Graphics
         return mesh;
     }
 
-    Mesh Mesh::genPlane(float width, float height, float textureLoop) {
+    Mesh Mesh::genPlane(float width, float height, float textureLoop, const glm::vec3 & offset) {
         Mesh mesh;
 
         mesh._vertices = {
-                Graphics::VertexDescriptor(-width/2, 0, height/2, 0, 1, 0, 0.f, 0.f),
-                Graphics::VertexDescriptor(width/2, 0, height/2, 0, 1, 0, 0.f, textureLoop),
-                Graphics::VertexDescriptor(-width/2, 0, -height/2, 0, 1, 0, textureLoop, 0.f),
-                Graphics::VertexDescriptor(width/2, 0, -height/2, 0, 1, 0, textureLoop, textureLoop)
+                Graphics::VertexDescriptor(-width/2 + offset.x, offset.y, height/2 + offset.z, 0, 1, 0, 0.f, 0.f),
+                Graphics::VertexDescriptor(width/2 + offset.x, offset.y, height/2 + offset.z, 0, 1, 0, 0.f, textureLoop),
+                Graphics::VertexDescriptor(-width/2 + offset.x, offset.y, -height/2 + offset.z, 0, 1, 0, textureLoop, 0.f),
+                Graphics::VertexDescriptor(width/2 + offset.x, offset.y, -height/2 + offset.z, 0, 1, 0, textureLoop, textureLoop)
         };
 
         mesh._elementIndex = {
@@ -136,7 +137,84 @@ namespace Graphics
         return mesh;
     }
 
+
+    Mesh Mesh::genSphere(int latitudeBands, int longitudeBands, float radius, const glm::vec3 &offset) {
+        Mesh mesh;
+
+        std::vector<Graphics::VertexDescriptor> sphereVertices;
+        for (int latNumber = 0; latNumber <= latitudeBands; latNumber++) {
+            float theta = glm::pi<float>()*(float(latNumber) / float(latitudeBands));
+            float sinTheta = glm::sin(theta);
+            float cosTheta = glm::cos(theta);
+
+            for (int longNumber = 0; longNumber <= longitudeBands; longNumber++) {
+                float phi = glm::two_pi<float>() * (float(longNumber)  / float(longitudeBands));
+                float sinPhi = glm::sin(phi);
+                float cosPhi = glm::cos(phi);
+
+                float x = sinPhi * sinTheta;
+                float y = cosTheta;
+                float z = cosPhi * sinTheta;
+
+                float u = 1.f - (float(longNumber) / float(longitudeBands));
+                float v = 1.f - (float(latNumber) / float(latitudeBands));
+
+                sphereVertices.push_back(Graphics::VertexDescriptor(x*radius + offset.x, y * radius + offset.y, z * radius + offset.z, x, y, z, u, v));
+            }
+        }
+
+        std::vector<int> sphereIds;
+        for (int latNumber = 0; latNumber < latitudeBands; latNumber++) {
+            for (int longNumber = 0; longNumber < longitudeBands; longNumber++) {
+                int first = (latNumber * (longitudeBands + 1)) + longNumber;
+                int second = first + longitudeBands + 1;
+                sphereIds.push_back(first);
+                sphereIds.push_back(second);
+                sphereIds.push_back(first + 1);
+
+                sphereIds.push_back(second);
+                sphereIds.push_back(second + 1);
+                sphereIds.push_back(first + 1);
+            }
+        }
+
+        mesh.addVertices(sphereVertices);
+        mesh.addElementIndexes(sphereIds);
+
+        mesh._vertexCount = latitudeBands * longitudeBands;
+        mesh._triangleCount = mesh._vertexCount * 2;
+
+        return mesh;
+    }
+
     const Geometry::BoundingBox &Mesh::getBoundingBox() {
         return _boundaries;
+    }
+
+    void Mesh::addVertices(const std::vector<VertexDescriptor> &vertices) {
+        _vertices.insert(_vertices.begin(), vertices.begin(), vertices.end());
+    }
+
+    void Mesh::addVertices(std::vector<VertexDescriptor> &&vertices) {
+        _vertices.insert(_vertices.begin(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.begin()));
+    }
+
+    void Mesh::addElementIndexes(const std::vector<int> &index) {
+        _elementIndex.insert(_elementIndex.begin(), index.begin(), index.end());
+    }
+
+    void Mesh::addElementIndexes(std::vector<int> &&index) {
+        _elementIndex.insert(_elementIndex.begin(), std::make_move_iterator(index.begin()), std::make_move_iterator(index.begin()));
+    }
+
+    Mesh Mesh::loadMesh(const std::string &filePath) {
+        Mesh mesh;
+        //TODO: load model with assimp
+        return mesh;
+    }
+
+    void Mesh::setTriangleCount(unsigned int value) {
+        _triangleCount = value;
+        _vertexCount = value * 3;
     }
 }

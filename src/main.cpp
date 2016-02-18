@@ -299,7 +299,7 @@ int main( int argc, char **argv )
     planeVAO.addVBO(&planeIdsVbo);
     planeVAO.init();
 
-    Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(10,10,15));
+    Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
 
     planeVerticesVbo.updateData(planeMesh.getVertices());
     planeIdsVbo.updateData(planeMesh.getElementIndex());
@@ -309,6 +309,25 @@ int main( int argc, char **argv )
         return -1;
     }
 
+    // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
+
+    Graphics::VertexBufferObject sphereVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject sphereIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+
+    Graphics::VertexArrayObject sphereVAO;
+    sphereVAO.addVBO(&sphereVerticesVbo);
+    sphereVAO.addVBO(&sphereIdsVbo);
+    sphereVAO.init();
+
+    Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(30,30,1,glm::vec3(2,0,2)));
+
+    sphereVerticesVbo.updateData(sphereMesh.getVertices());
+    sphereIdsVbo.updateData(sphereMesh.getElementIndex());
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : sphere vao" << std::endl;
+        return -1;
+    }
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -464,6 +483,10 @@ int main( int argc, char **argv )
     planeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
     planeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
     planeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+
+    sphereMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
+    sphereMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
+    sphereMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -815,6 +838,14 @@ int main( int argc, char **argv )
         glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        //-------------------------------------Render Sphere
+        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+
+        sphereVAO.bind();
+        sphereMesh.bindTextures();
+        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         //-------------------------------------Unbind the frambuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -840,6 +871,10 @@ int main( int argc, char **argv )
 
         planeVAO.bind();
         glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
+
+
+        sphereVAO.bind();
+        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
