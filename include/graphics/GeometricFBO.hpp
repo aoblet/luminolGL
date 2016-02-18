@@ -6,12 +6,12 @@
 #include <glm/vec2.hpp>
 
 namespace Graphics{
-    class GeometricBuffer : public FrameBufferObject{
+    class GeometricFBO : public FrameBufferObject{
         Texture _color;
         Texture _normal;
         Texture _depth;
     public:
-        GeometricBuffer(int widthTexture, int heightTexture);
+        GeometricFBO(const glm::ivec2& resolutionTexture);
         virtual void build() override;
         Texture& color();
         Texture& normal();

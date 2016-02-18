@@ -1,34 +1,34 @@
-#include "graphics/GeometricBuffer.hpp"
+#include "graphics/GeometricFBO.hpp"
 
 using namespace Graphics;
 
-void GeometricBuffer::build(){
+void GeometricFBO::build(){
     bind();
     _drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
     glDrawBuffers((GLsizei) _drawBuffers.size(), &_drawBuffers[0]);
-    attachFrameBufferTexture(_drawBuffers[0], _color.glId());
-    attachFrameBufferTexture(_drawBuffers[1], _normal.glId());
-    attachFrameBufferTexture(GL_DEPTH_ATTACHMENT, _depth.glId());
+    attachTexture(_drawBuffers[0], _color.glId());
+    attachTexture(_drawBuffers[1], _normal.glId());
+    attachTexture(GL_DEPTH_ATTACHMENT, _depth.glId());
     FrameBufferObject::checkStatus();
     unbind();
 }
 
-GeometricBuffer::GeometricBuffer(int widthTexture, int heightTexture):
-        FrameBufferObject(widthTexture, heightTexture),
-        _color(_widthTextures,  _heightTextures, TextureType::FRAMEBUFFER_RGBA),
-        _normal(_widthTextures, _heightTextures, TextureType::FRAMEBUFFER_NORMAL_ENCODED),
-        _depth(_widthTextures,  _heightTextures, TextureType::FRAMEBUFFER_DEPTH){
+GeometricFBO::GeometricFBO(const glm::ivec2& resolutionTexture):
+        FrameBufferObject(resolutionTexture),
+        _color(resolutionTexture.x,  resolutionTexture.y, TextureType::FRAMEBUFFER_RGBA),
+        _normal(resolutionTexture.x, resolutionTexture.y, TextureType::FRAMEBUFFER_NORMAL_ENCODED),
+        _depth(resolutionTexture.x,  resolutionTexture.y, TextureType::FRAMEBUFFER_DEPTH){
     build();
 }
 
-Texture& GeometricBuffer::color(){
+Texture& GeometricFBO::color(){
     return _color;
 }
 
-Texture& GeometricBuffer::normal(){
+Texture& GeometricFBO::normal(){
     return _normal;
 }
 
-Texture& GeometricBuffer::depth(){
+Texture& GeometricFBO::depth(){
     return _depth;
 }
