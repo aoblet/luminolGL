@@ -21,9 +21,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
-#include <graphics/GeometricBuffer.hpp>
 
 #include "geometry/Spline3D.h"
+
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Texture.h"
 #include "graphics/TextureHandler.h"
@@ -31,8 +31,12 @@
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
+#include "graphics/ShadowMapFBO.hpp"
+#include "graphics/GeometricFBO.hpp"
+
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
+
 #include "gui/UserInput.hpp"
 
 
@@ -167,7 +171,8 @@ void printVec3(glm::vec3 vec){
 
 int main( int argc, char **argv )
 {
-    int width = 1300, height= 700;
+    glm::ivec2 dimViewport(1300, 700);
+    int& width = dimViewport.x, height= dimViewport.y;
     float fps = 0.f;
 
     GUI::UserInput userInput;
@@ -431,15 +436,6 @@ int main( int argc, char **argv )
     }
 
 
-    int shadowTexWidth = 2048;
-    int shadowTexHeight = 2048;
-    std::string shadowBufferTexture = "shadow_buffer_texture";
-    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
-    if (!checkError("Texture")){
-        std::cout << "Error : shadow_buffer_texture" << std::endl;
-        return -1;
-    }
-
     std::string beautyBufferTexture = "beauty_buffer_texture";
     texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), beautyBufferTexture);
     if (!checkError("Texture")){
@@ -488,8 +484,11 @@ int main( int argc, char **argv )
     const std::string UNIFORM_NAME_INSTANCE_NUMBER  = "InstanceNumber";
 
     const std::string UNIFORM_NAME_SHADOW_MVP       = "ShadowMVP";
+    const std::string UNIFORM_NAME_SHADOW_POISSON_SAMPLE_COUNT  = "SampleCountPoisson";
+    const std::string UNIFORM_NAME_SHADOW_POISSON_SPREAD  = "SpreadPoisson";
     const std::string UNIFORM_NAME_SHADOW_MV        = "ShadowMV";
     const std::string UNIFORM_NAME_SHADOW_BIAS      = "ShadowBias";
+
     const std::string UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN = "WorldToLightScreen";
     const std::string UNIFORM_NAME_SCREEN_TO_VIEW  = "ScreenToView";
 
@@ -553,12 +552,12 @@ int main( int argc, char **argv )
 
     GLint blurDirectionLocation = glGetUniformLocation(blurShader.id(), "BlurDirection");
     // ---------------------- FX Variables
-    float shadowBias = 0.00001;
+    float shadowBias = 0.00013;
 
     float gamma = 1.22;
     float sobelIntensity = 0.5;
     int sampleCount = 8; // blur
-    glm::vec3 focus(0, 1, 10);
+    glm::vec3 focus(0, 1, 100);
 
 
     // ---------------------- FX uniform update
@@ -585,42 +584,15 @@ int main( int argc, char **argv )
     }
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
+    Graphics::GeometricFBO gBufferFBO(dimViewport);
 
-    // Framebuffer object handle
-    Graphics::GeometricBuffer gBufferFBO(width, height);
-
-
-    // Create Shadow & Texture FBO -------------------------------------------------------------------------------------------------------------------------------
-
-    // Create shadow FBO
-    GLuint shadowFbo;
-    glGenFramebuffers(1, &shadowFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-
-    // Create a render buffer since we don't need to read shadow color
-    // in a texture
-    GLuint shadowRenderBuffer;
-    glGenRenderbuffers(1, &shadowRenderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, shadowRenderBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, shadowTexWidth, shadowTexHeight);
-    // Attach the renderbuffer
-    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, shadowRenderBuffer);
-
-    // Attach the shadow texture to the depth attachment
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[shadowBufferTexture].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building shadow framebuffer\n");
-        return( EXIT_FAILURE );
-    }
-
-    // Fall back to default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //TODO: remove poisson shadow ?
+    float shadowPoissonSampleCount = 1;
+    float shadowPoissonSpread = 1;
+    Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
 
 
     // Create Beauty FBO -------------------------------------------------------------------------------------------------------------------------------
-
     // Create beauty FBO
     GLuint beautyFbo;
     // Texture handles
@@ -763,6 +735,8 @@ int main( int argc, char **argv )
 
         spotLightShader.updateUniform(UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN, worldToLightScreen);
         spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BIAS, shadowBias);
+        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
+        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_POISSON_SPREAD, shadowPoissonSpread);
         gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
         sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
         blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
@@ -801,10 +775,10 @@ int main( int argc, char **argv )
 
         //******************************************************* SECOND PASS
         //-------------------------------------Shadow pass
-        glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
+        shadowMapFBO.bind();
 
         // Set the viewport corresponding to shadow texture resolution
-        glViewport(0, 0, shadowTexWidth, shadowTexHeight);
+        glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
 
         // Clear only the depth buffer
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -940,7 +914,7 @@ int main( int argc, char **argv )
         gBufferFBO.color().bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
         gBufferFBO.depth().bind(GL_TEXTURE2);
-        texHandler[shadowBufferTexture].bind(GL_TEXTURE3);
+        shadowMapFBO.shadowTexture().bind(GL_TEXTURE3);
 
         for(size_t i = 0; i < spotLights.size(); ++i){
             uboLight.updateBuffer(&spotLights[i], sizeof(SpotLight));
@@ -1156,7 +1130,9 @@ int main( int argc, char **argv )
         imguiSlider("Attenuation", &lightAttenuation, 0, 16, 0.1);
         imguiSlider("Intensity", &lightIntensity, 0, 10, 0.1);
         imguiSlider("Threshold", &lightAttenuationThreshold, 0, 0.5, 0.0001);
-        imguiSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
+        imguiSlider("Shadow Poisson nb", &shadowPoissonSampleCount, 0, 16, 1);
+        imguiSlider("Shadow Poisson spread", &shadowPoissonSpread, 0, 100, 1);
+        imguiSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00001);
         imguiSlider("Gamma", &gamma, 1, 8, 0.01);
         imguiSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
         float sample = sampleCount;
