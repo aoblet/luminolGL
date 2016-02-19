@@ -14,9 +14,6 @@
 #include "imgui/imguiRenderGL3.h"
 
 #include <glm/glm.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
@@ -31,6 +28,7 @@
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
+#include "graphics/UBO_keys.hpp"
 #include "graphics/ShadowMapFBO.hpp"
 #include "graphics/GeometricFBO.hpp"
 
@@ -473,46 +471,6 @@ int main( int argc, char **argv )
     std::vector<SpotLight> spotLights;
     spotLights.push_back(SpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66));
 
-    // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
-    const std::string UNIFORM_NAME_MVP              = "MVP";
-    const std::string UNIFORM_NAME_MV               = "MV";
-    const std::string UNIFORM_NAME_MV_INVERSE       = "MVInverse";
-    const std::string UNIFORM_NAME_TIME             = "Time";
-    const std::string UNIFORM_NAME_SLIDER           = "Slider";
-    const std::string UNIFORM_NAME_SLIDER_MULT      = "SliderMult";
-    const std::string UNIFORM_NAME_SPECULAR_POWER   = "SpecularPower";
-    const std::string UNIFORM_NAME_INSTANCE_NUMBER  = "InstanceNumber";
-
-    const std::string UNIFORM_NAME_SHADOW_MVP       = "ShadowMVP";
-    const std::string UNIFORM_NAME_SHADOW_POISSON_SAMPLE_COUNT  = "SampleCountPoisson";
-    const std::string UNIFORM_NAME_SHADOW_POISSON_SPREAD  = "SpreadPoisson";
-    const std::string UNIFORM_NAME_SHADOW_MV        = "ShadowMV";
-    const std::string UNIFORM_NAME_SHADOW_BIAS      = "ShadowBias";
-
-    const std::string UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN = "WorldToLightScreen";
-    const std::string UNIFORM_NAME_SCREEN_TO_VIEW  = "ScreenToView";
-
-    const std::string UNIFORM_NAME_FOCUS            = "Focus";
-    const std::string UNIFORM_NAME_SHADOW_BUFFER    = "ShadowBuffer";
-    const std::string UNIFORM_NAME_GAMMA            = "Gamma";
-    const std::string UNIFORM_NAME_SOBEL_INTENSITY  = "SobelIntensity";
-    const std::string UNIFORM_NAME_BLUR_SAMPLE_COUNT= "SampleCount";
-    const std::string UNIFORM_NAME_BLUR_DIRECTION   = "BlurDirection";
-
-    const std::string UNIFORM_NAME_DOF_COLOR        = "Color";
-    const std::string UNIFORM_NAME_DOF_COC          = "CoC";
-    const std::string UNIFORM_NAME_DOF_BLUR         = "Blur";
-
-    const std::string UNIFORM_NAME_COLOR_BUFFER     = "ColorBuffer";
-    const std::string UNIFORM_NAME_NORMAL_BUFFER    = "NormalBuffer";
-    const std::string UNIFORM_NAME_DEPTH_BUFFER     = "DepthBuffer";
-    const std::string UNIFORM_NAME_DIFFUSE          = "Diffuse";
-    const std::string UNIFORM_NAME_SPECULAR         = "Specular";
-    const std::string UNIFORM_NAME_NORMAL_MAP       = "NormalMap";
-    const std::string UNIFORM_NAME_CAMERA_POSITION  = "CamPos";
-    const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE = "IsNormalMapActive";
-
-
     // ---------------------- For Geometry Shading
     float t = 0;
     float SliderValue = 0.3;
@@ -521,12 +479,12 @@ int main( int argc, char **argv )
     float instanceNumber = 100;
     int isNormalMapActive = 1;
 
-    mainShader.updateUniform(UNIFORM_NAME_DIFFUSE, 0);
-    mainShader.updateUniform(UNIFORM_NAME_SPECULAR, 1);
-    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP, 2);
-    mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
-    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, isNormalMapActive);
-    shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+    mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
+    mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
+    mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP, 2);
+    mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
+    mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
+    shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
     if (!checkError("Uniforms")){
         std::cerr << "Error : geometry uniforms" << std::endl;
@@ -534,17 +492,17 @@ int main( int argc, char **argv )
     }
 
     // ---------------------- For Light Pass Shading
-    directionalLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
-    spotLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
-    pointLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    spotLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
 
-    directionalLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
-    spotLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
-    pointLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
+    spotLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
+    pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
 
-    directionalLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
-    spotLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
-    pointLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+    spotLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+    pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
 
     if (!checkError("Uniforms"))
@@ -562,20 +520,20 @@ int main( int argc, char **argv )
 
     // ---------------------- FX uniform update
     // For shadow pass shading
-    spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BUFFER, 3);
+    spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BUFFER, 3);
 
-    gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
-    sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
-    blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
-    blurShader.updateUniform(UNIFORM_NAME_BLUR_DIRECTION, glm::ivec2(1,0));
+    gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
+    sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
+    blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, sampleCount);
+    blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
 
     // ---------------------- For coc Correction
-    circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
+    circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
 
     // ---------------------- For dof Correction
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COLOR, 0);
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COC, 1);
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_BLUR, 2);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_COLOR, 0);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_COC, 1);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_BLUR, 2);
 
 
     if (!checkError("Uniforms")){
@@ -713,35 +671,35 @@ int main( int argc, char **argv )
 
         //-------------------------------------Upload Uniforms
 
-        mainShader.updateUniform(UNIFORM_NAME_MVP, mvp);
-        mainShader.updateUniform(UNIFORM_NAME_MV, mv);
-        mainShader.updateUniform(UNIFORM_NAME_CAMERA_POSITION, camera.getEye());
-        debugShapesShader.updateUniform(UNIFORM_NAME_MVP, mvp);
-        debugShapesShader.updateUniform(UNIFORM_NAME_MV_INVERSE, mvInverse);
+        mainShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        mainShader.updateUniform(Graphics::UBO_keys::MV, mv);
+        mainShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
+        debugShapesShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        debugShapesShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
 
 
         // Upload value
-        mainShader.updateUniform(UNIFORM_NAME_TIME, t);
-        mainShader.updateUniform(UNIFORM_NAME_SLIDER, SliderValue);
-        mainShader.updateUniform(UNIFORM_NAME_SLIDER_MULT, SliderMult);
-        mainShader.updateUniform(UNIFORM_NAME_SPECULAR_POWER, specularPower);
-        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+        mainShader.updateUniform(Graphics::UBO_keys::TIME, t);
+        mainShader.updateUniform(Graphics::UBO_keys::SLIDER, SliderValue);
+        mainShader.updateUniform(Graphics::UBO_keys::SLIDER_MULT, SliderMult);
+        mainShader.updateUniform(Graphics::UBO_keys::SPECULAR_POWER, specularPower);
+        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
 
         // Update scene uniforms
-        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
-        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MVP, objectToLightScreen);
-        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MV, objectToLight);
+        shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToLightScreen);
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToLight);
 
-        spotLightShader.updateUniform(UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN, worldToLightScreen);
-        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BIAS, shadowBias);
-        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
-        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_POISSON_SPREAD, shadowPoissonSpread);
-        gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
-        sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
-        blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
-        circleConfusionShader.updateUniform(UNIFORM_NAME_SCREEN_TO_VIEW, screenToView);
-        circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
+        spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
+        gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
+        sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, sampleCount);
+        circleConfusionShader.updateUniform(Graphics::UBO_keys::SCREEN_TO_VIEW, screenToView);
+        circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
 
         //******************************************************* FIRST PASS
         //-------------------------------------Bind gbuffer
@@ -759,7 +717,7 @@ int main( int argc, char **argv )
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
-        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
@@ -791,7 +749,7 @@ int main( int argc, char **argv )
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
-        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+        shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -1121,7 +1079,7 @@ int main( int argc, char **argv )
 
         imguiSeparatorLine();
         if(imguiButton("IsNormalMapActive"))
-            mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
+            mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
         imguiSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
         imguiSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
