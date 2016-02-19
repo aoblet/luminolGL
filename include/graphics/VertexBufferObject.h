@@ -37,11 +37,11 @@ namespace Graphics
         VertexBufferObject(DataType dataType, GLuint attribArray = 0);
         GLuint glId();
         void init();
-        void updateData(const std::vector<VertexDescriptor> data);
-        void updateData(const std::vector<glm::vec3> data);
-        void updateData(const std::vector<glm::vec2> data);
-        void updateData(const std::vector<float> data);
-        void updateData(const std::vector<int> data);
+        void updateData(const std::vector<VertexDescriptor>& data);
+        void updateData(const std::vector<glm::vec3>& data);
+        void updateData(const std::vector<glm::vec2>& data);
+        void updateData(const std::vector<float>& data);
+        void updateData(const std::vector<int>& data);
         void setAttribArray(GLuint value);
         static void unbindAll();
     };
