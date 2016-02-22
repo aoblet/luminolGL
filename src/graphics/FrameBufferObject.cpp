@@ -39,3 +39,19 @@ void FrameBufferObject::attachRenderBuffer(GLuint attachment, GLuint renderBuffe
 glm::ivec2 &FrameBufferObject::resolution() {
     return _resolutionTextures;
 }
+
+void FrameBufferObject::clear(GLenum what) {
+    glClear(what);
+}
+
+void FrameBufferObject::clearColor() {
+    clear(GL_COLOR_BUFFER_BIT);
+}
+
+void FrameBufferObject::clearDepth() {
+    clear(GL_DEPTH_BUFFER_BIT);
+}
+
+void FrameBufferObject::clear() {
+    clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}

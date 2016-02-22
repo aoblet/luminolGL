@@ -29,6 +29,10 @@ namespace Graphics{
         GLuint id() const;
         void bind();
         void unbind();
+        void clearColor();
+        void clearDepth();
+        void clear();
+        void clear(GLenum what);
         glm::ivec2& resolution();
     };
 }
