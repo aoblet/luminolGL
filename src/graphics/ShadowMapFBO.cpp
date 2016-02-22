@@ -4,7 +4,7 @@ using namespace Graphics;
 
 ShadowMapFBO::ShadowMapFBO(const glm::ivec2 &resolutionTexture):
         FrameBufferObject(resolutionTexture),
-        _shadowTexture(_resolutionTextures.x, _resolutionTextures.y, TexParams::depthFBO()){
+        _shadowTexture(_resolutionTextures.x, _resolutionTextures.y, TexParams::depthShadowFBO()){
    build();
 
 }
