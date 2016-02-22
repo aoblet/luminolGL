@@ -62,7 +62,7 @@ namespace Gui{
 
 		imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
 		
-		sprintf(lineBuffer, "FPS %f", imguiParams["FPS"] );
+		sprintf(lineBuffer, "FPS %f", *imguiParams["FPS"] );
 		imguiLabel(lineBuffer);
 		imguiSlider("Slider", imguiParams["Slider"], 0.0, 1.0, 0.001);
 		imguiSlider("InstanceNumber", imguiParams["InstanceNumber"], 100, 100000, 1);
@@ -105,17 +105,19 @@ namespace Gui{
         imguiSlider("DL: intensity", &lightHandler._directionnalLights[0]._intensity, 0, 1, 0.001);
         imguiSlider("DL: attenuation", &lightHandler._directionnalLights[0]._attenuation, 0.01, 3, 0.001);
 
-		sprintf(lineBuffer, "Point Light [0]");
-		imguiLabel(lineBuffer);
-		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -150, 300, 0.001);
-        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -150, 300, 0.001);
-        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -150, 300, 0.001);
-        imguiSlider("PL: col.R", &lightHandler._pointLights[0]._color.r, 0, 1, 0.01);
-        imguiSlider("PL: col.G", &lightHandler._pointLights[0]._color.g, 0, 1, 0.01);
-        imguiSlider("PL: col.B", &lightHandler._pointLights[0]._color.b, 0, 1, 0.01);
-        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 1, 0.001);
-        imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 3, 0.001);
-        
+      for(size_t i = 0; i < lightHandler._pointLights.size(); ++i) {
+          sprintf(lineBuffer, "Point Light  %d", i );
+          imguiLabel(lineBuffer);
+          imguiSlider("PL: pos.x", &lightHandler._pointLights[i]._pos.x, -150, 300, 0.001);
+          imguiSlider("PL: pos.y", &lightHandler._pointLights[i]._pos.y, -150, 300, 0.001);
+          imguiSlider("PL: pos.z", &lightHandler._pointLights[i]._pos.z, -150, 300, 0.001);
+          imguiSlider("PL: col.R", &lightHandler._pointLights[i]._color.r, 0, 1, 0.01);
+          imguiSlider("PL: col.G", &lightHandler._pointLights[i]._color.g, 0, 1, 0.01);
+          imguiSlider("PL: col.B", &lightHandler._pointLights[i]._color.b, 0, 1, 0.01);
+          imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 1, 0.001);
+          imguiSlider("PL: attenuation", &lightHandler._pointLights[i]._attenuation, 0.01, 3, 0.001);
+      }
+
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
         	sprintf(lineBuffer, "Spot Light  %d", i );
         	imguiLabel(lineBuffer);

@@ -15,16 +15,15 @@
 #include "imgui/imguiRenderGL3.h"
 
 #include <glm/glm.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
-#include <graphics/GeometricBuffer.hpp>
+#include <graphics/BeautyFBO.hpp>
+#include <graphics/PostFxFBO.hpp>
 
 #include "geometry/Spline3D.h"
+
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Texture.h"
 #include "graphics/TextureHandler.h"
@@ -32,15 +31,17 @@
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
+#include "graphics/Mesh.h"
+#include "graphics/UBO_keys.hpp"
+#include "graphics/ShadowMapFBO.hpp"
+#include "graphics/GeometricFBO.hpp"
 
 #include "gui/Gui.hpp"
-
 #include "lights/Light.hpp"
-
-#include "graphics/Mesh.h"
 
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
+
 #include "gui/UserInput.hpp"
 
 
@@ -59,9 +60,6 @@
 // Font buffers
 extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
-
-// Shader utils
-int check_compile_error(GLuint shader, const char ** sourceBuffer);
 
 // OpenGL utils
 bool checkError(const char* title);
@@ -88,25 +86,6 @@ struct UniformCamera
 
 };
 
-struct GUIStates
-{
-    bool panLock;
-    bool turnLock;
-    bool zoomLock;
-    int lockPositionX;
-    int lockPositionY;
-    int camera;
-    double time;
-    bool playing;
-    static const float MOUSE_PAN_SPEED;
-    static const float MOUSE_ZOOM_SPEED;
-    static const float MOUSE_TURN_SPEED;
-};
-const float GUIStates::MOUSE_PAN_SPEED = 0.001f;
-const float GUIStates::MOUSE_ZOOM_SPEED = 0.05f;
-const float GUIStates::MOUSE_TURN_SPEED = 0.005f;
-void init_gui_states(GUIStates & guiStates);
-
 
 void printVec3(glm::vec3 vec){
     std::cout << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]" << std::endl;
@@ -115,7 +94,8 @@ void printVec3(glm::vec3 vec){
 
 int main( int argc, char **argv )
 {
-    int width = 1300, height= 700;
+    glm::ivec2 dimViewport(1300, 700);
+    int& width = dimViewport.x, height= dimViewport.y;
     float fps = 0.f;
 
     GUI::UserInput userInput;
@@ -358,34 +338,6 @@ int main( int argc, char **argv )
         return -1;
     }
 
-
-    int shadowTexWidth = 2048;
-    int shadowTexHeight = 2048;
-    std::string shadowBufferTexture = "shadow_buffer_texture";
-    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
-    if (!checkError("Texture")){
-        std::cout << "Error : shadow_buffer_texture" << std::endl;
-        return -1;
-    }
-
-    std::string beautyBufferTexture = "beauty_buffer_texture";
-    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), beautyBufferTexture);
-    if (!checkError("Texture")){
-        std::cout << "Error : beauty_buffer_texture" << std::endl;
-        return -1;
-    }
-
-    const int fxTextureCount = 4;
-    std::string fxBufferTexture = "fx_texture_";
-    for(int i = 0; i < fxTextureCount; ++i){
-        std::string currentFxBufferTexture = fxBufferTexture + std::to_string(i);
-        texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), currentFxBufferTexture);
-        if (!checkError("Texture")){
-            std::cout << "Error : fx_texture" << i << std::endl;
-            return -1;
-        }
-    }
-
     std::cout << std::endl;
     std::cout << "---------------------------------------- " << std::endl;
     std::cout << std::endl;
@@ -406,48 +358,11 @@ int main( int argc, char **argv )
 
     Light::LightHandler lightHandler;
 
-    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.8,0.8,0.8), 0.7);
+    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.8,0.8,0.8), 0);
     lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0.6, 0, 60, 66);
-    lightHandler.addPointLight(glm::vec3(2.5,0.5,4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
+//    lightHandler.addPointLight(glm::vec3(2.5,0.5,4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
 
     
-
-    // My Uniforms -------------------------------------------------------------------------------------------------------------------------------
-    const std::string UNIFORM_NAME_MVP              = "MVP";
-    const std::string UNIFORM_NAME_MV               = "MV";
-    const std::string UNIFORM_NAME_MV_INVERSE       = "MVInverse";
-    const std::string UNIFORM_NAME_TIME             = "Time";
-    const std::string UNIFORM_NAME_SLIDER           = "Slider";
-    const std::string UNIFORM_NAME_SLIDER_MULT      = "SliderMult";
-    const std::string UNIFORM_NAME_SPECULAR_POWER   = "SpecularPower";
-    const std::string UNIFORM_NAME_INSTANCE_NUMBER  = "InstanceNumber";
-
-    const std::string UNIFORM_NAME_SHADOW_MVP       = "ShadowMVP";
-    const std::string UNIFORM_NAME_SHADOW_MV        = "ShadowMV";
-    const std::string UNIFORM_NAME_SHADOW_BIAS      = "ShadowBias";
-    const std::string UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN = "WorldToLightScreen";
-    const std::string UNIFORM_NAME_SCREEN_TO_VIEW  = "ScreenToView";
-
-    const std::string UNIFORM_NAME_FOCUS            = "Focus";
-    const std::string UNIFORM_NAME_SHADOW_BUFFER    = "ShadowBuffer";
-    const std::string UNIFORM_NAME_GAMMA            = "Gamma";
-    const std::string UNIFORM_NAME_SOBEL_INTENSITY  = "SobelIntensity";
-    const std::string UNIFORM_NAME_BLUR_SAMPLE_COUNT= "SampleCount";
-    const std::string UNIFORM_NAME_BLUR_DIRECTION   = "BlurDirection";
-
-    const std::string UNIFORM_NAME_DOF_COLOR        = "Color";
-    const std::string UNIFORM_NAME_DOF_COC          = "CoC";
-    const std::string UNIFORM_NAME_DOF_BLUR         = "Blur";
-
-    const std::string UNIFORM_NAME_COLOR_BUFFER     = "ColorBuffer";
-    const std::string UNIFORM_NAME_NORMAL_BUFFER    = "NormalBuffer";
-    const std::string UNIFORM_NAME_DEPTH_BUFFER     = "DepthBuffer";
-    const std::string UNIFORM_NAME_DIFFUSE          = "Diffuse";
-    const std::string UNIFORM_NAME_SPECULAR         = "Specular";
-    const std::string UNIFORM_NAME_NORMAL_MAP       = "NormalMap";
-    const std::string UNIFORM_NAME_CAMERA_POSITION  = "CamPos";
-    const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE = "IsNormalMapActive";
-
 
     // ---------------------- For Geometry Shading
     float t = 0;
@@ -456,12 +371,12 @@ int main( int argc, char **argv )
     float instanceNumber = 100;
     int isNormalMapActive = 1;
 
-    mainShader.updateUniform(UNIFORM_NAME_DIFFUSE, 0);
-    mainShader.updateUniform(UNIFORM_NAME_SPECULAR, 1);
-    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP, 2);
-    mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
-    mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, isNormalMapActive);
-    shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
+    mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
+    mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
+    mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP, 2);
+    mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
+    mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
+    shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
     if (!checkError("Uniforms")){
         std::cerr << "Error : geometry uniforms" << std::endl;
@@ -469,17 +384,17 @@ int main( int argc, char **argv )
     }
 
     // ---------------------- For Light Pass Shading
-    directionalLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
-    spotLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
-    pointLightShader.updateUniform(UNIFORM_NAME_COLOR_BUFFER, 0);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    spotLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
 
-    directionalLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
-    spotLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
-    pointLightShader.updateUniform(UNIFORM_NAME_NORMAL_BUFFER, 1);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
+    spotLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
+    pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
 
-    directionalLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
-    spotLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
-    pointLightShader.updateUniform(UNIFORM_NAME_DEPTH_BUFFER, 2);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+    spotLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+    pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
 
     if (!checkError("Uniforms"))
@@ -487,30 +402,30 @@ int main( int argc, char **argv )
 
     GLint blurDirectionLocation = glGetUniformLocation(blurShader.id(), "BlurDirection");
     // ---------------------- FX Variables
-    float shadowBias = 0.00001;
+    float shadowBias = 0.00013;
 
     float gamma = 1.22;
     float sobelIntensity = 0.5;
-    int sampleCount = 8; // blur
-    glm::vec3 focus(0, 1, 10);
+    float sampleCount = 9; // blur
+    glm::vec3 focus(0, 1, 100);
 
 
     // ---------------------- FX uniform update
     // For shadow pass shading
-    spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BUFFER, 3);
+    spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BUFFER, 3);
 
-    gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
-    sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
-    blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
-    blurShader.updateUniform(UNIFORM_NAME_BLUR_DIRECTION, glm::ivec2(1,0));
+    gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
+    sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
+    blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, (int)sampleCount);
+    blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
 
     // ---------------------- For coc Correction
-    circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
+    circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
 
     // ---------------------- For dof Correction
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COLOR, 0);
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_COC, 1);
-    depthOfFieldShader.updateUniform(UNIFORM_NAME_DOF_BLUR, 2);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_COLOR, 0);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_COC, 1);
+    depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_BLUR, 2);
 
 
     if (!checkError("Uniforms")){
@@ -519,85 +434,17 @@ int main( int argc, char **argv )
     }
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
+    Graphics::GeometricFBO gBufferFBO(dimViewport);
 
-    // Framebuffer object handle
-    Graphics::GeometricBuffer gBufferFBO(width, height);
+    //TODO: remove poisson shadow ?
+    float shadowPoissonSampleCount = 1;
+    float shadowPoissonSpread = 1;
 
-
-    // Create Shadow & Texture FBO -------------------------------------------------------------------------------------------------------------------------------
-
-    // Create shadow FBO
-    GLuint shadowFbo;
-    glGenFramebuffers(1, &shadowFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-
-    // Create a render buffer since we don't need to read shadow color
-    // in a texture
-    GLuint shadowRenderBuffer;
-    glGenRenderbuffers(1, &shadowRenderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, shadowRenderBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, shadowTexWidth, shadowTexHeight);
-    // Attach the renderbuffer
-    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, shadowRenderBuffer);
-
-    // Attach the shadow texture to the depth attachment
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texHandler[shadowBufferTexture].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building shadow framebuffer\n");
-        return( EXIT_FAILURE );
-    }
-
-    // Fall back to default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
+    Graphics::BeautyFBO beautyFBO(dimViewport);
+    Graphics::PostFxFBO fxFBO(dimViewport, 4);
 
 
-    // Create Beauty FBO -------------------------------------------------------------------------------------------------------------------------------
-
-    // Create beauty FBO
-    GLuint beautyFbo;
-    // Texture handles
-    GLuint beautyDrawBuffer;
-
-    // Create Framebuffer Object
-    glGenFramebuffers(1, &beautyFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, beautyFbo);
-    // Initialize DrawBuffers
-    beautyDrawBuffer = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, &beautyDrawBuffer);
-
-    // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[beautyBufferTexture].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building framebuffer\n");
-        return( EXIT_FAILURE );
-    }
-
-    // Back to the default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Create FBO & textures For Post Processing -------------------------------------------------------------------------------------------------------------------------------
-
-    // Create Fx Framebuffer Object
-    GLuint fxFbo;
-    GLuint fxDrawBuffers[1];
-    glGenFramebuffers(1, &fxFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-    fxDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, fxDrawBuffers);
-
-    // Attach first fx texture to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building framebuffern");
-        return( EXIT_FAILURE );
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
     // Create two ubo for light and camera
@@ -618,15 +465,11 @@ int main( int argc, char **argv )
     spotLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
 
     // Viewer Structures ----------------------------------------------------------------------------------------------------------------------
-    GUIStates guiStates;
-    init_gui_states(guiStates);
-
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
-    do
-    {
+    do {
         t = glfwGetTime();
         userInput.update(window);
         cameraController.update(t);
@@ -672,49 +515,48 @@ int main( int argc, char **argv )
 
         //-------------------------------------Upload Uniforms
 
-        mainShader.updateUniform(UNIFORM_NAME_MVP, mvp);
-        mainShader.updateUniform(UNIFORM_NAME_MV, mv);
-        mainShader.updateUniform(UNIFORM_NAME_CAMERA_POSITION, camera.getEye());
-        debugShapesShader.updateUniform(UNIFORM_NAME_MVP, mvp);
-        debugShapesShader.updateUniform(UNIFORM_NAME_MV_INVERSE, mvInverse);
+        mainShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        mainShader.updateUniform(Graphics::UBO_keys::MV, mv);
+        mainShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
+        debugShapesShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        debugShapesShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
 
 
         // Upload value
-        mainShader.updateUniform(UNIFORM_NAME_TIME, t);
-        mainShader.updateUniform(UNIFORM_NAME_SLIDER, SliderValue);
-        mainShader.updateUniform(UNIFORM_NAME_SLIDER_MULT, SliderMult);
-        mainShader.updateUniform(UNIFORM_NAME_SPECULAR_POWER, lightHandler._specularPower);
-        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
-
+        mainShader.updateUniform(Graphics::UBO_keys::TIME, t);
+        mainShader.updateUniform(Graphics::UBO_keys::SLIDER, SliderValue);
+        mainShader.updateUniform(Graphics::UBO_keys::SLIDER_MULT, SliderMult);
+        mainShader.updateUniform(Graphics::UBO_keys::SPECULAR_POWER, lightHandler._specularPower);
+        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
         // Update scene uniforms
-        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, int(instanceNumber));
-        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MVP, objectToLightScreen);
-        shadowShader.updateUniform(UNIFORM_NAME_SHADOW_MV, objectToLight);
+        shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToLightScreen);
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToLight);
 
-        spotLightShader.updateUniform(UNIFORM_NAME_WOLRD_TO_LIGHT_SCREEN, worldToLightScreen);
-        spotLightShader.updateUniform(UNIFORM_NAME_SHADOW_BIAS, shadowBias);
-        gammaShader.updateUniform(UNIFORM_NAME_GAMMA, gamma);
-        sobelShader.updateUniform(UNIFORM_NAME_SOBEL_INTENSITY, sobelIntensity);
-        blurShader.updateUniform(UNIFORM_NAME_BLUR_SAMPLE_COUNT, sampleCount);
-        circleConfusionShader.updateUniform(UNIFORM_NAME_SCREEN_TO_VIEW, screenToView);
-        circleConfusionShader.updateUniform(UNIFORM_NAME_FOCUS, focus);
+        spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
+        spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
+        gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
+        sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, (int)sampleCount);
+        circleConfusionShader.updateUniform(Graphics::UBO_keys::SCREEN_TO_VIEW, screenToView);
+        circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
 
         //******************************************************* FIRST PASS
         //-------------------------------------Bind gbuffer
         gBufferFBO.bind();
+        gBufferFBO.clear();
 
-        // Clear the gbuffer
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //-------------------------------------Render Cubes
-
         cubeVAO.bind();
         cubeMesh.bindTextures();
         glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //-------------------------------------Render Plane
-        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
         planeMesh.bindTextures();
@@ -722,7 +564,7 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //-------------------------------------Render Sphere
-        mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
 
         sphereVAO.bind();
         sphereMesh.bindTextures();
@@ -734,23 +576,21 @@ int main( int argc, char **argv )
 
         //******************************************************* SECOND PASS
         //-------------------------------------Shadow pass
-        glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
+        shadowMapFBO.bind();
+        // Clear only the depth buffer
+        shadowMapFBO.clearDepth();
 
         // Set the viewport corresponding to shadow texture resolution
-        glViewport(0, 0, shadowTexWidth, shadowTexHeight);
-
-        // Clear only the depth buffer
-        glClear(GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
 
         // Render the scene
         shadowShader.useProgram();
-
         //cubes
         cubeVAO.bind();
         glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
 
         //plane
-        shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
+        shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
 
         planeVAO.bind();
         glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
@@ -766,10 +606,8 @@ int main( int argc, char **argv )
         glViewport(0, 0, width, height);
 
         //-------------------------------------Light Draw
-
-        glBindFramebuffer(GL_FRAMEBUFFER, beautyFbo);
-        // Clear the gbuffer
-        glClear(GL_COLOR_BUFFER_BIT);
+        beautyFBO.bind();
+        beautyFBO.clearColor();
 
         // Set a full screen viewport
         glViewport( 0, 0, width, height );
@@ -785,13 +623,11 @@ int main( int argc, char **argv )
         UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
+        //directionnal light shaders
+        directionalLightShader.useProgram();
 
-
-
-        // ------------------------------------ Directionnal Lights
-
-        directionalLightShader.useProgram(); //directionnal light shaders
-        quadVAO.bind(); // Bind quad vao
+        // Bind quad vao
+        quadVAO.bind();
 
         gBufferFBO.color().bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
@@ -810,7 +646,7 @@ int main( int argc, char **argv )
         gBufferFBO.color().bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
         gBufferFBO.depth().bind(GL_TEXTURE2);
-        // gBufferFBO.shadow().bind(GL_TEXTURE3);
+        shadowMapFBO.shadowTexture().bind(GL_TEXTURE3);
 
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
             uboLight.updateBuffer(&lightHandler._spotLights[i], sizeof(Light::SpotLight));
@@ -849,52 +685,47 @@ int main( int argc, char **argv )
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
         // Disable blending
         glDisable(GL_BLEND);
-
         glViewport( 0, 0, width, height );
 
         // Clear default framebuffer color buffer
         glClear(GL_COLOR_BUFFER_BIT);
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
-        // Set quad as vao
-        quadVAO.bind();
 
         // ------- SOBEL ------
-        glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.bind();
+        fxFBO.changeCurrentTexture(0);
+        fxFBO.clearColor();
 
+        // Set quad as vao: deferred
         quadVAO.bind();
         sobelShader.useProgram();
-        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
-
+        beautyFBO.beauty().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- BLUR ------
         if(sampleCount > 0){
             // Use blur program shader
             blurShader.useProgram();
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
 
-            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 1,0);
             // Write into Vertical Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
+            fxFBO.changeCurrentTexture(1);
             // Clear the content of texture
-            glClear(GL_COLOR_BUFFER_BIT);
+            fxFBO.clearColor();
             // Read the texture processed by the Sobel operator
-            texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0);
+            fxFBO.texture(0).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 0,1);
-
             // Write into Horizontal Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(2)].glId(), 0);
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
+            fxFBO.changeCurrentTexture(2);
             // Clear the content of texture
-            glClear(GL_COLOR_BUFFER_BIT);
+            fxFBO.clearColor();
             // Read the texture processed by the Vertical Blur
-            texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
+            fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -903,36 +734,32 @@ int main( int argc, char **argv )
         circleConfusionShader.useProgram();
 
         // Write into Circle of Confusion Texture
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
+        fxFBO.changeCurrentTexture(1);
         // Clear the content of  texture
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.clearColor();
         // Read the depth texture
         gBufferFBO.depth().bind(GL_TEXTURE0);
-
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
         // ------- DOF ------
         // Attach Depth of Field texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(3)].glId(), 0);
-
+        fxFBO.changeCurrentTexture(3);
         // Only the color buffer is used
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.clearColor();
+
         // Use the Depth of Field shader
-
         depthOfFieldShader.useProgram();
-
-        texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0); // Color
-        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE1); // CoC
-        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE2); //Blur
-
+        fxFBO.texture(0).bind(GL_TEXTURE0); // Color
+        fxFBO.texture(1).bind(GL_TEXTURE1); // CoC
+        fxFBO.texture(2).bind(GL_TEXTURE2); // Blur
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gammaShader.useProgram();
-        texHandler[fxBufferTexture+std::to_string(3)].bind(GL_TEXTURE0);
+        fxFBO.texture(3).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //-------------------------------------Debug Draw
@@ -992,21 +819,22 @@ int main( int argc, char **argv )
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
+        beautyFBO.beauty().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Circle of confusion Buffer
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
+        fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Blur Buffer
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+//        glViewport(0, 0, width, height);
 
         quadVAO.bind();
-        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
+        fxFBO.texture(2).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //****************************************** EVENTS *******************************************
@@ -1017,9 +845,6 @@ int main( int argc, char **argv )
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
 
-
-
-     
         gui.beginFrame();
         gui.getCursorPos(window);
         gui.updateFrame();
@@ -1030,7 +855,6 @@ int main( int argc, char **argv )
         gui.updateMbut(leftButtonPress);   
 
 
-        float sample = sampleCount;
         std::map<std::string,float*> imguiParams = {
             { "FPS", &fps },
             { "Slider", &SliderValue },
@@ -1039,27 +863,21 @@ int main( int argc, char **argv )
             { "Shadow Bias", &shadowBias }, 
             { "Gamma", &gamma }, 
             { "SobelIntensity", &sobelIntensity }, 
-            { "BlurSampleCount", &sample }, 
+            { "BlurSampleCount", &sampleCount},
             { "FocusNear", &focus[0] }, 
             { "FocusPosition", &focus[1] }, 
             { "FocusFar", &focus[2] },
         };
-        sampleCount = sample;
 
-        // const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE
-        // Graphics::ShaderProgram mainShader
         std::map<std::string, Graphics::ShaderProgram*> imguiShaders = {
             { "mainShader", &mainShader }
         };
         std::map<std::string,std::string> imguiUniforms = {
-            {"UNIFORM_NAME_NORMAL_MAP_ACTIVE", UNIFORM_NAME_NORMAL_MAP_ACTIVE}
+            {"UNIFORM_NAME_NORMAL_MAP_ACTIVE", Graphics::UBO_keys::NORMAL_MAP_ACTIVE}
         };
 
         gui.scrollArea(imguiParams, lightHandler, cameraController.viewTargets(), cameraController, userInput, imguiShaders, imguiUniforms);
         gui.scrollAreaEnd();
-        
-
-        
 
         glDisable(GL_BLEND);
 #endif
@@ -1115,39 +933,3 @@ bool checkError(const char* title)
     }
     return error == GL_NO_ERROR;
 }
-
-void init_gui_states(GUIStates & guiStates)
-{
-    guiStates.panLock = false;
-    guiStates.turnLock = false;
-    guiStates.zoomLock = false;
-    guiStates.lockPositionX = 0;
-    guiStates.lockPositionY = 0;
-    guiStates.camera = 0;
-    guiStates.time = 0.0;
-    guiStates.playing = false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

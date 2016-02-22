@@ -108,7 +108,11 @@ namespace Graphics
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    GLuint Texture::glId(){
+    GLuint& Texture::glId(){
+        return _texId;
+    }
+
+    GLuint Texture::glId() const{
         return _texId;
     }
 
