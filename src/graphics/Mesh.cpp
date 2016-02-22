@@ -47,11 +47,6 @@ namespace Graphics
         return _triangleCount;
     }
 
-
-    bool Mesh::isVisible(const View::CameraFreefly& camera) const {
-        return _boundaries.isVisible(camera);
-    }
-
     void Mesh::computeBoundingBox() {
         _boundaries.compute(_vertices);
     }
@@ -106,8 +101,6 @@ namespace Graphics
 
         mesh._triangleCount = 12;
         mesh._vertexCount = mesh._triangleCount * 3;
-
-        std::cout << "vertexCount before : " << mesh._vertices.size() << std::endl;
 
         mesh.computeBoundingBox();
 
@@ -181,8 +174,10 @@ namespace Graphics
         mesh.addVertices(sphereVertices);
         mesh.addElementIndexes(sphereIds);
 
-        mesh._vertexCount = latitudeBands * longitudeBands;
+        mesh._vertexCount = latitudeBands * longitudeBands * 6;
         mesh._triangleCount = mesh._vertexCount * 2;
+
+        mesh.computeBoundingBox();
 
         return mesh;
     }

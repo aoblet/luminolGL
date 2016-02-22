@@ -7,9 +7,34 @@
 
 namespace Geometry
 {
-    bool BoundingBox::isVisible(const View::CameraFreefly &camera) const {
-        //TODO:Check if bounding box is visible using MVP Matrix
-        return true;
+    bool BoundingBox::isVisible(const glm::mat4 &MVP)  const {
+        glm::vec4 projInitPoint = MVP * glm::vec4(_points[0], 1.0);
+
+        if(projInitPoint.z < 0) return false;
+
+        projInitPoint /= projInitPoint.w;
+
+        float xmin = projInitPoint.x;
+        float xmax = projInitPoint.x;
+        float ymin = projInitPoint.y;
+        float ymax = projInitPoint.y;
+
+        for(auto& point : _points){
+            glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
+            projPoint /= projPoint.w;
+            if( projPoint.x < xmin) xmin = projPoint.x;
+            if( projPoint.y > ymax) ymax = projPoint.y;
+            if( projPoint.x > xmax) xmax = projPoint.x;
+            if( projPoint.y < ymin) ymin = projPoint.y;
+        }
+
+        float limit = 1;
+        return !(
+                    (xmax<-limit) ||
+                    (ymax<-limit) ||
+                    (xmin>limit)  ||
+                    (ymin>limit)
+                );
     }
 
 
@@ -47,4 +72,17 @@ namespace Geometry
     const std::vector<glm::vec3> &BoundingBox::getVector() const{
         return _points;
     }
+
+    BoundingBox operator*(const glm::mat4 &trans, const BoundingBox& box1) {
+        Geometry::BoundingBox box;
+
+        for(auto &point : box1._points){
+            glm::vec4 transPoint = trans * glm::vec4(point,1);
+            box._points.push_back(glm::vec3(transPoint));
+        }
+
+        return box;
+    }
+
 }
+

@@ -32,6 +32,8 @@
 #include "graphics/VertexArrayObject.h"
 #include "graphics/UBO.hpp"
 #include "graphics/Mesh.h"
+#include "graphics/MeshInstance.h"
+#include "graphics/Scene.h"
 
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
@@ -163,9 +165,7 @@ const float GUIStates::MOUSE_TURN_SPEED = 0.005f;
 void init_gui_states(GUIStates & guiStates);
 
 
-void printVec3(glm::vec3 vec){
-    std::cout << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]" << std::endl;
-}
+
 
 int main( int argc, char **argv )
 {
@@ -181,8 +181,6 @@ int main( int argc, char **argv )
     cameraController.positions().add(glm::vec3(10,10,10));
     cameraController.positions().add(glm::vec3(0,10,0)  );
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
-
-
 
     // Initialise GLFW
     if( !glfwInit() )
@@ -263,20 +261,76 @@ int main( int argc, char **argv )
 
     Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
     Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+    Graphics::VertexBufferObject cubeInstancePositionVbo(Graphics::INSTANCE_BUFFER, 3);
 
     Graphics::VertexArrayObject cubeVAO;
     cubeVAO.addVBO(&cubeVerticesVbo);
     cubeVAO.addVBO(&cubeIdsVbo);
+    cubeVAO.addVBO(&cubeInstancePositionVbo);
     cubeVAO.init();
 
-
     Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
+    Graphics::MeshInstance cubeInstances(&cubeMesh);
+
+    int cubeInstanceWidth = 10;
+    int cubeInstanceHeight = 10;
+
+    std::vector<glm::vec3> cubeInstancePosition;
+
+    int k = 0;
+    for(int i = 0; i < cubeInstanceHeight; ++i){
+        for(int j = 0; j < cubeInstanceWidth; ++j){
+            cubeInstances.addInstance(glm::vec3(i * 2, 1.5f, j * 2));
+            cubeInstancePosition.push_back(cubeInstances.getPosition(k));
+            ++k;
+        }
+    }
 
     cubeVerticesVbo.updateData(cubeMesh.getVertices());
     cubeIdsVbo.updateData(cubeMesh.getElementIndex());
 
+    cubeInstancePositionVbo.updateData(cubeInstancePosition);
+
     if (!checkError("VAO/VBO")){
         std::cerr << "Error : cube vao" << std::endl;
+        return -1;
+    }
+
+    // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
+
+    Graphics::VertexBufferObject sphereVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
+    Graphics::VertexBufferObject sphereIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+    Graphics::VertexBufferObject sphereInstancePositionVbo(Graphics::INSTANCE_BUFFER, 3);
+
+    Graphics::VertexArrayObject sphereVAO;
+    sphereVAO.addVBO(&sphereVerticesVbo);
+    sphereVAO.addVBO(&sphereIdsVbo);
+    sphereVAO.addVBO(&sphereInstancePositionVbo);
+    sphereVAO.init();
+
+    Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
+    Graphics::MeshInstance sphereInstances(&sphereMesh);
+
+    int sphereInstanceWidth = 10;
+    int sphereInstanceHeight = 10;
+
+    std::vector<glm::vec3> sphereInstancePositions;
+
+    k=0;
+    for(int i = 0; i < sphereInstanceWidth; ++i){
+        for(int j = 0; j < sphereInstanceHeight; ++j){
+            sphereInstances.addInstance(glm::vec3(i * 2, 2.5f, j * 2));
+            sphereInstancePositions.push_back(sphereInstances.getPosition(k));
+            ++k;
+        }
+    }
+
+    sphereVerticesVbo.updateData(sphereMesh.getVertices());
+    sphereIdsVbo.updateData(sphereMesh.getElementIndex());
+    sphereInstancePositionVbo.updateData(sphereInstancePositions);
+
+    if (!checkError("VAO/VBO")){
+        std::cerr << "Error : sphere vao" << std::endl;
         return -1;
     }
 
@@ -297,26 +351,6 @@ int main( int argc, char **argv )
 
     if (!checkError("VAO/VBO")){
         std::cerr << "Error : plane vao" << std::endl;
-        return -1;
-    }
-
-    // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
-
-    Graphics::VertexBufferObject sphereVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
-    Graphics::VertexBufferObject sphereIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-
-    Graphics::VertexArrayObject sphereVAO;
-    sphereVAO.addVBO(&sphereVerticesVbo);
-    sphereVAO.addVBO(&sphereIdsVbo);
-    sphereVAO.init();
-
-    Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(30,30,1,glm::vec3(2,0,2)));
-
-    sphereVerticesVbo.updateData(sphereMesh.getVertices());
-    sphereIdsVbo.updateData(sphereMesh.getElementIndex());
-
-    if (!checkError("VAO/VBO")){
-        std::cerr << "Error : sphere vao" << std::endl;
         return -1;
     }
 
@@ -346,6 +380,10 @@ int main( int argc, char **argv )
     quadVerticesVbo.updateData(quadVertices);
     quadIdsVbo.updateData(quadIds);
 
+    // unbind everything
+    Graphics::VertexArrayObject::unbindAll();
+    Graphics::VertexBufferObject::unbindAll();
+
     // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
 
     std::vector<int> debugId;
@@ -353,23 +391,26 @@ int main( int argc, char **argv )
     debugId.push_back(1);
     debugId.push_back(2);
     debugId.push_back(3);
+    debugId.push_back(4);
+    debugId.push_back(5);
+    debugId.push_back(6);
+    debugId.push_back(7);
 
-    std::vector<glm::vec3> debugVertices;
-    debugVertices.push_back(glm::vec3(1));
-    debugVertices.push_back(glm::vec3(2));
-    debugVertices.push_back(glm::vec3(3));
-    debugVertices.push_back(glm::vec3(4));
+    std::vector<glm::vec3> debugVertices = cubeMesh.getBoundingBox().getVector();
 
     Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
     Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+    Graphics::VertexBufferObject debugInstancePositionVbo(Graphics::INSTANCE_BUFFER, 1);
 
     Graphics::VertexArrayObject debugVAO;
     debugVAO.addVBO(&debugVerticesVbo);
     debugVAO.addVBO(&debugIdsVbo);
+    debugVAO.addVBO(&debugInstancePositionVbo);
     debugVAO.init();
 
     debugVerticesVbo.updateData(debugVertices);
     debugIdsVbo.updateData(debugId);
+    debugInstancePositionVbo.updateData(cubeInstancePosition);
 
     // unbind everything
     Graphics::VertexArrayObject::unbindAll();
@@ -380,10 +421,16 @@ int main( int argc, char **argv )
         return -1;
     }
 
-    // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
+    // Create Scene -------------------------------------------------------------------------------------------------------------------------------
 
-    std::cout << "--------------- TEXTURES --------------- " << std::endl;
-    std::cout << std::endl;
+    Graphics::Scene scene;
+
+    const std::string cubeInstanceName = "cube_instance";
+    const std::string sphereInstanceName = "sphere_instance";
+    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
+    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
+
+    // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
     Graphics::TextureHandler texHandler;
 
@@ -412,8 +459,8 @@ int main( int argc, char **argv )
     }
 
 
-    int shadowTexWidth = 2048;
-    int shadowTexHeight = 2048;
+    int shadowTexWidth = 4096;
+    int shadowTexHeight = 4096;
     std::string shadowBufferTexture = "shadow_buffer_texture";
     texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
     if (!checkError("Texture")){
@@ -438,10 +485,6 @@ int main( int argc, char **argv )
             return -1;
         }
     }
-
-    std::cout << std::endl;
-    std::cout << "---------------------------------------- " << std::endl;
-    std::cout << std::endl;
 
     cubeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
     cubeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
@@ -708,6 +751,8 @@ int main( int argc, char **argv )
         glm::mat4 mv = worldToView * objectToWorld;
         glm::mat4 mvInverse = glm::inverse(mv);
         glm::mat4 screenToView = glm::inverse(projection);
+        glm::mat4 vp = camera.getProjectionMatrix() * camera.getViewMatrix();
+
 
         // Light space matrices
         // From light space to shadow map screen space
@@ -770,9 +815,12 @@ int main( int argc, char **argv )
 
         //-------------------------------------Render Cubes
 
+        scene.setCurrentInstance(cubeInstanceName);
+        cubeInstancePositionVbo.updateData(scene.computeVisiblePositions(vp));
+
         cubeVAO.bind();
         cubeMesh.bindTextures();
-        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
 
         //-------------------------------------Render Plane
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
@@ -785,9 +833,13 @@ int main( int argc, char **argv )
         //-------------------------------------Render Sphere
         mainShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
 
+
+        scene.setCurrentInstance(sphereInstanceName);
+        sphereInstancePositionVbo.updateData(scene.computeVisiblePositions(vp));
+
         sphereVAO.bind();
         sphereMesh.bindTextures();
-        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
+        glDrawElementsInstanced(GL_TRIANGLES, sphereMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //-------------------------------------Unbind the frambuffer
@@ -806,9 +858,12 @@ int main( int argc, char **argv )
         // Render the scene
         shadowShader.useProgram();
 
+        scene.setCurrentInstance(cubeInstanceName);
+        cubeInstancePositionVbo.updateData(scene.computeVisiblePositions(worldToLightScreen));
+
         //cubes
         cubeVAO.bind();
-        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
+        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
 
         //plane
         shadowShader.updateUniform(UNIFORM_NAME_INSTANCE_NUMBER, -1);
@@ -816,9 +871,11 @@ int main( int argc, char **argv )
         planeVAO.bind();
         glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
 
+        scene.setCurrentInstance(sphereInstanceName);
+        sphereInstancePositionVbo.updateData(scene.computeVisiblePositions(worldToLightScreen));
 
         sphereVAO.bind();
-        glDrawElements(GL_TRIANGLES, sphereMesh.getVertexCount() * 1000, GL_UNSIGNED_INT, (void*)0);
+        glDrawElementsInstanced(GL_TRIANGLES, sphereMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -846,72 +903,6 @@ int main( int argc, char **argv )
         UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
-        //------------------------------------ Point Lights
-
-//        // point light shaders
-//        pointLightShader.useProgram();
-//
-//        // Bind quad vao
-//        glBindVertexArray(vao[2]);
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-//        glActiveTexture(GL_TEXTURE2);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-//
-//        unsigned int nbLightsByCircle[] = {6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78};
-//        int counterCircle = 0;
-//        unsigned int nbPointLights = 30;
-//        float xOffset = glm::sqrt(float(instanceNumber))/2;
-//        float zOffset = glm::sqrt(float(instanceNumber))/2;
-//
-//        float rayon = sqrt(xOffset*2 + zOffset*2);
-//
-//
-//        int cptVisiblePointLight = 0;
-//
-//        std::vector<Light> lights;
-//
-//        for(size_t i = 0; i < nbPointLights; ++i){
-//
-//            Light light(glm::vec3(0,0,0), glm::vec3(1,1,1), lightIntensity, lightAttenuation);
-//
-//            if( i == nbLightsByCircle[counterCircle] ){
-//              counterCircle++;
-//              rayon += 3;
-//            }
-//
-//
-//            float coeff = rayon * sin(t);
-//            float w = t + t;
-//
-////            coeff = 20;
-////            w = 0;
-//
-//            light._pos = glm::vec3(
-//                coeff * cos(i+ M_PI /nbPointLights) + xOffset,
-//                pointLightsYOffset,
-//                coeff * sin(i+ M_PI /nbPointLights) + zOffset);
-//
-//            light._color.x = cos(i);
-//            light._color.y = sin(3*i);
-//            light._color.y = cos(i*2);
-//
-//
-//            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-//            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &light);
-//            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-////            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//
-//            lights.push_back(light);
-//
-//        }
-//
-
-//
         //------------------------------------ Directionnal Lights
 
         //directionnal light shaders
@@ -1041,25 +1032,9 @@ int main( int argc, char **argv )
         //------------------------------------ Debug Shape Drawing
 
         debugShapesShader.useProgram();
-        glPointSize(10);
         debugVAO.bind();
 
-        int id = 0;
-
-        debugVertices.clear();
-        debugId.clear();
-
-        for(float i = 0; i < 1; i +=0.01){
-            debugId.push_back(id);
-            ++id;
-            debugVertices.push_back(cameraController.positions().cubicInterpolation(i));
-        }
-
-
-        debugVerticesVbo.updateData(debugVertices);
-        debugIdsVbo.updateData(debugId);
-
-        glDrawElements(GL_LINE_STRIP, debugVertices.size(), GL_UNSIGNED_INT, (void*)0);
+        glDrawElementsInstanced(GL_LINES, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstancePosition.size());
 
         int screenNumber = 6;
 
