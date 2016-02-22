@@ -107,9 +107,9 @@ namespace Gui{
 
 		sprintf(lineBuffer, "Point Light [0]");
 		imguiLabel(lineBuffer);
-		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -150, 300, 0.001);
-        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -150, 300, 0.001);
-        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -150, 300, 0.001);
+		imguiSlider("PL: pos.x", &lightHandler._pointLights[0]._pos.x, -150, 300, 0.00001);
+        imguiSlider("PL: pos.y", &lightHandler._pointLights[0]._pos.y, -5, 10, 0.00001);
+        imguiSlider("PL: pos.z", &lightHandler._pointLights[0]._pos.z, -150, 300, 0.00001);
         imguiSlider("PL: col.R", &lightHandler._pointLights[0]._color.r, 0, 1, 0.01);
         imguiSlider("PL: col.G", &lightHandler._pointLights[0]._color.g, 0, 1, 0.01);
         imguiSlider("PL: col.B", &lightHandler._pointLights[0]._color.b, 0, 1, 0.01);

@@ -76,6 +76,7 @@ Illumination computeIlluminationParams(vec3 pos){
 }
 
 vec3 computeDiffuse(vec3 lightColor, Illumination illu){
+	// return lightColor * point.Diffuse * illu.ndotl / illu.diffuseAttenuation; 
 	return lightColor * point.Diffuse * illu.ndotl / illu.diffuseAttenuation; 
 }
 
@@ -87,7 +88,8 @@ float computeSpecular(Illumination illu){
 }
 
 vec3 computeFragmentColor(vec3 lightColor, float lightIntensity, Illumination illu){
-	return lightIntensity * (computeDiffuse(lightColor, illu) + lightColor * computeSpecular(illu));
+	// return lightIntensity * (computeDiffuse(lightColor, illu) + lightColor * computeSpecular(illu));
+	return lightIntensity * computeDiffuse(lightColor, illu);
 }
 
 vec3 decodeNormal(vec3 enc)

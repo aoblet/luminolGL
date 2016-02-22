@@ -837,6 +837,8 @@ int main( int argc, char **argv )
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
                 glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
             }        
+            
+            // glDrawElements(GL_POINTS, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
         quadVerticesVbo.updateData(quadVertices);
         quadIdsVbo.updateData(quadIds);

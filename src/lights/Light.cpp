@@ -1,7 +1,7 @@
 
 #include "lights/Light.hpp"
 
-#define DEBUG 0
+#define DEBUG 1
 
 namespace Light{
 
@@ -35,37 +35,52 @@ namespace Light{
 		_spotLights.push_back(SpotLight(sl._pos, sl._dir, sl._color, sl._intensity, sl._attenuation, sl._angle, sl._falloff));
 	}
 
-	bool LightHandler::isOnScreen(const glm::mat4 & mvp, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 &pos, const glm::vec3 & color, const float & intensity, const float & attenuation){
+	// bool LightHandler::isVisible(const glm::mat4 &MVP)  const {
+	//         glm::vec4 projInitPoint = MVP * glm::vec4(_points[0], 1.0);
 
-		// pow(length(illu.l), PointLight.Attenuation)
+	//         if(projInitPoint.z < 0) return false;
+
+	//         projInitPoint /= projInitPoint.w;
+
+	//         float xmin = projInitPoint.x;
+	//         float xmax = projInitPoint.x;
+	//         float ymin = projInitPoint.y;
+	//         float ymax = projInitPoint.y;
+
+	//         for(auto& point : _points){
+	//             glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
+	//             projPoint /= projPoint.w;
+	//             if( projPoint.x < xmin) xmin = projPoint.x;
+	//             if( projPoint.y > ymax) ymax = projPoint.y;
+	//             if( projPoint.x > xmax) xmax = projPoint.x;
+	//             if( projPoint.y < ymin) ymin = projPoint.y;
+	//         }
+
+	//         float limit = 1;
+	//         return !(
+	//                     (xmax<-limit) ||
+	//                     (ymax<-limit) ||
+	//                     (xmin>limit)  ||
+	//                     (ymin>limit)
+	//                 );
+	//     }
+
+
+	bool LightHandler::isOnScreen(const glm::mat4 & MVP, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 &pos, const glm::vec3 & color, const float & intensity, const float & attenuation){
+
 		float linear = 1.7;
-		// // linear = 1.3;
-  //       float quadratic = attenuation; 
-  //       // quadratic = 2.0;
-		float radius = 1.0;
         float maxBrightness = std::max(std::max(color.r, color.g), color.b);
-  //	radius = ( (-linear + std::sqrt(linear * linear - 4 * quadratic * (1.0 - (256.0 / 5.0) 
-  //       	* maxBrightness))) / (2 * quadratic) ) /2;
-        
-        // float ret = (-Light.Attenuation.Linear + sqrtf(Light.Attenuation.Linear * Light.Attenuation.Linear -
-        // 4 * Light.Attenuation.Exp * (Light.Attenuation.Exp - 256 * MaxChannel * Light.DiffuseIntensity)))
-        //     /
-        // (2 * Light.Attenuation.Exp);
+		float radius = 1.0;
+	  	radius = ( (-linear + std::sqrt(linear * linear - 4 * attenuation * (1.0 - (256.0 / 5.0) 
+	        	* maxBrightness))) / (2 * attenuation) ) /2;
 
-        radius = (-linear + sqrtf(linear * linear -
-        4 * std::exp(attenuation) * (std::exp(attenuation) - 256 * maxBrightness * intensity)))
-            /
-        (2 * std::exp(attenuation));
-
-        float dx = radius;
+		float dx = radius;
 
         if(DEBUG) std::cout << "radius: " << dx << " && attenuation: " << attenuation << std::endl;
 
         // création d'un cube d'influence autour de la point light
         std::vector<glm::vec3> cube;
-        float px = pos.x;
-        float py = pos.y;
-        float pz = pos.z;
+        float px = pos.x; float py = pos.y; float pz = pos.z;
         cube.push_back(glm::vec3(px-dx,py-dx,pz-dx)); // left bot back
         cube.push_back(glm::vec3(px+dx,py-dx,pz-dx)); // right bot back
         cube.push_back(glm::vec3(px-dx,py-dx,pz+dx)); // left bot front
@@ -74,52 +89,47 @@ namespace Light{
         cube.push_back(glm::vec3(px-dx,py+dx,pz-dx)); // left top back
         cube.push_back(glm::vec3(px-dx,py+dx,pz+dx)); // left top front
         cube.push_back(glm::vec3(px+dx,py+dx,pz+dx)); // right top front
-    
-        // float wt = t;
-        // wt = 0;
-        // glm::mat4 rotateMatrix = rotationMatrix(glm::vec3(0.,-1.,0.) , wt);
 
-        // glm::vec4 projInitPoint = mvp * rotateMatrix * glm::vec4(cube[0], 1.0);
-        glm::vec4 projInitPoint = mvp * glm::vec4(cube[0], 1.0);
+		glm::vec4 projInitPoint = MVP * glm::vec4(cube[0], 1.0);
+
+	    // if(projInitPoint.z < 0) return false;
+
         projInitPoint /= projInitPoint.w;
-        glm::vec2 mostLeft(glm::vec2(projInitPoint.x,projInitPoint.y));
-        glm::vec2 mostRight(glm::vec2(projInitPoint.x,projInitPoint.y));
-        glm::vec2 mostTop(glm::vec2(projInitPoint.x,projInitPoint.y));
-        glm::vec2 mostBottom(glm::vec2(projInitPoint.x,projInitPoint.y));
 
-        for(int k=1; k<8; ++k){
-            // glm::vec4 projPoint = mvp * rotateMatrix *  glm::vec4(cube[k], 1.0);
-            glm::vec4 projPoint = mvp *  glm::vec4(cube[k], 1.0);
+        float xmin = projInitPoint.x;
+        float xmax = projInitPoint.x;
+        float ymin = projInitPoint.y;
+        float ymax = projInitPoint.y;
+
+        for(auto& point : cube){
+            glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
             projPoint /= projPoint.w;
-            if( projPoint.x < mostLeft.x) mostLeft = glm::vec2(projPoint.x, projPoint.y);
-            if( projPoint.y > mostTop.y) mostTop = glm::vec2(projPoint.x, projPoint.y);
-            if( projPoint.x > mostRight.x) mostRight = glm::vec2(projPoint.x, projPoint.y);
-            if( projPoint.y < mostBottom.y) mostBottom = glm::vec2(projPoint.x, projPoint.y);
+            if( projPoint.x < xmin) xmin = projPoint.x;
+            if( projPoint.y > ymax) ymax = projPoint.y;
+            if( projPoint.x > xmax) xmax = projPoint.x;
+            if( projPoint.y < ymin) ymin = projPoint.y;
+        }
 
-        }   
+        if(DEBUG) std::cout << "Left: " << xmin << " Right: " << xmax << " Top: " << ymax << " Bottom: " << ymin << std::endl; 
 
-        if(DEBUG) std::cout << "Left: " << mostLeft.x << " Right: " << mostRight.x << " Top: " << mostTop.y << " Bottom: " << mostBottom.y << std::endl; 
+        littleQuadVertices.push_back(glm::vec2(xmin, ymin));
+        littleQuadVertices.push_back(glm::vec2(xmax, ymin));
+        littleQuadVertices.push_back(glm::vec2(xmin, ymax));
+        littleQuadVertices.push_back(glm::vec2(xmax, ymax));
 
-        littleQuadVertices.push_back(glm::vec2(mostLeft.x, mostBottom.y));
-        littleQuadVertices.push_back(glm::vec2(mostRight.x, mostBottom.y));
-        littleQuadVertices.push_back(glm::vec2(mostLeft.x, mostTop.y));
-        littleQuadVertices.push_back(glm::vec2(mostRight.x, mostTop.y));
+        float limit = 1.1;
+		// if( ( (xmin > -limit && xmin < limit) || (xmax > -limit && xmax < limit) ) && ( (ymax > -limit && ymax < limit) || (ymin > -limit && ymin < limit) )  )
+        if(!( (xmax<-limit) || (ymax<-limit) || (xmin>limit) || (ymin>limit) ) )
+        {
+        	if(DEBUG) std::cout << "visible" << std::endl;
+        	return true;
+        }
 
-        // Render quad si au moins une partie dela light est dans l'écran
-        float limit = 2; // tmp value for debugging (have to be 1 for maximum optimisation!)
-        
-        if( ( (mostLeft.x > -limit && mostLeft.x < limit) || (mostRight.x > -limit && mostRight.x < limit) ) 
-            &&  ( (mostTop.y > -limit && mostTop.y < limit) || (mostBottom.y > -limit && mostBottom.y < limit) ) )
-       	{
-       		if(DEBUG) std::cout << "visible" << std::endl;
-       		return true;
-       	}
-       	if(DEBUG) std::cout << "NON visible" << std::endl;
-
+		if(DEBUG) std::cout << "NON visible" << std::endl;
+		return false;
+	}	
 
 
-       return false;
-	}
 
 
 
