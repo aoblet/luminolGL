@@ -18,6 +18,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
+#include <graphics/BeautyFBO.hpp>
 
 #include "geometry/Spline3D.h"
 
@@ -433,14 +434,6 @@ int main( int argc, char **argv )
         return -1;
     }
 
-
-    std::string beautyBufferTexture = "beauty_buffer_texture";
-    texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), beautyBufferTexture);
-    if (!checkError("Texture")){
-        std::cout << "Error : beauty_buffer_texture" << std::endl;
-        return -1;
-    }
-
     const int fxTextureCount = 4;
     std::string fxBufferTexture = "fx_texture_";
     for(int i = 0; i < fxTextureCount; ++i){
@@ -514,7 +507,7 @@ int main( int argc, char **argv )
 
     float gamma = 1.22;
     float sobelIntensity = 0.5;
-    int sampleCount = 8; // blur
+    int sampleCount = 9; // blur
     glm::vec3 focus(0, 1, 100);
 
 
@@ -549,28 +542,8 @@ int main( int argc, char **argv )
     float shadowPoissonSpread = 1;
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
 
+    Graphics::BeautyFBO beautyFBO(dimViewport);
 
-    // Create Beauty FBO -------------------------------------------------------------------------------------------------------------------------------
-    // Create beauty FBO
-    GLuint beautyFbo;
-    // Texture handles
-    GLuint beautyDrawBuffer;
-
-    // Create Framebuffer Object
-    glGenFramebuffers(1, &beautyFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, beautyFbo);
-    // Initialize DrawBuffers
-    beautyDrawBuffer = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, &beautyDrawBuffer);
-
-    // Attach textures to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texHandler[beautyBufferTexture].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building framebuffer\n");
-        return( EXIT_FAILURE );
-    }
 
     // Back to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -704,12 +677,10 @@ int main( int argc, char **argv )
         //******************************************************* FIRST PASS
         //-------------------------------------Bind gbuffer
         gBufferFBO.bind();
+        gBufferFBO.clear();
 
-        // Clear the gbuffer
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //-------------------------------------Render Cubes
-
         cubeVAO.bind();
         texHandler[TexBricksDiff].bind(GL_TEXTURE0);
         texHandler[TexBricksSpec].bind(GL_TEXTURE1);
@@ -734,16 +705,14 @@ int main( int argc, char **argv )
         //******************************************************* SECOND PASS
         //-------------------------------------Shadow pass
         shadowMapFBO.bind();
+        // Clear only the depth buffer
+        shadowMapFBO.clearDepth();
 
         // Set the viewport corresponding to shadow texture resolution
         glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
 
-        // Clear only the depth buffer
-        glClear(GL_DEPTH_BUFFER_BIT);
-
         // Render the scene
         shadowShader.useProgram();
-
         //cubes
         cubeVAO.bind();
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0, int(instanceNumber));
@@ -761,10 +730,8 @@ int main( int argc, char **argv )
         glViewport(0, 0, width, height);
 
         //-------------------------------------Light Draw
-
-        glBindFramebuffer(GL_FRAMEBUFFER, beautyFbo);
-        // Clear the gbuffer
-        glClear(GL_COLOR_BUFFER_BIT);
+        beautyFBO.bind();
+        beautyFBO.clearColor();
 
         // Set a full screen viewport
         glViewport( 0, 0, width, height );
@@ -903,7 +870,7 @@ int main( int argc, char **argv )
 
         quadVAO.bind();
         sobelShader.useProgram();
-        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
+        beautyFBO.beauty().bind(GL_TEXTURE0);
 
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -929,6 +896,7 @@ int main( int argc, char **argv )
             glClear(GL_COLOR_BUFFER_BIT);
             // Read the texture processed by the Vertical Blur
             texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
+
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -1025,7 +993,7 @@ int main( int argc, char **argv )
         glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[beautyBufferTexture].bind(GL_TEXTURE0);
+        beautyFBO.beauty().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Circle of confusion Buffer
@@ -1037,6 +1005,7 @@ int main( int argc, char **argv )
 
         // --------------- Blur Buffer
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+//        glViewport(0, 0, width, height);
 
         quadVAO.bind();
         texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
