@@ -19,6 +19,7 @@
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
 #include <graphics/BeautyFBO.hpp>
+#include <graphics/PostFxFBO.hpp>
 
 #include "geometry/Spline3D.h"
 
@@ -434,17 +435,6 @@ int main( int argc, char **argv )
         return -1;
     }
 
-    const int fxTextureCount = 4;
-    std::string fxBufferTexture = "fx_texture_";
-    for(int i = 0; i < fxTextureCount; ++i){
-        std::string currentFxBufferTexture = fxBufferTexture + std::to_string(i);
-        texHandler.add(Graphics::Texture(width, height, Graphics::FRAMEBUFFER_RGBA), currentFxBufferTexture);
-        if (!checkError("Texture")){
-            std::cout << "Error : fx_texture" << i << std::endl;
-            return -1;
-        }
-    }
-
     std::cout << std::endl;
     std::cout << "---------------------------------------- " << std::endl;
     std::cout << std::endl;
@@ -540,33 +530,12 @@ int main( int argc, char **argv )
     //TODO: remove poisson shadow ?
     float shadowPoissonSampleCount = 1;
     float shadowPoissonSpread = 1;
+
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
-
     Graphics::BeautyFBO beautyFBO(dimViewport);
+    Graphics::PostFxFBO fxFBO(dimViewport, 4);
 
 
-    // Back to the default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Create FBO & textures For Post Processing -------------------------------------------------------------------------------------------------------------------------------
-
-    // Create Fx Framebuffer Object
-    GLuint fxFbo;
-    GLuint fxDrawBuffers[1];
-    glGenFramebuffers(1, &fxFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-    fxDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, fxDrawBuffers);
-
-    // Attach first fx texture to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        fprintf(stderr, "Error on building framebuffern");
-        return( EXIT_FAILURE );
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
     // Create two ubo for light and camera
@@ -597,8 +566,7 @@ int main( int argc, char **argv )
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
-    do
-    {
+    do {
         t = glfwGetTime();
         userInput.update(window);
         cameraController.update(t);
@@ -747,71 +715,6 @@ int main( int argc, char **argv )
         UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
 
-        //------------------------------------ Point Lights
-//        // point light shaders
-//        pointLightShader.useProgram();
-//
-//        // Bind quad vao
-//        glBindVertexArray(vao[2]);
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-//        glActiveTexture(GL_TEXTURE2);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-//
-//        unsigned int nbLightsByCircle[] = {6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78};
-//        int counterCircle = 0;
-//        unsigned int nbPointLights = 30;
-//        float xOffset = glm::sqrt(float(instanceNumber))/2;
-//        float zOffset = glm::sqrt(float(instanceNumber))/2;
-//
-//        float rayon = sqrt(xOffset*2 + zOffset*2);
-//
-//
-//        int cptVisiblePointLight = 0;
-//
-//        std::vector<Light> lights;
-//
-//        for(size_t i = 0; i < nbPointLights; ++i){
-//
-//            Light light(glm::vec3(0,0,0), glm::vec3(1,1,1), lightIntensity, lightAttenuation);
-//
-//            if( i == nbLightsByCircle[counterCircle] ){
-//              counterCircle++;
-//              rayon += 3;
-//            }
-//
-//
-//            float coeff = rayon * sin(t);
-//            float w = t + t;
-//
-////            coeff = 20;
-////            w = 0;
-//
-//            light._pos = glm::vec3(
-//                coeff * cos(i+ M_PI /nbPointLights) + xOffset,
-//                pointLightsYOffset,
-//                coeff * sin(i+ M_PI /nbPointLights) + zOffset);
-//
-//            light._color.x = cos(i);
-//            light._color.y = sin(3*i);
-//            light._color.y = cos(i*2);
-//
-//
-//            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-//            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &light);
-//            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-////            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//
-//            lights.push_back(light);
-//
-//        }
-//
-
-//
         //------------------------------------ Directionnal Lights
 
         //directionnal light shaders
@@ -850,53 +753,47 @@ int main( int argc, char **argv )
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
         // Disable blending
         glDisable(GL_BLEND);
-
         glViewport( 0, 0, width, height );
 
         // Clear default framebuffer color buffer
         glClear(GL_COLOR_BUFFER_BIT);
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
-        // Set quad as vao
-        quadVAO.bind();
 
         // ------- SOBEL ------
-        glBindFramebuffer(GL_FRAMEBUFFER, fxFbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(0)].glId(), 0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.bind();
+        fxFBO.changeCurrentTexture(0);
+        fxFBO.clearColor();
 
+        // Set quad as vao: deferred
         quadVAO.bind();
         sobelShader.useProgram();
         beautyFBO.beauty().bind(GL_TEXTURE0);
-
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- BLUR ------
         if(sampleCount > 0){
             // Use blur program shader
             blurShader.useProgram();
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
 
-            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 1,0);
             // Write into Vertical Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
+            fxFBO.changeCurrentTexture(1);
             // Clear the content of texture
-            glClear(GL_COLOR_BUFFER_BIT);
+            fxFBO.clearColor();
             // Read the texture processed by the Sobel operator
-            texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0);
+            fxFBO.texture(0).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-            glProgramUniform2i(blurShader.id(), blurDirectionLocation, 0,1);
-
             // Write into Horizontal Blur Texture
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(2)].glId(), 0);
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
+            fxFBO.changeCurrentTexture(2);
             // Clear the content of texture
-            glClear(GL_COLOR_BUFFER_BIT);
+            fxFBO.clearColor();
             // Read the texture processed by the Vertical Blur
-            texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
-
+            fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -905,36 +802,32 @@ int main( int argc, char **argv )
         circleConfusionShader.useProgram();
 
         // Write into Circle of Confusion Texture
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(1)].glId(), 0);
+        fxFBO.changeCurrentTexture(1);
         // Clear the content of  texture
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.clearColor();
         // Read the depth texture
         gBufferFBO.depth().bind(GL_TEXTURE0);
-
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
         // ------- DOF ------
         // Attach Depth of Field texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, texHandler[fxBufferTexture+std::to_string(3)].glId(), 0);
-
+        fxFBO.changeCurrentTexture(3);
         // Only the color buffer is used
-        glClear(GL_COLOR_BUFFER_BIT);
+        fxFBO.clearColor();
+
         // Use the Depth of Field shader
-
         depthOfFieldShader.useProgram();
-
-        texHandler[fxBufferTexture+std::to_string(0)].bind(GL_TEXTURE0); // Color
-        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE1); // CoC
-        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE2); //Blur
-
+        fxFBO.texture(0).bind(GL_TEXTURE0); // Color
+        fxFBO.texture(1).bind(GL_TEXTURE1); // CoC
+        fxFBO.texture(2).bind(GL_TEXTURE2); // Blur
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gammaShader.useProgram();
-        texHandler[fxBufferTexture+std::to_string(3)].bind(GL_TEXTURE0);
+        fxFBO.texture(3).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //-------------------------------------Debug Draw
@@ -1000,7 +893,7 @@ int main( int argc, char **argv )
         glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
         quadVAO.bind();
-        texHandler[fxBufferTexture+std::to_string(1)].bind(GL_TEXTURE0);
+        fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // --------------- Blur Buffer
@@ -1008,7 +901,7 @@ int main( int argc, char **argv )
 //        glViewport(0, 0, width, height);
 
         quadVAO.bind();
-        texHandler[fxBufferTexture+std::to_string(2)].bind(GL_TEXTURE0);
+        fxFBO.texture(2).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //****************************************** EVENTS *******************************************
