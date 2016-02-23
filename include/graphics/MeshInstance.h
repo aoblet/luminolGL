@@ -20,7 +20,7 @@ namespace Graphics
         void addInstance(const std::vector<Geometry::Transformation>& transformations);
         void addInstance(const std::vector<glm::vec3> &positions, const std::vector<glm::vec4> &rotations);
         void addInstance(const std::vector<glm::vec3> &positions);
-        void addInstance(const glm::vec3& position, const glm::vec4& rotation = glm::vec4(1,1,1,0));
+        void addInstance(const glm::vec3& position, const glm::vec4& rotation = glm::vec4(1,1,1,0), const glm::vec3& scale = glm::vec3(1,1,1));
         void addInstance(float xpos, float ypos, float zpos, float angle = 0, float xrot = 0, float yrot = 0, float zrot = 0);
         const glm::vec3& getPosition(int index);
         const glm::vec4& getRotation(int index);

@@ -31,8 +31,8 @@ namespace Graphics
             _transformations.push_back(Geometry::Transformation(position));
     }
 
-    void MeshInstance::addInstance(const glm::vec3 &position, const glm::vec4 &rotation) {
-        addInstance(Geometry::Transformation(position, rotation));
+    void MeshInstance::addInstance(const glm::vec3 &position, const glm::vec4 &rotation, const glm::vec3& scale) {
+        addInstance(Geometry::Transformation(position, rotation, scale));
     }
 
     void MeshInstance::addInstance(float xpos, float ypos, float zpos, float angle, float xrot, float yrot, float zrot) {
