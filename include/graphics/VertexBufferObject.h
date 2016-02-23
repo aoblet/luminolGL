@@ -19,7 +19,8 @@ namespace Graphics
         FLOAT,
         INT,
         ELEMENT_ARRAY_BUFFER,
-        INSTANCE_BUFFER /** to store instance position or rotation or whatever you want */
+        INSTANCE_BUFFER, /** to store instance position or rotation or whatever you want */
+        INSTANCE_TRANSFORMATION_BUFFER /** to store instance position, rotation and scale */
     };
 
     class VertexBufferObject {
@@ -34,6 +35,7 @@ namespace Graphics
         void initVboFloat();
         void initVboInt();
         void initVboInstanceVec3();
+        void initVboInstanceMat4();
         void bind();
     public:
         VertexBufferObject(DataType dataType, GLuint attribArray = 0);
@@ -44,6 +46,7 @@ namespace Graphics
         void updateData(const std::vector<glm::vec2>& data);
         void updateData(const std::vector<float>& data);
         void updateData(const std::vector<int>& data);
+        void updateData(const std::vector<glm::mat4>& data);
         void setAttribArray(GLuint value);
         static void unbindAll();
     };

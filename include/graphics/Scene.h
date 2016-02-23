@@ -18,6 +18,8 @@ namespace Graphics
         std::map<std::string, MeshInstance*> _meshInstances;
         std::vector<glm::vec3> _visiblePositions;
         std::vector<glm::vec4> _visibleRotations;
+        std::vector<glm::mat4> _visibleTransformations;
+        int _currentInstanceNumber;
         std::string _currentInstance;
     public:
         void addMeshInstance(MeshInstance *instance, const std::string& name);
@@ -28,6 +30,7 @@ namespace Graphics
 
         const std::vector<glm::vec3>& computeVisiblePositions(const glm::mat4 & VP);
         const std::vector<glm::vec4>& computeVisibleRotations(const glm::mat4 & VP);
+        const std::vector<glm::mat4>& computeVisibleTransformations(const glm::mat4 & VP);
 
         const std::vector<glm::vec3>& getVisiblePositions();
         const std::vector<glm::vec4>& getVisibleRotations();

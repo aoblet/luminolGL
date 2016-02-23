@@ -39,6 +39,10 @@ namespace Graphics
                 initVboInstanceVec3();
                 break;
 
+            case INSTANCE_TRANSFORMATION_BUFFER:
+                initVboInstanceMat4();
+                break;
+
             default: // no need to init element array buffer
                 break;
         }
@@ -87,8 +91,27 @@ namespace Graphics
     void VertexBufferObject::initVboInstanceVec3() {
         bind();
         glEnableVertexAttribArray( _attribArray );
-        glVertexAttribPointer( _attribArray, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0 );
+        glVertexAttribPointer( _attribArray, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0 );
         glVertexAttribDivisor( _attribArray, 1 );
+    }
+
+    void VertexBufferObject::initVboInstanceMat4() {
+        bind();
+
+//        GLuint location = 2;
+//        GLint components = 4;
+//        GLenum type = GL_FLOAT;
+//        GLboolean normalized = GL_FALSE;
+//        GLsizei datasize = sizeof( glm::mat4 );
+//        char* pointer = 0;
+//        GLuint divisor = 1;
+
+        for( int c = 0; c < 4; ++c )
+        {
+            glEnableVertexAttribArray( _attribArray + c );
+            glVertexAttribPointer( _attribArray + c, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(c * sizeof(glm::vec4)) );
+            glVertexAttribDivisor( _attribArray + c, 1 );
+        }
     }
 
     void VertexBufferObject::bind(){
@@ -122,6 +145,12 @@ namespace Graphics
     void VertexBufferObject::updateData(const std::vector<int>& data){
         bind();
         glBufferData(_target, data.size() * sizeof(GL_INT), data.data(), GL_STATIC_DRAW);
+    }
+
+
+    void VertexBufferObject::updateData(const std::vector<glm::mat4> &data) {
+        bind();
+        glBufferData(_target, data.size() * sizeof(glm::mat4), data.data(), GL_STATIC_DRAW);
     }
 
     void VertexBufferObject::setAttribArray(GLuint value){

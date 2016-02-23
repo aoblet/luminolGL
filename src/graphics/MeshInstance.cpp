@@ -56,6 +56,11 @@ namespace Graphics
         return _transformations.at(index);
     }
 
+
+    glm::mat4 MeshInstance::getTransformationMatrix(int index) const {
+        return _transformations.at(index).getTransformationMatrix();
+    }
+
     Geometry::BoundingBox MeshInstance::getBoundingBox(int index) const {
         return _transformations.at(index).getTransformationMatrix() * _referenceMesh->getBoundingBox();
     }

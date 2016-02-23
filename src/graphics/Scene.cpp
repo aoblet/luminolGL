@@ -2,6 +2,7 @@
 // Created by mehdi on 18/02/16.
 //
 
+#include <glm/gtx/string_cast.hpp>
 #include "graphics/Scene.h"
 
 namespace Graphics
@@ -19,7 +20,6 @@ namespace Graphics
     void Scene::setCurrentInstance(const std::string &name) {
         if(_meshInstances.count(name) < 1)
             throw std::runtime_error("Scene::setCurrentInstance : trying to access instance that doesn't exist");
-
         _currentInstance = name;
     }
 
@@ -31,6 +31,9 @@ namespace Graphics
                 _visiblePositions.push_back(_meshInstances[_currentInstance]->getPosition(i));
             }
         }
+
+        _currentInstanceNumber = _visiblePositions.size();
+
         return _visiblePositions;
     }
 
@@ -42,9 +45,24 @@ namespace Graphics
                 _visibleRotations.push_back(_meshInstances[_currentInstance]->getRotation(i));
             }
         }
+
+        _currentInstanceNumber = _visibleRotations.size();
+
         return _visibleRotations;
     }
 
+
+    const std::vector<glm::mat4> &Scene::computeVisibleTransformations(const glm::mat4 &VP) {
+        _visibleTransformations.clear();
+        for(int i = 0; i < _meshInstances[_currentInstance]->getInstanceNumber(); ++i){
+            if(_meshInstances[_currentInstance]->getBoundingBox(i).isVisible(VP)){
+                _visibleTransformations.push_back(_meshInstances[_currentInstance]->getTransformationMatrix(i));
+            }
+        }
+        _currentInstanceNumber = _visibleTransformations.size();
+
+        return _visibleTransformations;
+    }
 
     const std::vector<glm::vec3> &Scene::getVisiblePositions() {
         return _visiblePositions;
@@ -56,6 +74,6 @@ namespace Graphics
 
 
     int Scene::getInstanceNumber() {
-        return _visiblePositions.size();
+        return _currentInstanceNumber;
     }
 }
