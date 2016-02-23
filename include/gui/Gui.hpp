@@ -2,6 +2,7 @@
  
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <map>
 #include <string>
 #include <GL/glew.h>
@@ -26,38 +27,68 @@ namespace Gui{
     * According to the event the class will update the frame and the variables.
     */
 
+    struct Param{
+    	const char * _name;  
+    	float * _var;
+    	float _begin;
+    	float _end;
+    	float _step;
+
+   		Param(const char * name, float * var, float begin, float end, float step):
+			_name(name), _var(var), _begin(begin), _end(end), _step(step)
+		{
+
+		}
+
+
+    };
+
     class Gui {
 
     private:
 
-    	char lineBuffer[512];
-        float xwidth = 400;
-        float ywidth = 550;
+        double mousex, mousey;
+        const char * name;
         int width;
         int height;
         int DPI;
-        double mousex, mousey;
         unsigned char mbut = '0';
         int mscroll = 0;
         int logScroll = 0;
+    	char lineBuffer[512];
+        float xwidth = 400;
+        float ywidth = 550;
 	
 
 	public:
 
-		Gui(int DPI, int width, int height);
-    	Gui(int DPI, int width, int height, float xwidth, float ywidth, 
-    		unsigned char mbut, int mscrool, int logScrool);
-    
+		Gui(int DPI, int width, int height, const char * name);
+
     	void beginFrame();
     	void getCursorPos(GLFWwindow * window);
     	void updateFrame();
     	void updateMbut(bool leftButtonPress);
-    	void scrollArea(std::map<std::string, float*> & imguiParams, Light::LightHandler & lightHandler, 
-    		Geometry::Spline3D & spline, View::CameraController & cameraController, 
-    		GUI::UserInput & userInput, 
-    		std::map<std::string, Graphics::ShaderProgram*> & imguiShaders,
-    		std::map<std::string,std::string> & imguiUniforms
-    		);
+    	void setScrollArea();
+
+		void addSlider(const char * name, float * var, float begin, float end, float step);
+		void addSlider(Param & p);
+		void addSlider(std::vector<Param> & params);
+
+        void addLabel(const char * label);
+    	void addLabel(const char * label, float * var);
+		void addLabel(const char * label, int var);
+
+		bool addButton(const char * name);
+
+		void addSeparator();
+
+    	void addSliderDirectionalLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
+    	void addSliderSpotLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float dirBegin=-1, float dirEnd=1, float dirStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
+    	void addSliderPointLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
+
+		void addSliderSpline(Geometry::Spline3D & spline, float posBegin=-300, float posEnd=300, float posStep=0.001);
+
+
     	void scrollAreaEnd();
 
     };

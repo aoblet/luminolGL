@@ -183,7 +183,7 @@ int main( int argc, char **argv )
     GLenum glerr = GL_NO_ERROR;
     glerr = glGetError();
 
-    Gui::Gui gui(DPI, width, height);
+    Gui::Gui gui(DPI, width, height, "LuminoGL");
     if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
     {
         fprintf(stderr, "Could not init GUI renderer.\n");
@@ -1021,47 +1021,65 @@ int main( int argc, char **argv )
 
 
 
+        float sample = sampleCount;
      
         gui.beginFrame();
         gui.getCursorPos(window);
         gui.updateFrame();
+        gui.setScrollArea();
 
         bool leftButtonPress = false;
         if( leftButton == GLFW_PRESS ) leftButtonPress = true;
 
-        gui.updateMbut(leftButtonPress);   
+        gui.updateMbut(leftButtonPress);  
+
+        gui.addLabel("FPS", &fps);
+
+        if(gui.addButton("Camera switch"))
+            cameraController.setSpectator(!cameraController.isSpectator());
+        gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+        gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
+
+        if(gui.addButton("IsNormalMapActive"))
+            mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
+
+        gui.addSeparator();
+        gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
+        gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
+        gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
+        gui.addSeparator();
+
+        gui.addLabel("Post-FX parameters");
+        gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
+        gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
+        gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
+        gui.addSlider("Blur Sample Count", &sample, 0, 32, 1);
+        gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
+        gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
+        gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+        gui.addSeparator();
+
+        gui.addLabel("General Lights Parameters");
+        gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
+        gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
+        gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
+        gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+        gui.addSeparator();
+
+        gui.addSliderPointLights(lightHandler);
+        gui.addSliderDirectionalLights(lightHandler);
+        gui.addSliderSpotLights(lightHandler);
 
 
-        float sample = sampleCount;
-        std::map<std::string,float*> imguiParams = {
-            { "FPS", &fps },
-            { "Slider", &SliderValue },
-            { "InstanceNumber", &instanceNumber },
-            { "SliderMultiply", &SliderMult }, 
-            { "Shadow Bias", &shadowBias }, 
-            { "Gamma", &gamma }, 
-            { "SobelIntensity", &sobelIntensity }, 
-            { "BlurSampleCount", &sample }, 
-            { "FocusNear", &focus[0] }, 
-            { "FocusPosition", &focus[1] }, 
-            { "FocusFar", &focus[2] },
-        };
-        sampleCount = sample;
-
-        // const std::string UNIFORM_NAME_NORMAL_MAP_ACTIVE
-        // Graphics::ShaderProgram mainShader
-        std::map<std::string, Graphics::ShaderProgram*> imguiShaders = {
-            { "mainShader", &mainShader }
-        };
-        std::map<std::string,std::string> imguiUniforms = {
-            {"UNIFORM_NAME_NORMAL_MAP_ACTIVE", UNIFORM_NAME_NORMAL_MAP_ACTIVE}
-        };
-
-        gui.scrollArea(imguiParams, lightHandler, cameraController.viewTargets(), cameraController, userInput, imguiShaders, imguiUniforms);
+        gui.addSliderSpline(cameraController.viewTargets());
+        if(gui.addButton("Add Spline"))
+            cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
+                
         gui.scrollAreaEnd();
         
-
         
+        sampleCount = sample;
+            
 
         glDisable(GL_BLEND);
 #endif

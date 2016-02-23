@@ -1,7 +1,7 @@
 
 #include "lights/Light.hpp"
 
-#define DEBUG 1
+#define DEBUG 0
 
 namespace Light{
 
