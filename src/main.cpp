@@ -183,13 +183,17 @@ int main( int argc, char **argv )
     GLenum glerr = GL_NO_ERROR;
     glerr = glGetError();
 
+
+    // GUI
     Gui::Gui gui(DPI, width, height, "LuminoGL");
+
     if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
     {
         fprintf(stderr, "Could not init GUI renderer.\n");
         return(EXIT_FAILURE);
     }
 
+    // Shaders
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "../shaders/aogl.geom", "../shaders/aogl.frag");
     Graphics::ShaderProgram debugShader("../shaders/blit.vert", "", "../shaders/blit.frag");
     Graphics::ShaderProgram pointLightShader(debugShader.vShader(), "../shaders/pointLight.frag");
@@ -1030,53 +1034,62 @@ int main( int argc, char **argv )
 
         bool leftButtonPress = false;
         if( leftButton == GLFW_PRESS ) leftButtonPress = true;
-
         gui.updateMbut(leftButtonPress);  
 
         gui.addLabel("FPS", &fps);
 
         if(gui.addButton("Camera switch"))
             cameraController.setSpectator(!cameraController.isSpectator());
-        gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
-        gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
 
         if(gui.addButton("IsNormalMapActive"))
             mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
         gui.addSeparator();
-        gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
-        gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
-        gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
-        gui.addSeparator();
 
-        gui.addLabel("Post-FX parameters");
-        gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
-        gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
-        gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
-        gui.addSlider("Blur Sample Count", &sample, 0, 32, 1);
-        gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
-        gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
-        gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
-        gui.addSeparator();
+        if(gui.addButton("General Parameters", gui.displayGeneralParameters) ){         
+            gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
+            gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
+            gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
+            gui.addSeparator();
+        }
 
-        gui.addLabel("General Lights Parameters");
-        gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
-        gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
-        gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
-        gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
-        gui.addSeparator();
+        if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){ 
+            gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
+            gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
+            gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
+            gui.addSlider("Blur Sample Count", &sample, 0, 32, 1);
+            gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
+            gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
+            gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+            gui.addSeparator();
+        }
 
-        gui.addSliderPointLights(lightHandler);
-        gui.addSliderDirectionalLights(lightHandler);
-        gui.addSliderSpotLights(lightHandler);
+        if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){   
+            gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
+            gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
+            gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
+            gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+            gui.addSeparator();
+        }
 
+        if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
+            gui.addSliderPointLights(lightHandler);
 
-        gui.addSliderSpline(cameraController.viewTargets());
-        if(gui.addButton("Add Spline"))
-            cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
-                
-        gui.scrollAreaEnd();
+        if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters))
+            gui.addSliderSpotLights(lightHandler);
+
+        if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters))
+            gui.addSliderDirectionalLights(lightHandler);
+
+        if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){ 
+            gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+            gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
+            gui.addSliderSpline(cameraController.viewTargets());
+            if(gui.addButton("Add Spline"))
+                cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
+        }
         
+        gui.scrollAreaEnd();
         
         sampleCount = sample;
             

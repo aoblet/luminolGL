@@ -69,6 +69,14 @@ namespace Gui{
         return(imguiButton(name));
     }
 
+    bool Gui::addButton(const char * name, bool & display){
+        if(imguiButton(name)){   
+            if(!display) display = true;
+            else display = false;
+        }
+        return display;
+    }
+
     void Gui::addSeparator(){
         imguiSeparatorLine();
     }

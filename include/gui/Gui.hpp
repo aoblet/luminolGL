@@ -58,7 +58,7 @@ namespace Gui{
     	char lineBuffer[512];
         float xwidth = 400;
         float ywidth = 550;
-	
+
 
 	public:
 
@@ -79,6 +79,7 @@ namespace Gui{
 		void addLabel(const char * label, int var);
 
 		bool addButton(const char * name);
+		bool addButton(const char * name, bool & display);
 
 		void addSeparator();
 
@@ -90,6 +91,14 @@ namespace Gui{
 
 
     	void scrollAreaEnd();
+
+
+
+    	bool displayGeneralLightParameters = false, displayPointLightParameters = false, 
+		    displaySpotLightParameters = false,  
+		    displayDirectionalLightParameters = false, displayCameraSplineParameters = false,
+		    displayPostFxParameters = false, displayGeneralParameters = true;
+	
 
     };
 }
