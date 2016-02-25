@@ -22,6 +22,7 @@ namespace Graphics
         void addVBO(VertexBufferObject* vbo);
         void init();
         void bind();
+        GLuint glId();
         static void unbindAll();
     };
 }

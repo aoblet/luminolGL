@@ -8,6 +8,27 @@
 namespace Graphics
 {
 
+
+    Scene::Scene() : _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3) { }
+
+
+    void Scene::init() {
+        for(auto& instance : _meshInstances){
+            instance.second->attachInstanceTransformVBO(&_visibleTransformationsVBO);
+            instance.second->init();
+        }
+    }
+
+    void Scene::draw(const glm::mat4 &VP) {
+        for(auto& instance : _meshInstances){
+            setCurrentInstance(instance.first);
+            _visibleTransformationsVBO.updateData(computeVisibleTransformations(VP));
+            instance.second->bindVAO();
+            instance.second->bindTextures();
+            instance.second->draw(getInstanceNumber());
+        }
+    }
+
     void Scene::addMeshInstance(MeshInstance *instance, const std::string& name) {
         _meshInstances.insert({name, instance});
     }
@@ -23,35 +44,6 @@ namespace Graphics
         _currentInstance = name;
     }
 
-    const std::vector<glm::vec3>& Scene::computeVisiblePositions(const glm::mat4 & VP){
-        _visiblePositions.clear();
-
-        for(int i = 0; i < _meshInstances[_currentInstance]->getInstanceNumber(); ++i){
-            if(_meshInstances[_currentInstance]->getBoundingBox(i).isVisible(VP)){
-                _visiblePositions.push_back(_meshInstances[_currentInstance]->getPosition(i));
-            }
-        }
-
-        _currentInstanceNumber = _visiblePositions.size();
-
-        return _visiblePositions;
-    }
-
-    const std::vector<glm::vec4>& Scene::computeVisibleRotations(const glm::mat4 & VP){
-        _visibleRotations.clear();
-
-        for(int i = 0; i < _meshInstances[_currentInstance]->getInstanceNumber(); ++i){
-            if(_meshInstances[_currentInstance]->getBoundingBox(i).isVisible(VP)){
-                _visibleRotations.push_back(_meshInstances[_currentInstance]->getRotation(i));
-            }
-        }
-
-        _currentInstanceNumber = _visibleRotations.size();
-
-        return _visibleRotations;
-    }
-
-
     const std::vector<glm::mat4> &Scene::computeVisibleTransformations(const glm::mat4 &VP) {
         _visibleTransformations.clear();
         for(int i = 0; i < _meshInstances[_currentInstance]->getInstanceNumber(); ++i){
@@ -63,15 +55,6 @@ namespace Graphics
 
         return _visibleTransformations;
     }
-
-    const std::vector<glm::vec3> &Scene::getVisiblePositions() {
-        return _visiblePositions;
-    }
-
-    const std::vector<glm::vec4> &Scene::getVisibleRotations() {
-        return _visibleRotations;
-    }
-
 
     int Scene::getInstanceNumber() {
         return _currentInstanceNumber;

@@ -8,7 +8,38 @@
 namespace Graphics
 {
 
-    MeshInstance::MeshInstance(Mesh *referenceMesh) : _referenceMesh(referenceMesh) { }
+    MeshInstance::MeshInstance(Mesh *referenceMesh) :
+            _referenceMesh(referenceMesh),
+            _VAO(),
+            _verticesVBO(Graphics::VERTEX_DESCRIPTOR),
+            _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER)
+    { }
+
+
+    void MeshInstance::attachInstanceTransformVBO(VertexBufferObject *vbo) {
+        _VAO.addVBO(vbo);
+    }
+
+    void MeshInstance::init() {
+        _VAO.addVBO(&_verticesVBO);
+        _VAO.addVBO(&_indexesVBO);
+        _VAO.init();
+
+        _verticesVBO.updateData(_referenceMesh->getVertices());
+        _indexesVBO.updateData(_referenceMesh->getElementIndex());
+    }
+
+    void MeshInstance::bindVAO() {
+        _VAO.bind();
+    }
+
+    void MeshInstance::bindTextures() {
+        _referenceMesh->bindTextures();
+    }
+
+    void MeshInstance::draw(int instanceNumber) {
+        glDrawElementsInstanced(GL_TRIANGLES, _referenceMesh->getVertexCount(), GL_UNSIGNED_INT, (void*)0, instanceNumber);
+    }
 
     void MeshInstance::addInstance(const Geometry::Transformation &trans) {
         _transformations.push_back(trans);

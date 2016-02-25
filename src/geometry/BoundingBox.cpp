@@ -7,8 +7,8 @@
 
 namespace Geometry
 {
-    bool BoundingBox::isVisible(const glm::mat4 &MVP)  const {
-        glm::vec4 projInitPoint = MVP * glm::vec4(_points[0], 1.0);
+    bool BoundingBox::isVisible(const glm::mat4 &VP)  const {
+        glm::vec4 projInitPoint = VP * glm::vec4(_points[0], 1.0);
 
         if(projInitPoint.z < 0) return false;
 
@@ -20,7 +20,7 @@ namespace Geometry
         float ymax = projInitPoint.y;
 
         for(auto& point : _points){
-            glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
+            glm::vec4 projPoint = VP * glm::vec4(point, 1.0);
             projPoint /= projPoint.w;
             if( projPoint.x < xmin) xmin = projPoint.x;
             if( projPoint.y > ymax) ymax = projPoint.y;

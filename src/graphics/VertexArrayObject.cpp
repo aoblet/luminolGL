@@ -26,6 +26,10 @@ namespace Graphics
         }
     }
 
+    GLuint VertexArrayObject::glId() {
+        return _glId;
+    }
+
     void VertexArrayObject::unbindAll() {
         glBindVertexArray(0);
     }

@@ -98,14 +98,6 @@ namespace Graphics
     void VertexBufferObject::initVboInstanceMat4() {
         bind();
 
-//        GLuint location = 2;
-//        GLint components = 4;
-//        GLenum type = GL_FLOAT;
-//        GLboolean normalized = GL_FALSE;
-//        GLsizei datasize = sizeof( glm::mat4 );
-//        char* pointer = 0;
-//        GLuint divisor = 1;
-
         for( int c = 0; c < 4; ++c )
         {
             glEnableVertexAttribArray( _attribArray + c );
