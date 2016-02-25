@@ -56,7 +56,7 @@ namespace Gui{
     		Geometry::Spline3D & spline, View::CameraController & cameraController, 
     		GUI::UserInput & userInput, 
     		std::map<std::string, Graphics::ShaderProgram*> & imguiShaders,
-    		std::map<std::string,std::string> & imguiUniforms
+    		std::map<std::string,std::string> & imguiUniforms,int& isNormalMapActive
     		);
     	void scrollAreaEnd();
 

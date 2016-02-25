@@ -53,12 +53,9 @@ namespace Gui{
 		View::CameraController & cameraController,
 		GUI::UserInput & userInput,
 		std::map<std::string, Graphics::ShaderProgram*> & imguiShaders,
-    	std::map<std::string,std::string> & imguiUniforms
+    	std::map<std::string,std::string> & imguiUniforms, int& isNormalMapActive
 	)
 	{
-
-		int isNormalMapActive = 1;
-		
 
 		imguiBeginScrollArea("aogl", width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
 		
@@ -75,7 +72,7 @@ namespace Gui{
 
         imguiSeparatorLine();
         if(imguiButton("IsNormalMapActive"))
-            // imguiShaders["mainShader"]->updateUniform(imguiUniforms["UNIFORM_NAME_NORMAL_MAP_ACTIVE"], (imguiParams["isNormalMapActive"] = imguiParams["isNormalMapActive"] ? 0.f : 1.f));
+//             imguiShaders["mainShader"]->updateUniform(imguiUniforms["UNIFORM_NAME_NORMAL_MAP_ACTIVE"], (imguiParams["isNormalMapActive"] = imguiParams["isNormalMapActive"] ? 0.f : 1.f));
             imguiShaders["mainShader"]->updateUniform(imguiUniforms["UNIFORM_NAME_NORMAL_MAP_ACTIVE"], (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
 		imguiLabel("Post-FX parameters");
