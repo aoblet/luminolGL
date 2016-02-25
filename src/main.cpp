@@ -902,7 +902,7 @@ int main( int argc, char **argv )
             cameraController.setSpectator(!cameraController.isSpectator());
 
         if(gui.addButton("IsNormalMapActive"))
-            mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
+            mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
         gui.addSeparatorLine();
 
@@ -917,7 +917,7 @@ int main( int argc, char **argv )
             gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
             gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
             gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
-            gui.addSliderInt("Blur Sample Count", &sampleCount, 0, 32, 1);
+            gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
             gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
             gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
             gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
