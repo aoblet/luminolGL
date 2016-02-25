@@ -35,6 +35,10 @@ namespace Graphics
                 initVboInt();
                 break;
 
+            case INSTANCE_BUFFER:
+                initVboInstanceVec3();
+                break;
+
             default: // no need to init element array buffer
                 break;
         }
@@ -77,6 +81,14 @@ namespace Graphics
         bind();
         glEnableVertexAttribArray(_attribArray);
         glVertexAttribPointer(_attribArray, 1, GL_INT, GL_FALSE, 0, (void*)0);
+    }
+
+
+    void VertexBufferObject::initVboInstanceVec3() {
+        bind();
+        glEnableVertexAttribArray( _attribArray );
+        glVertexAttribPointer( _attribArray, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0 );
+        glVertexAttribDivisor( _attribArray, 1 );
     }
 
     void VertexBufferObject::bind(){

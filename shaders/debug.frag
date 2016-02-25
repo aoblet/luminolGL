@@ -9,6 +9,6 @@ layout(location = FRAG_COLOR) out vec4 FragColor;
 in vec3 WorldPosition;
 
 void main()
-{	
-	FragColor = vec4(1,1,1,1);
+{
+	FragColor = vec4(vec3(0.2, 0.3, 0.2), 1);
 }

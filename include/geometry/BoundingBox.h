@@ -17,11 +17,16 @@ namespace Geometry
     private:
         std::vector<glm::vec3> _points;
     public:
-        bool isVisible(const View::CameraFreefly& camera) const;
+        bool isVisible(const glm::mat4 &MVP) const;
         void compute(const std::vector<Graphics::VertexDescriptor>& vertices);
         const std::vector<glm::vec3>& getVector() const;
+        friend BoundingBox operator*(const glm::mat4 &trans, const BoundingBox& box1);
     };
+    BoundingBox operator*(const glm::mat4 &trans, const BoundingBox& box1);
+
 }
+
+
 
 
 

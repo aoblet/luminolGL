@@ -18,7 +18,8 @@ namespace Graphics
         VEC2,
         FLOAT,
         INT,
-        ELEMENT_ARRAY_BUFFER
+        ELEMENT_ARRAY_BUFFER,
+        INSTANCE_BUFFER /** to store instance position or rotation or whatever you want */
     };
 
     class VertexBufferObject {
@@ -32,6 +33,7 @@ namespace Graphics
         void initVboVec2();
         void initVboFloat();
         void initVboInt();
+        void initVboInstanceVec3();
         void bind();
     public:
         VertexBufferObject(DataType dataType, GLuint attribArray = 0);

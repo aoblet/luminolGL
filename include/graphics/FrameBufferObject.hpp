@@ -4,26 +4,37 @@
 #include <GL/gl.h>
 #include <vector>
 #include "TextureHandler.h"
+#include <glm/vec2.hpp>
 
 namespace Graphics{
+    /**
+     * FBO wrapper.
+     * Textures are not handled here: avoid one indirection when accessing - subclasses responsibilities.
+     */
     class FrameBufferObject{
     protected:
         GLuint _id;
-        TextureHandler _textures;
         std::vector<GLuint> _drawBuffers;
-        int _widthTextures;
-        int _heightTextures;
+        glm::ivec2 _resolutionTextures;
 
     public:
-        FrameBufferObject(int widthTextures, int heightTextures);
+        FrameBufferObject(const glm::ivec2& resolutionTextures);
         virtual ~FrameBufferObject();
 
-        void attachFrameBufferTexture(GLuint attachement, GLuint textureId);
+        void attachTexture(GLuint attachment, GLuint textureId);
+        void attachRenderBuffer(GLuint attachment, GLuint renderBufferId);
 
         static void checkStatus();
         virtual void build() = 0;
         GLuint id() const;
-        void bind() const;
-        void unbind() const;
+        void bind();
+        void unbind();
+
+        void clearColor();
+        void clearDepth();
+        void clear();
+        void clear(GLenum what);
+
+        glm::ivec2& resolution();
     };
 }
