@@ -29,7 +29,7 @@ void CameraController::updateFromInput(const GUI::UserInput& userInput) {
     glm::vec3 movement;
     movement.z = userInput.is_PRESSED_Z ? 1 : (userInput.is_PRESSED_S ? -1 : 0) ;
     movement.x  = userInput.is_PRESSED_Q ? 1 : (userInput.is_PRESSED_D ? -1 : 0) ;
-    movement.y  = userInput.is_PRESSED_SPACE ? 1 : (userInput.is_PRESSED_ALT ? -1 : 0) ;
+    movement.y  = userInput.is_PRESSED_SPACE ? 1 : (userInput.is_PRESSED_CTRL ? -1 : 0) ;
     movement *= 0.05f;
     _camera.update(userInput.rotate * userInput.velocityRotate, movement * userInput.velocityMovement);
 }

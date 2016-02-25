@@ -28,6 +28,7 @@ namespace Geometry
             if( projPoint.y < ymin) ymin = projPoint.y;
         }
 
+        // screen space limit (between -1 and 1 for each axis x,y and z)
         float limit = 1;
         return !(
                     (xmax<-limit) ||
