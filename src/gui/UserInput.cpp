@@ -10,7 +10,7 @@ void UserInput::update(GLFWwindow *window) {
     is_PRESSED_S        = glfwGetKey(window, GLFW_KEY_S ) == GLFW_PRESS;
     is_PRESSED_D        = glfwGetKey(window, GLFW_KEY_D ) == GLFW_PRESS;
     is_PRESSED_SPACE    = glfwGetKey(window, GLFW_KEY_SPACE ) == GLFW_PRESS;
-    is_PRESSED_ALT      = glfwGetKey(window, GLFW_KEY_LEFT_ALT ) == GLFW_PRESS;
+    is_PRESSED_CTRL = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL ) == GLFW_PRESS;
     velocityMovement    = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? 2.f : 1;
 
     if(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_MIDDLE) != GLFW_PRESS){
