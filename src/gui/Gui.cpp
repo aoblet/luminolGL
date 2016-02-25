@@ -33,6 +33,13 @@ namespace Gui{
         else mbut = '0';
 	}
 
+    void Gui::init(GLFWwindow * window){
+        beginFrame();
+        getCursorPos(window);
+        updateFrame();
+        setScrollArea();
+    }
+
 	void Gui::addSlider(const char * name, float * var, float begin, float end, float step){
 		imguiSlider(name, var, begin, end, step);
 	}
@@ -47,12 +54,16 @@ namespace Gui{
         }
 	}
 
+    void Gui::addSliderInt(const char* text, int* val, float vmin, float vmax, float vinc, bool enabled){
+        imguiSliderInt(text, val, vmin, vmax, vinc, enabled);
+    }
+
     void Gui::addLabel(const char * label){
         imguiLabel(label);
     }
 
     void Gui::addLabel(const char * label, float * var){
-        sprintf(lineBuffer, "%s %f", label, var );
+        sprintf(lineBuffer, "%s %f", label, *var );
         imguiLabel(lineBuffer);
     }
 
@@ -77,31 +88,28 @@ namespace Gui{
         return display;
     }
 
-    void Gui::addSeparator(){
-        imguiSeparatorLine();
-    }
-
     void Gui::addSliderDirectionalLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
-
+        addIndent();
         addLabel("Directional Light: 0");
- 
+        addIndent();
         imguiSlider("DL: direction.x", &lightHandler._directionnalLights[0]._pos.x, posBegin, posEnd, posStep);
         imguiSlider("DL: direction.y", &lightHandler._directionnalLights[0]._pos.y, posBegin, posEnd, posStep);
         imguiSlider("DL: direction.z", &lightHandler._directionnalLights[0]._pos.z, posBegin, posEnd, posStep);
-        imguiSlider("DL: color.R", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01);
-        imguiSlider("DL: color.G", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01);
-        imguiSlider("DL: color.B", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01);
+            imgui3Slider("Red", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01, 1);
+            imgui3Slider("Green", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01, 2);
+            imgui3Slider("Blue", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01, 3);
         imguiSlider("DL: intensity", &lightHandler._directionnalLights[0]._intensity, attBegin, attEnd, attStep);
         imguiSlider("DL: attenuation", &lightHandler._directionnalLights[0]._attenuation, attBegin, attEnd, attStep);
-        
-        addSeparator();
+        addUnindent();
+        addSeparatorLine();
     }
 
     void Gui::addSliderSpotLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float dirBegin, float dirEnd, float dirStep, float attBegin, float attEnd, float attStep){
 
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
+            addIndent();
             addLabel("Spot Light: ", (int)i);
-
+            addIndent();
             imguiSlider("SL: position.x", &lightHandler._spotLights[i]._pos.x, posBegin, posEnd, posStep);
             imguiSlider("SL: position.y", &lightHandler._spotLights[i]._pos.y, posBegin, posEnd, posStep);
             imguiSlider("SL: position.z", &lightHandler._spotLights[i]._pos.z, posBegin, posEnd, posStep);
@@ -110,30 +118,36 @@ namespace Gui{
             imguiSlider("SL: direction.y", &lightHandler._spotLights[i]._dir.y, -1, 1, 0.001);
             imguiSlider("SL: direction.z", &lightHandler._spotLights[i]._dir.z, -1, 1, 0.001);
 
+            imgui3Slider("Red", &lightHandler._spotLights[i]._color.r, 0, 1, 0.01, 1);
+            imgui3Slider("Green", &lightHandler._spotLights[i]._color.g, 0, 1, 0.01, 2);
+            imgui3Slider("Blue", &lightHandler._spotLights[i]._color.b, 0, 1, 0.01, 3);
+
             imguiSlider("SL: angle", &lightHandler._spotLights[i]._angle, 0, 180, 0.001);
             imguiSlider("SL: falloff", &lightHandler._spotLights[i]._falloff, 0, 180, 0.001);
             imguiSlider("SL: intensity", &lightHandler._spotLights[i]._intensity, 0, 1, 0.001);
             imguiSlider("SL: attenuation", &lightHandler._spotLights[i]._attenuation, attBegin, attEnd, attStep);
+            addUnindent();
         }
-        addSeparator();
+        addSeparatorLine();
     }
 
     void Gui::addSliderPointLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
 
         for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
+            addIndent();
             addLabel("Point Light: ", (int)i);
-
+            addIndent();
             imguiSlider("PL: position.x", &lightHandler._pointLights[i]._pos.x, posBegin, posEnd, posStep);
             imguiSlider("PL: position.y", &lightHandler._pointLights[i]._pos.y, -3.0, 12.0, posStep);
             imguiSlider("PL: position.z", &lightHandler._pointLights[i]._pos.z, posBegin, posEnd, posStep);
-            imguiSlider("PL: color.R", &lightHandler._pointLights[i]._color.r, 0, 1, 0.01);
-            imguiSlider("PL: color.G", &lightHandler._pointLights[i]._color.g, 0, 1, 0.01);
-            imguiSlider("PL: color.B", &lightHandler._pointLights[i]._color.b, 0, 1, 0.01);
             imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 1, 0.001);
             imguiSlider("PL: attenuation", &lightHandler._pointLights[i]._attenuation, attBegin, attEnd, attStep);
-        
+            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 1, 0.01, 1);
+            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 1, 0.01, 2);
+            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 1, 0.01, 3);
+            addUnindent();
         }
-        addSeparator();
+        addSeparatorLine();
     }
 
     void Gui::addSliderSpline(Geometry::Spline3D & spline, float posBegin, float posEnd, float posStep){
@@ -141,11 +155,49 @@ namespace Gui{
         addLabel("Spline Handler");
         addSeparator();
         for(size_t i = 0; i < spline.size(); ++i){
+            addIndent();
             addLabel("point");
             imguiSlider("x", &spline[i].x, posBegin, posEnd, posStep);
             imguiSlider("y", &spline[i].y, posBegin, posEnd, posStep);
             imguiSlider("z", &spline[i].z, posBegin, posEnd, posStep);
+            addUnindent();
         }
+    }
+
+    bool Gui::addCheckBox(const char* text, bool checked, bool enabled){
+        return imguiCheck(text, checked, enabled);
+    }
+
+    bool Gui::addItem(const char* text, bool enabled){
+        return imguiItem(text, enabled);
+    }
+
+    bool Gui::addCollapse(const char* text, const char* subtext, bool checked, bool enabled){
+        return imguiCollapse(text, subtext, checked, enabled);
+    }
+
+    void Gui::addValue(const char* text){
+        imguiValue(text);
+    }
+
+    void Gui::addIndent()
+    {
+        imguiIndent();
+    }
+
+    void Gui::addUnindent()
+    {
+        imguiUnindent();
+    }
+
+    void Gui::addSeparator()
+    {
+        imguiSeparator();
+    }
+
+    void Gui::addSeparatorLine()
+    {
+        imguiSeparatorLine();
     }
 
 	void Gui::scrollAreaEnd(){
@@ -153,5 +205,10 @@ namespace Gui{
         imguiEndFrame();
         imguiRenderGLDraw(width, height);
 	}
+
+
+
+
+
 
 }

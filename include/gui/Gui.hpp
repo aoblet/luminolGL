@@ -70,9 +70,12 @@ namespace Gui{
     	void updateMbut(bool leftButtonPress);
     	void setScrollArea();
 
+    	void init(GLFWwindow * window);;
+
 		void addSlider(const char * name, float * var, float begin, float end, float step);
 		void addSlider(Param & p);
 		void addSlider(std::vector<Param> & params);
+		void addSliderInt(const char* text, int* val, float vmin, float vmax, float vinc, bool enabled = true);
 
         void addLabel(const char * label);
     	void addLabel(const char * label, float * var);
@@ -81,23 +84,33 @@ namespace Gui{
 		bool addButton(const char * name);
 		bool addButton(const char * name, bool & display);
 
-		void addSeparator();
-
     	void addSliderDirectionalLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
     	void addSliderSpotLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float dirBegin=-1, float dirEnd=1, float dirStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
     	void addSliderPointLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
 
 		void addSliderSpline(Geometry::Spline3D & spline, float posBegin=-300, float posEnd=300, float posStep=0.001);
 
+    	bool addCheckBox(const char* text, bool checked, bool enabled);
+		bool addItem(const char* text, bool enabled);
+    	bool addCollapse(const char* text, const char* subtext, bool checked, bool enabled);
+    	void addValue(const char* text);
+
+	    void addIndent();
+	    void addUnindent();
+	    void addSeparator();
+	    void addSeparatorLine();
 
     	void scrollAreaEnd();
 
 
 
-    	bool displayGeneralLightParameters = false, displayPointLightParameters = false, 
-		    displaySpotLightParameters = false,  
-		    displayDirectionalLightParameters = false, displayCameraSplineParameters = false,
-		    displayPostFxParameters = false, displayGeneralParameters = true;
+		bool displayGeneralParameters = true;
+    	bool displayGeneralLightParameters = false;
+		bool displayPointLightParameters = false;
+		bool displaySpotLightParameters = false;
+		bool displayDirectionalLightParameters = false;
+		bool displayCameraSplineParameters = false;
+		bool displayPostFxParameters = false;
 	
 
     };

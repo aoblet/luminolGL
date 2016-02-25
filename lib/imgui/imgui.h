@@ -58,7 +58,8 @@ bool imguiCollapse(const char* text, const char* subtext, bool checked, bool ena
 void imguiLabel(const char* text);
 void imguiValue(const char* text);
 bool imguiSlider(const char* text, float* val, float vmin, float vmax, float vinc, bool enabled = true);
-
+bool imgui3Slider(const char* text, float* val, float vmin, float vmax, float vinc, int pos, bool enabled = true);
+bool imguiSliderInt(const char* text, int* val, float vmin, float vmax, float vinc, bool enabled = true);
 void imguiDrawText(int x, int y, int align, const char* text, unsigned int color);
 void imguiDrawLine(float x0, float y0, float x1, float y1, float r, unsigned int color);
 void imguiDrawRoundedRect(float x, float y, float w, float h, float r, unsigned int color);

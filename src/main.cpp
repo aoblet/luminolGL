@@ -1024,17 +1024,10 @@ int main( int argc, char **argv )
         glViewport(0, 0, width, height);
 
 
-
-        float sample = sampleCount;
      
-        gui.beginFrame();
-        gui.getCursorPos(window);
-        gui.updateFrame();
-        gui.setScrollArea();
 
-        bool leftButtonPress = false;
-        if( leftButton == GLFW_PRESS ) leftButtonPress = true;
-        gui.updateMbut(leftButtonPress);  
+        gui.init(window);
+        gui.updateMbut(leftButton == GLFW_PRESS);  
 
         gui.addLabel("FPS", &fps);
 
@@ -1044,24 +1037,24 @@ int main( int argc, char **argv )
         if(gui.addButton("IsNormalMapActive"))
             mainShader.updateUniform(UNIFORM_NAME_NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
-        gui.addSeparator();
+        gui.addSeparatorLine();
 
         if(gui.addButton("General Parameters", gui.displayGeneralParameters) ){         
             gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
             gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
             gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
-            gui.addSeparator();
+            gui.addSeparatorLine();
         }
 
         if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){ 
             gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
             gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
             gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
-            gui.addSlider("Blur Sample Count", &sample, 0, 32, 1);
+            gui.addSliderInt("Blur Sample Count", &sampleCount, 0, 32, 1);
             gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
             gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
             gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
-            gui.addSeparator();
+            gui.addSeparatorLine();
         }
 
         if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){   
@@ -1069,7 +1062,7 @@ int main( int argc, char **argv )
             gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
             gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
             gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
-            gui.addSeparator();
+            gui.addSeparatorLine();
         }
 
         if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
@@ -1091,7 +1084,7 @@ int main( int argc, char **argv )
         
         gui.scrollAreaEnd();
         
-        sampleCount = sample;
+
             
 
         glDisable(GL_BLEND);
@@ -1104,6 +1097,7 @@ int main( int argc, char **argv )
 
         double newTime = glfwGetTime();
         fps = 1.f/ (newTime - t);
+
     } // Check if the ESC key was pressed
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS );
 
