@@ -18,13 +18,13 @@ namespace Graphics
 {
     class Mesh {
     private:
-        unsigned int _vertexCount; /** Number of vertices in the mesh */
-        unsigned int _triangleCount; /** Number of triangles in the mesh */
-        std::vector<VertexDescriptor> _vertices; /** Vertices attributes (position, normal , uv) */
-        std::vector<int> _elementIndex; /** Vertices indexes (vertices drawing order) */
-        Geometry::BoundingBox _boundaries /** Bounding box of the mesh */;
-        std::map<GLenum, Texture*> _textures /** Textures attached to the mesh with a specific binding point (GL_TEXTURE0, GL_TEXTURE1, ...) */;
+        unsigned int _vertexCount;              /** Vertices numbers sent to draw call openGL (linked with _elements indexes)*/
+        unsigned int _triangleCount;            /** Number of triangles in the mesh */
+        std::vector<VertexDescriptor> _vertices;/** Vertices attributes (position, normal , uv) */
+        std::vector<int> _elementIndex;         /** Vertices indexes (vertices drawing order) */
+        Geometry::BoundingBox _boundaries       /** Bounding box of the mesh */;
     public:
+        std::map<GLenum, Texture*> _textures    /** Textures attached to the mesh with a specific binding point (GL_TEXTURE0, GL_TEXTURE1, ...) */;
         Mesh();
         Mesh(Mesh&& mesh);
 
@@ -62,8 +62,10 @@ namespace Graphics
         static Mesh genPlane(float width = 1.f, float height = 1.f, float textureLoop = 1, const glm::vec3 & offset = glm::vec3(0,0,0));
         static Mesh genSphere(int latitudeBands, int longitudeBands, float radius = 1.f, const glm::vec3 & offset = glm::vec3(0,0,0));
 
-        /** Static function to load a mesh using assimp */
-        static Mesh loadMesh(const std::string& filePath);
+        /**
+         * Static function to load a mesh using assimp.
+         */
+        static Mesh loadMesh(const std::string &modelPath);
     };
 }
 
