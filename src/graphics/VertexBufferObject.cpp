@@ -13,6 +13,10 @@ namespace Graphics
         _target = _dataType == ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
     }
 
+    VertexBufferObject::~VertexBufferObject() {
+        glDeleteBuffers(1, &_glId);
+    }
+
     void VertexBufferObject::init() {
         switch(_dataType){
             case VERTEX_DESCRIPTOR:
@@ -131,5 +135,17 @@ namespace Graphics
     void VertexBufferObject::unbindAll(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
+        std::swap(_glId, other._glId);
+        std::swap(_dataType, other._dataType);
+        std::swap(_target, other._target);
+        std::swap(_attribArray, other._attribArray);
+    }
+
+    VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray){
+        _dataType = other._dataType;
+        _target = other._target;
     }
 }

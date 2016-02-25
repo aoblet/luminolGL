@@ -19,6 +19,9 @@ namespace Graphics
         std::vector<VertexBufferObject*> _vbos;
     public:
         VertexArrayObject();
+        VertexArrayObject(const VertexArrayObject& other);
+        ~VertexArrayObject();
+        VertexArrayObject(VertexArrayObject&& other);
         void addVBO(VertexBufferObject* vbo);
         void init();
         void bind();

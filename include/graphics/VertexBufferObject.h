@@ -34,11 +34,17 @@ namespace Graphics
         void initVboFloat();
         void initVboInt();
         void initVboInstanceVec3();
-        void bind();
     public:
         VertexBufferObject(DataType dataType, GLuint attribArray = 0);
+        VertexBufferObject(VertexBufferObject&& other);
+        VertexBufferObject(const VertexBufferObject& other);
+        ~VertexBufferObject();
+
         GLuint glId();
+
+        /** Should not use directly but inside VAO.init() */
         void init();
+        void bind();
         void updateData(const std::vector<VertexDescriptor>& data);
         void updateData(const std::vector<glm::vec3>& data);
         void updateData(const std::vector<glm::vec2>& data);
