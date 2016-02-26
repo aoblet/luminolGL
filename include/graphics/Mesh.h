@@ -69,6 +69,9 @@ namespace Graphics
         static Mesh genCube();
         static Mesh genPlane(float width = 1.f, float height = 1.f, float textureLoop = 1, const glm::vec3 & offset = glm::vec3(0,0,0));
         static Mesh genSphere(int latitudeBands, int longitudeBands, float radius = 1.f, const glm::vec3 & offset = glm::vec3(0,0,0));
+
+        /** Save a .obj file */
+        void saveOBJ(const std::string& filePath, const std::string& filename);
     };
 }
 

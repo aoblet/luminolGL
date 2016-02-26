@@ -30,8 +30,8 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
     loadMeshes(scene);
     computeBoundingBox();
 
-    DLOG(INFO) << "Vertices count " << _allVertices.size() << " DONE";
-    DLOG(INFO) << "Loading model " << modelPath << " DONE";
+    DLOG(INFO) << "Vertices count " << _allVertices.size();
+    DLOG(INFO) << "Loading model " << modelPath << " DONE" << std::endl << std::endl;
 }
 
 void ModelMeshGroup::loadMeshes(const aiScene* scene) {
