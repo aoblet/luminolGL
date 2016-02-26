@@ -1,50 +1,54 @@
-#include "graphics/AssimpModel.hpp"
+#include "graphics/ModelMeshGroup.hpp"
 #include <glog/logging.h>
 
 using namespace Graphics;
 
-const std::string AssimpModel::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
-const std::string AssimpModel::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
-const std::string AssimpModel::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default.png";
+const std::string ModelMeshGroup::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
+const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
+const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default.png";
 
 
-AssimpModel::AssimpModel(const std::string &modelPath): _verticesVBO(DataType::VERTEX_DESCRIPTOR), _idsVBO(DataType::ELEMENT_ARRAY_BUFFER) {
+ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
+{
+
     DLOG(INFO) << "Loading model with assimp: " << modelPath;
 
     Assimp::Importer aImporter;
     const aiScene* scene = aImporter.ReadFile(modelPath,  aiProcess_Triangulate | aiProcess_GenSmoothNormals  | aiProcess_FlipUVs);
 
     if(!scene)
-        throw std::runtime_error("AssimpModel::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
-
-    _directoryPath = modelPath.substr(0, modelPath.find_last_of('/'));
-    _meshes.reserve(scene->mNumMeshes);
+        throw std::runtime_error("ModelMeshGroup::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
 
     const aiMatrix4x4& t = scene->mRootNode->mTransformation;
-
     _modelMatrix = glm::mat4( t.a1, t.a2, t.a3, t.a4,
                               t.b1, t.b2, t.b3, t.b4,
                               t.c1, t.c2, t.c3, t.c4,
                               t.d1, t.d2, t.d3, t.d4);
 
-    for(unsigned int i=0; i<scene->mNumMeshes; ++i){
-        aiMeshToMesh(scene->mMeshes[i], scene);
-    }
+    _directoryPath = modelPath.substr(0, modelPath.find_last_of('/'));
+    _meshes.reserve(scene->mNumMeshes);
+    loadMeshes(scene);
+    computeBoundingBox();
 
     DLOG(INFO) << "Vertices count " << _allVertices.size() << " DONE";
     DLOG(INFO) << "Loading model " << modelPath << " DONE";
 }
 
+void ModelMeshGroup::loadMeshes(const aiScene* scene) {
+    for(unsigned int i=0; i<scene->mNumMeshes; ++i){
+        aiMeshToMesh(scene->mMeshes[i], scene);
+    }
+}
 
-std::vector<Mesh>& AssimpModel::meshes() {
+std::vector<Mesh>&ModelMeshGroup::meshes() {
     return _meshes;
 }
 
-std::map<std::string, Texture>& AssimpModel::textures() {
+std::map<std::string, Texture>&ModelMeshGroup::textures(){
     return _textures;
 }
 
-void AssimpModel::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
+void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
 
     Mesh mesh;
     // update element indexes
@@ -114,7 +118,7 @@ void AssimpModel::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
     _meshes.push_back(std::move(mesh));
 }
 
-Texture* AssimpModel::saveTexture(const std::string &pathTexture) {
+Texture*ModelMeshGroup::saveTexture(const std::string &pathTexture) {
 
     DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
 
@@ -124,7 +128,7 @@ Texture* AssimpModel::saveTexture(const std::string &pathTexture) {
     return &_textures[pathTexture];
 }
 
-void AssimpModel::draw(VertexArrayObject& vao, int nbInstancesToDraw){
+void ModelMeshGroup::draw(int nbInstancesToDraw){
     /**
      * We need to offset VBOs since we have every vertices and ids in respectively one VBO
      * Example: VBO ids:
@@ -139,8 +143,6 @@ void AssimpModel::draw(VertexArrayObject& vao, int nbInstancesToDraw){
      */
 
     int offsetIds = 0;
-    vao.bind();
-
     for(auto& mesh : _meshes){
         mesh.bindTextures();
         glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, (void*)(offsetIds*sizeof(unsigned int)), nbInstancesToDraw, offsetIds);
@@ -148,18 +150,19 @@ void AssimpModel::draw(VertexArrayObject& vao, int nbInstancesToDraw){
     }
 }
 
-VertexBufferObject &AssimpModel::verticesVBO() {
-    return _verticesVBO;
-}
 
-VertexBufferObject &AssimpModel::idsVBO() {
-    return _idsVBO;
-}
-
-std::vector<VertexDescriptor> &AssimpModel::allVertices() {
+std::vector<VertexDescriptor> &ModelMeshGroup::allVertices() {
     return _allVertices;
 }
 
-std::vector<int> &AssimpModel::allIds() {
+std::vector<int> &ModelMeshGroup::allIndexes() {
     return _allIds;
+}
+
+void ModelMeshGroup::computeBoundingBox() {
+    _boundingBox.compute(_allVertices);
+}
+
+const Geometry::BoundingBox& ModelMeshGroup::getBoundingBox() const {
+    return _boundingBox;
 }
