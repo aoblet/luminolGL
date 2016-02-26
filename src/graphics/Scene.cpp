@@ -2,7 +2,8 @@
 // Created by mehdi on 18/02/16.
 //
 
-#include <glm/gtx/string_cast.hpp>
+#include <glm/ext.hpp>
+#include <glog/logging.h>
 #include "graphics/Scene.h"
 
 namespace Graphics
@@ -14,8 +15,7 @@ namespace Graphics
 
     void Scene::init() {
         for(auto& instance : _meshInstances){
-            instance.second->attachInstanceTransformVBO(&_visibleTransformationsVBO);
-            instance.second->init();
+            instance.second->initGLBuffers(_visibleTransformationsVBO);
         }
     }
 
@@ -23,17 +23,15 @@ namespace Graphics
         for(auto& instance : _meshInstances){
             setCurrentInstance(instance.first);
             _visibleTransformationsVBO.updateData(computeVisibleTransformations(VP));
-            instance.second->bindVAO();
-            instance.second->bindTextures();
             instance.second->draw(getInstanceNumber());
         }
     }
 
-    void Scene::addMeshInstance(MeshInstance *instance, const std::string& name) {
+    void Scene::addMeshInstance(ModelMeshInstanced *instance, const std::string& name) {
         _meshInstances.insert({name, instance});
     }
 
-    MeshInstance *Scene::getInstance() {
+    ModelMeshInstanced *Scene::getInstance() {
         return _meshInstances.at(_currentInstance);
     }
 

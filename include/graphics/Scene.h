@@ -9,14 +9,14 @@
 #include <string>
 #include <glm/detail/type_vec.hpp>
 
-#include "graphics/MeshInstance.h"
+#include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/VertexBufferObject.h"
 
 namespace Graphics
 {
     class Scene {
     private:
-        std::map<std::string, MeshInstance*> _meshInstances; /** Each mesh instance is associated to a name */
+        std::map<std::string, ModelMeshInstanced*> _meshInstances; /** Each mesh instance is associated to a name */
 
         std::string _currentInstance;                        /** The name of the current instance called by setCurrentInstance() */
 
@@ -45,7 +45,7 @@ namespace Graphics
                                          */
 
 
-        void addMeshInstance(MeshInstance *instance, const std::string& name); /** Add a MeshInstance to _meshInstances
+        void addMeshInstance(ModelMeshInstanced *instance, const std::string& name); /** Add a MeshInstance to _meshInstances
                                                                                 *  a name must be specified
                                                                                 */
 
@@ -58,7 +58,7 @@ namespace Graphics
                                                            */
 
 
-        MeshInstance* getInstance();         /** Returns the currentInstance */
+        ModelMeshInstanced* getInstance();         /** Returns the currentInstance */
 
 
         const std::vector<glm::mat4>& computeVisibleTransformations(const glm::mat4 & VP); /** Compute frustum culling on current instance.
