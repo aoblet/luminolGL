@@ -292,7 +292,7 @@ int main( int argc, char **argv )
 //    std::vector<int> debugId = cubeMesh.getElementIndex();
     std::vector<int> debugId = {0,1,2,3,4,5,6,7};
 
-    std::vector<glm::vec3> debugVertices = planeMesh.getBoundingBox().getVector();
+    std::vector<glm::vec3> debugVertices = crysisModel.getBoundingBox(0).getVector();
 
     Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
     Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
@@ -605,7 +605,7 @@ int main( int argc, char **argv )
         // Render the scene
         shadowShader.useProgram();
 
-        scene.draw(worldToLightScreen);
+//        scene.draw(worldToLightScreen);
 
 
         // Fallback to default framebuffer
@@ -778,7 +778,7 @@ int main( int argc, char **argv )
 
         glPointSize(2);
 
-        glDrawElementsInstanced(GL_POINTS, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstanceTransform.size());
+        glDrawElementsInstanced(GL_LINE_STRIP, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstanceTransform.size());
 
         int screenNumber = 6;
 

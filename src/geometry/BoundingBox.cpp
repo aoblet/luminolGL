@@ -2,6 +2,7 @@
 // Created by mehdi on 16/02/16.
 //
 
+#include <glog/logging.h>
 #include <stdexcept>
 #include "geometry/BoundingBox.h"
 
@@ -9,24 +10,29 @@ namespace Geometry
 {
     bool BoundingBox::isVisible(const glm::mat4 &VP)  const {
         glm::vec4 projInitPoint = VP * glm::vec4(_points[0], 1.0);
-
-        if(projInitPoint.z < 0) return false;
-
         projInitPoint /= projInitPoint.w;
 
         float xmin = projInitPoint.x;
         float xmax = projInitPoint.x;
         float ymin = projInitPoint.y;
         float ymax = projInitPoint.y;
+        bool isInFrontOfCamera = false;
 
         for(auto& point : _points){
             glm::vec4 projPoint = VP * glm::vec4(point, 1.0);
+
+            // no need to be in homogeneous coordinates
+            if( projPoint.z > 0) isInFrontOfCamera = true;
+
             projPoint /= projPoint.w;
             if( projPoint.x < xmin) xmin = projPoint.x;
             if( projPoint.y > ymax) ymax = projPoint.y;
             if( projPoint.x > xmax) xmax = projPoint.x;
             if( projPoint.y < ymin) ymin = projPoint.y;
         }
+
+        if(!isInFrontOfCamera)
+            return false;
 
         // screen space limit (between -1 and 1 for each axis x,y and z)
         float limit = 1;
