@@ -3,11 +3,16 @@
 
 using namespace Graphics;
 
+const std::string AssimpModel::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
+const std::string AssimpModel::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
+const std::string AssimpModel::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default.png";
+
+
 AssimpModel::AssimpModel(const std::string &modelPath): _verticesVBO(DataType::VERTEX_DESCRIPTOR), _idsVBO(DataType::ELEMENT_ARRAY_BUFFER) {
     DLOG(INFO) << "Loading model with assimp: " << modelPath;
 
     Assimp::Importer aImporter;
-    const aiScene* scene = aImporter.ReadFile(modelPath,  aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals );
+    const aiScene* scene = aImporter.ReadFile(modelPath,  aiProcess_Triangulate | aiProcess_GenSmoothNormals  | aiProcess_FlipUVs);
 
     if(!scene)
         throw std::runtime_error("AssimpModel::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
@@ -16,16 +21,17 @@ AssimpModel::AssimpModel(const std::string &modelPath): _verticesVBO(DataType::V
     _meshes.reserve(scene->mNumMeshes);
 
     const aiMatrix4x4& t = scene->mRootNode->mTransformation;
-    _modelMatrix = glm::mat4( t.a1*0.1, t.a2, t.a3, t.a4,
-                              t.b1, t.b2*0.1, t.b3, t.b4,
-                              t.c1, t.c2, t.c3*0.1, t.c4,
+
+    _modelMatrix = glm::mat4( t.a1, t.a2, t.a3, t.a4,
+                              t.b1, t.b2, t.b3, t.b4,
+                              t.c1, t.c2, t.c3, t.c4,
                               t.d1, t.d2, t.d3, t.d4);
 
     for(unsigned int i=0; i<scene->mNumMeshes; ++i){
         aiMeshToMesh(scene->mMeshes[i], scene);
     }
 
-    buildVBOS();
+    DLOG(INFO) << "Vertices count " << _allVertices.size() << " DONE";
     DLOG(INFO) << "Loading model " << modelPath << " DONE";
 }
 
@@ -77,45 +83,67 @@ void AssimpModel::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
 
         // just handle one texture per mesh currently
         // TODO: handle multiple diffuse/specular textures in shaders
+
+        // Diffuse
         if(material->GetTextureCount(aiTextureType_DIFFUSE)){
             material->GetTexture(aiTextureType_DIFFUSE, 0, &texName);
-            mesh.attachTexture(saveTexture(texName.C_Str()), Texture::GL_INDEX_DIFFUSE);
+            mesh.attachTexture(saveTexture(_directoryPath + "/" + texName.C_Str()), Texture::GL_INDEX_DIFFUSE);
+        }
+        else{
+            mesh.attachTexture(saveTexture(PATH_DEFAULT_TEX_DIFFUSE), Texture::GL_INDEX_DIFFUSE);
         }
 
+        // Specular
         if(material->GetTextureCount(aiTextureType_SPECULAR)){
             material->GetTexture(aiTextureType_SPECULAR, 0, &texName);
-            mesh.attachTexture(saveTexture(texName.C_Str()), Texture::GL_INDEX_SPECULAR);
+            mesh.attachTexture(saveTexture(_directoryPath + "/" + texName.C_Str()), Texture::GL_INDEX_SPECULAR);
+        }
+        else{
+            mesh.attachTexture(saveTexture(PATH_DEFAULT_TEX_SPECULAR), Texture::GL_INDEX_SPECULAR);
         }
 
+        // Normal map
         if(material->GetTextureCount(aiTextureType_HEIGHT)){
             material->GetTexture(aiTextureType_HEIGHT, 0, &texName);
-            mesh.attachTexture(saveTexture(texName.C_Str()), Texture::GL_INDEX_NORMAL_MAP);
+            mesh.attachTexture(saveTexture(_directoryPath + "/" + texName.C_Str()), Texture::GL_INDEX_NORMAL_MAP);
+        }
+        else{
+            mesh.attachTexture(saveTexture(PATH_DEFAULT_TEX_NORMAL), Texture::GL_INDEX_NORMAL_MAP);
         }
     }
     _meshes.push_back(std::move(mesh));
 }
 
-Texture* AssimpModel::saveTexture(const std::string &textureName) {
-    std::string path = _directoryPath + "/" + textureName;
-    DLOG(INFO) << "Save texture - " << path;
+Texture* AssimpModel::saveTexture(const std::string &pathTexture) {
 
-    if(_textures.find(path) == _textures.end())
-        _textures.insert(std::make_pair(path, Texture(path)));
-    return &_textures[path];
+    DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
+
+    // If the texture does not exist we create it
+    if(_textures.find(pathTexture) == _textures.end())
+        _textures.insert(std::make_pair(pathTexture, Texture(pathTexture)));
+    return &_textures[pathTexture];
 }
 
-void AssimpModel::buildVBOS(){
-//    _verticesVBO.updateData(_allVertices);
-//    _idsVBO.updateData(_allIds);
-}
+void AssimpModel::draw(VertexArrayObject& vao, int nbInstancesToDraw){
+    /**
+     * We need to offset VBOs since we have every vertices and ids in respectively one VBO
+     * Example: VBO ids:
+     * 0 1 2 3 4 5 6 | 0 1 2 3 4 5 6
+     *    Mesh1      |      Mesh2
+     *
+     * VBO vertices:
+     * v0 v1 v2 v3 v4 v5 v6 | v0 v1 v2 v3 v4 v5 v6
+     *           Mesh1      |      Mesh2
+     *
+     * Here we need to offset by 6 when pull from Mesh2 ids to get Mesh2 vertices
+     */
 
-void AssimpModel::draw(VertexArrayObject& vao, int instanceNumber){
     int offsetIds = 0;
-
     vao.bind();
+
     for(auto& mesh : _meshes){
         mesh.bindTextures();
-        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, 100, offsetIds);
+        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, (void*)(offsetIds*sizeof(unsigned int)), nbInstancesToDraw, offsetIds);
         offsetIds += mesh.getVertexCount();
     }
 }
