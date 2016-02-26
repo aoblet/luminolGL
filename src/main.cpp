@@ -35,8 +35,8 @@
 #include "graphics/GeometricFBO.hpp"
 #include "graphics/BeautyFBO.hpp"
 #include "graphics/PostFxFBO.hpp"
-#include "graphics/AssimpModel.hpp"
-#include "graphics/MeshInstance.h"
+#include "graphics/ModelMeshGroup.hpp"
+#include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/Scene.h"
 
 #include "gui/Gui.hpp"
@@ -187,9 +187,8 @@ int main( int argc, char **argv )
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
 
-    Graphics::MeshInstance cubeInstances(&cubeMesh);
+    Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
     int cubeInstanceWidth = 10;
     int cubeInstanceHeight = 10;
@@ -212,28 +211,10 @@ int main( int argc, char **argv )
     }
 
 
-    Graphics::AssimpModel crysisModel("../assets/models/cat/cat.obj");
-    Graphics::VertexBufferObject  crysisInstancePositionVbo(Graphics::INSTANCE_BUFFER, 3);
-    Graphics::VertexArrayObject   crysisVAO;
-    int nbInstancesCrysis = 1;
-    crysisVAO.addVBO(&crysisModel.verticesVBO());
-    crysisVAO.addVBO(&crysisModel.idsVBO());
-    crysisVAO.addVBO(&crysisInstancePositionVbo);
-
-    crysisVAO.init();
-    crysisModel.idsVBO().updateData(crysisModel.allIds());
-    crysisInstancePositionVbo.updateData(std::vector<glm::vec3>{glm::vec3(0,0,0)});
-    crysisModel.verticesVBO().updateData(crysisModel.allVertices());
-
-    if (!checkErrorGL("VAO/VBO")){
-        std::cerr << "Error : crysis" << std::endl;
-        return -1;
-    }
-
     // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
 
     Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
-    Graphics::MeshInstance sphereInstances(&sphereMesh);
+    Graphics::ModelMeshInstanced sphereInstances("../assets/models/primitives/sphere.obj");
 
     int sphereInstanceWidth = 10;
     int sphereInstanceHeight = 10;
@@ -259,7 +240,7 @@ int main( int argc, char **argv )
 
 
     Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
-    Graphics::MeshInstance planeInstances(&planeMesh);
+    Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
     planeInstances.addInstance(glm::vec3(0,1,0));
 
     std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
@@ -268,6 +249,10 @@ int main( int argc, char **argv )
         std::cerr << "Error : plane vao" << std::endl;
         return -1;
     }
+
+
+    Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
+    crysisModel.addInstance(glm::vec3(0,1,0));
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -336,10 +321,12 @@ int main( int argc, char **argv )
     const std::string cubeInstanceName = "cube_instance";
     const std::string sphereInstanceName = "sphere_instance";
     const std::string planeInstanceName = "plane_instance";
-    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
-    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
-    scene.addMeshInstance(&planeInstances, planeInstanceName);
+    const std::string crysisName = "crysis";
 
+//    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
+//    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
+//    scene.addMeshInstance(&planeInstances, planeInstanceName);
+    scene.addMeshInstance(&crysisModel, crysisName);
     scene.init();
 
     if (!checkErrorGL("Scene")){
@@ -390,11 +377,6 @@ int main( int argc, char **argv )
         std::cout << "Error : shadow_buffer_texture" << std::endl;
         return -1;
     }
-
-
-    cubeMesh.attachTexture(&texHandler[TexBricksDiff],    Graphics::Texture::GL_INDEX_DIFFUSE);
-    cubeMesh.attachTexture(&texHandler[TexBricksSpec],    Graphics::Texture::GL_INDEX_SPECULAR);
-    cubeMesh.attachTexture(&texHandler[TexBricksNormal],  Graphics::Texture::GL_INDEX_NORMAL_MAP);
 
     planeMesh.attachTexture(&texHandler[TexBricksDiff],   Graphics::Texture::GL_INDEX_DIFFUSE);
     planeMesh.attachTexture(&texHandler[TexBricksSpec],   Graphics::Texture::GL_INDEX_SPECULAR);
@@ -603,10 +585,6 @@ int main( int argc, char **argv )
 
         //-------------------------------------Render Scene
         scene.draw(vp);
-
-        //------------------------------------Render obj assimp
-        crysisModel.draw(crysisVAO, nbInstancesCrysis);
-
 
         //-------------------------------------Unbind the frambuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
