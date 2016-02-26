@@ -3,6 +3,7 @@
 //
 
 #include <glm/gtc/constants.hpp>
+#include <fstream>
 #include "graphics/Mesh.h"
 
 namespace Graphics
@@ -211,5 +212,48 @@ namespace Graphics
     void Mesh::setTriangleCount(unsigned int value) {
         _triangleCount = value;
         _vertexCount = value * 3;
+    }
+
+
+    void Mesh::saveOBJ(const std::string &filePath, const std::string& filename) {
+
+        std::ofstream file (filePath + filename + ".obj");
+
+        if (!file.is_open())
+            throw std::runtime_error("Unable to save mesh at \"" + filePath + "\"");
+
+        file << "# " + filename + ".obj" << std::endl;
+
+        // write positions
+        for(int i = 0; i < _vertices.size(); ++i){
+            file << "v ";
+            file << _vertices[i].position.x << " ";
+            file << _vertices[i].position.y << " ";
+            file << _vertices[i].position.z << std::endl;
+        }
+
+        // write texcoords
+        for(int i = 0; i < _vertices.size(); ++i){
+            file << "vt ";
+            file << _vertices[i].texcoord.x << " ";
+            file << _vertices[i].texcoord.y << std::endl;
+        }
+
+        // write normals
+        for(int i = 0; i < _vertices.size(); ++i){
+            file << "vn ";
+            file << _vertices[i].normal.x << " ";
+            file << _vertices[i].normal.y << " ";
+            file << _vertices[i].normal.z << std::endl;
+        }
+
+        //write indexes
+        for(int i = 0; i < _elementIndex.size(); i+=3){
+            file << "f ";
+            file << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << " ";
+            file << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << " ";
+            file << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << std::endl;
+        }
+
     }
 }

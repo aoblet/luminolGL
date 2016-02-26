@@ -258,6 +258,9 @@ int main( int argc, char **argv )
 
     Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
 
+
+
+
     Graphics::MeshInstance cubeInstances(&cubeMesh);
 
     int cubeInstanceWidth = 10;

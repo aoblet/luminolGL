@@ -78,6 +78,10 @@ namespace Graphics
 
         /** Static function to load a mesh using assimp */
         static Mesh loadMesh(const std::string& filePath);
+
+        /** Save a .obj file */
+        void saveOBJ(const std::string& filePath, const std::string& filename);
+
     };
 }
 
