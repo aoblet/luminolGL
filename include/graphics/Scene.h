@@ -32,7 +32,6 @@ namespace Graphics
 
         Scene(); /** Just init The VBO containing Instance transformations */
 
-
         void init(); /** Must be called after all MeshInstances has been attached.
                       *  _visibleTransformationsVBO is attached to each MeshInstance VAO
                       *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs

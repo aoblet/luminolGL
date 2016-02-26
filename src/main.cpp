@@ -313,7 +313,7 @@ int main( int argc, char **argv )
     Graphics::VertexBufferObject::unbindAll();
 
     if (!checkErrorGL("VAO/VBO")){
-        std::cerr << "Error : debug vao" << std::endl;
+        LOG(ERROR) << "Error : debug VAO" << std::endl;
         return -1;
     }
 
@@ -333,61 +333,11 @@ int main( int argc, char **argv )
     scene.init();
 
     if (!checkErrorGL("Scene")){
-        std::cerr << "Error : scene" << std::endl;
+        LOG(ERROR) << "Error : scene" << std::endl;
         return -1;
     }
 
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
-
-    Graphics::TextureHandler texHandler;
-
-    std::string TexBricksDiff = "bricks_diff";
-    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_diff.tga"), TexBricksDiff);
-
-    if (!checkErrorGL("Texture")){
-        std::cout << "Error : bricks_diff" << std::endl;
-        return -1;
-    }
-
-    std::string TexBricksSpec = "bricks_spec";
-    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_spec.tga"), TexBricksSpec);
-
-    if (!checkErrorGL("Texture")){
-        std::cout << "Error : bricks_spec" << std::endl;
-        return -1;
-    }
-
-    std::string TexBricksNormal = "bricks_normal";
-    texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_normal.tga"), TexBricksNormal);
-
-    if (!checkErrorGL("Texture")){
-        std::cout << "Error : bricks_normal" << std::endl;
-        return -1;
-    }
-
-    const std::string TexCatDiffuse = "cat_diff";
-    const std::string TexCatSpec    = "cat_spec";
-    const std::string TexCatNormal  = "cat_normal";
-
-    texHandler.add(Graphics::Texture("../assets/models/cat/cat_diff.tga"), TexCatDiffuse);
-    texHandler.add(Graphics::Texture("../assets/models/cat/cat_spec.tga"), TexCatSpec);
-    texHandler.add(Graphics::Texture("../assets/models/cat/normal_map.tga"), TexCatNormal);
-    int shadowTexWidth = 4096;
-    int shadowTexHeight = 4096;
-    std::string shadowBufferTexture = "shadow_buffer_texture";
-    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
-    if (!checkErrorGL("Texture")){
-        std::cout << "Error : shadow_buffer_texture" << std::endl;
-        return -1;
-    }
-
-    planeMesh.attachTexture(&texHandler[TexBricksDiff],   Graphics::Texture::GL_INDEX_DIFFUSE);
-    planeMesh.attachTexture(&texHandler[TexBricksSpec],   Graphics::Texture::GL_INDEX_SPECULAR);
-    planeMesh.attachTexture(&texHandler[TexBricksNormal], Graphics::Texture::GL_INDEX_NORMAL_MAP);
-
-    sphereMesh.attachTexture(&texHandler[TexBricksDiff],  Graphics::Texture::GL_INDEX_DIFFUSE);
-    sphereMesh.attachTexture(&texHandler[TexBricksSpec],  Graphics::Texture::GL_INDEX_SPECULAR);
-    sphereMesh.attachTexture(&texHandler[TexBricksNormal],Graphics::Texture::GL_INDEX_NORMAL_MAP);
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -397,7 +347,6 @@ int main( int argc, char **argv )
     lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
 //    lightHandler.addPointLight(glm::vec3(2.5,0.5,4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
 
-    
 
     // ---------------------- For Geometry Shading
     float t = 0;
@@ -414,7 +363,7 @@ int main( int argc, char **argv )
     shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
     if (!checkErrorGL("Uniforms")){
-        std::cerr << "Error : geometry uniforms" << std::endl;
+        LOG(ERROR) << "Error : geometry uniforms";
         return -1;
     }
 
@@ -432,8 +381,10 @@ int main( int argc, char **argv )
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
 
-    if (!checkErrorGL("Uniforms"))
-        return(1);
+    if (!checkErrorGL("Uniforms")){
+        LOG(ERROR) << "Uniforms error";
+        return -1;
+    }
 
     // ---------------------- FX Variables
     float shadowBias = 0.00019;
@@ -463,7 +414,7 @@ int main( int argc, char **argv )
 
 
     if (!checkErrorGL("Uniforms")){
-        std::cout << "Error : post_fx Uniforms" << std::endl;
+        LOG(ERROR) << "Error : post_fx Uniforms";
         return -1;
     }
 

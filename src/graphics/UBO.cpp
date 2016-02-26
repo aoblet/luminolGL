@@ -1,6 +1,7 @@
 #include "graphics/UBO.hpp"
 #include <cstring>
 #include <iostream>
+#include <glog/logging.h>
 
 using namespace Graphics;
 
@@ -23,7 +24,7 @@ void UBO::updateBuffer(const GLvoid* data, int sizeofObject) {
     if(sizeofObject > _sizeBuffer){
         _sizeBuffer = sizeofObject;
         reserveBuffer(_sizeBuffer);
-        std::cout << "UBO buffer has been resized: UBO " << this << std::endl;
+        DLOG(WARNING) << "UBO buffer has been resized: UBO " << this << std::endl;
     }
 
     glBindBufferBase(GL_UNIFORM_BUFFER, _bindingPointIndex, _bufferId);
