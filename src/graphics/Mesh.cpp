@@ -213,48 +213,4 @@ namespace Graphics
         _triangleCount = value;
         _vertexCount = value * 3;
     }
-
-    Mesh Mesh::loadMesh(const std::string &modelPath) {
-        Assimp::Importer aImporter;
-        const aiScene* scene = aImporter.ReadFile(modelPath, aiProcessPreset_TargetRealtime_MaxQuality);
-
-        if(!scene)
-            throw std::runtime_error("Mesh::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
-
-        Mesh mesh;
-
-        const aiMatrix4x4& t = scene->mRootNode->mTransformation;
-        glm::mat4 modelMatrix = glm::mat4(t.a1, t.a2, t.a3, t.a4,
-                                          t.b1, t.b2, t.b3, t.b4,
-                                          t.c1, t.c2, t.c3, t.c4,
-                                          t.d1, t.d2, t.d3, t.d4);
-
-        for(unsigned int k=0; k<scene->mNumMeshes; ++k){
-            const aiMesh* aiMesh = scene->mMeshes[k];
-
-            // update element indexes
-            for(unsigned int j=0; j<aiMesh->mNumFaces; ++j){
-                const aiFace& face = aiMesh->mFaces[j];
-                mesh._elementIndex.push_back(face.mIndices[0]);
-                mesh._elementIndex.push_back(face.mIndices[1]);
-                mesh._elementIndex.push_back(face.mIndices[2]);
-            }
-            mesh._triangleCount += aiMesh->mNumFaces;
-
-            // positions, normals and uv
-            for(unsigned int i=0; i<aiMesh->mNumVertices; ++i){
-                VertexDescriptor vd;
-                const aiVector3D& vPos = aiMesh->mVertices[i];
-                const aiVector3D& vNormal = aiMesh->mNormals[i];
-                const aiVector3D* uv = aiMesh->mTextureCoords[0];
-                vd.position = glm::vec3((modelMatrix * glm::vec4(vPos.x, vPos.y, vPos.z, 1)));
-                vd.normal   = glm::vec3(vNormal.x, vNormal.y, vNormal.z);
-                vd.texcoord = aiMesh->HasTextureCoords(0) ? glm::vec2(uv[i].x, 1. - uv[i].y) : glm::vec2(0,0);
-                mesh._vertices.push_back(std::move(vd));
-            }
-        }
-        mesh._vertexCount = mesh._triangleCount*3;
-        mesh.computeBoundingBox();
-        return mesh;
-    }
 }
