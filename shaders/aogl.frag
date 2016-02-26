@@ -86,5 +86,4 @@ void main()
 	vec4 normalFinal = MV * vec4(normal, 0);
 	Normal = vec4(encodeNormal(normalFinal), SpecularPower/100);
     Color = vec4(diffuse, specular.x);
-
 }

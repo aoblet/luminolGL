@@ -10,29 +10,70 @@
 #include <glm/detail/type_vec.hpp>
 
 #include "graphics/MeshInstance.h"
+#include "graphics/VertexBufferObject.h"
 
 namespace Graphics
 {
     class Scene {
     private:
-        std::map<std::string, MeshInstance*> _meshInstances;
-        std::vector<glm::vec3> _visiblePositions;
-        std::vector<glm::vec4> _visibleRotations;
-        std::string _currentInstance;
+        std::map<std::string, MeshInstance*> _meshInstances; /** Each mesh instance is associated to a name */
+
+        std::string _currentInstance;                        /** The name of the current instance called by setCurrentInstance() */
+
+        std::vector<glm::mat4> _visibleTransformations;      /** This vector is updated with visible Transformations of the current instance */
+
+        VertexBufferObject _visibleTransformationsVBO;       /** A VBO containing the Transformations of visible current instances */
+
+        int _currentInstanceNumber;                          /** Current instance that will impact :
+                                                             *   computeVisibleTransformations(), getInstance(), or getInstanceNumber()
+                                                             */
     public:
-        void addMeshInstance(MeshInstance *instance, const std::string& name);
 
-        void setCurrentInstance(const std::string& name);
 
-        MeshInstance* getInstance();
+        Scene(); /** Just init The VBO containing Instance transformations */
 
-        const std::vector<glm::vec3>& computeVisiblePositions(const glm::mat4 & VP);
-        const std::vector<glm::vec4>& computeVisibleRotations(const glm::mat4 & VP);
 
-        const std::vector<glm::vec3>& getVisiblePositions();
-        const std::vector<glm::vec4>& getVisibleRotations();
+        void init(); /** Must be called after all MeshInstances has been attached.
+                      *  _visibleTransformationsVBO is attached to each MeshInstance VAO
+                      *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
+                      */
 
-        int getInstanceNumber();
+
+        void draw(const glm::mat4 &VP); /** Call the draw() function of each MeshInstance.
+                                         *  Performs frustum culling to update _visibleTransformationsVBO :
+                                         *  Only visible instances of VP Matrix are sent to the GPU
+                                         */
+
+
+        void addMeshInstance(MeshInstance *instance, const std::string& name); /** Add a MeshInstance to _meshInstances
+                                                                                *  a name must be specified
+                                                                                */
+
+
+        void setCurrentInstance(const std::string& name); /** Switch the MeshInstance that will be updated.
+                                                           *  Modify the behavior of :
+                                                           *  - computeVisibleTransformations()
+                                                           *  - getInstanceNumber()
+                                                           *  - getInstance()
+                                                           */
+
+
+        MeshInstance* getInstance();         /** Returns the currentInstance */
+
+
+        const std::vector<glm::mat4>& computeVisibleTransformations(const glm::mat4 & VP); /** Compute frustum culling on current instance.
+                                                                                            *  VP is the matrix that will be used
+                                                                                            *  to say if an instance Transform is visible or not.
+                                                                                            *  Updates :
+                                                                                            *  - _visibleTransformations vector
+                                                                                            *  - _visibleTransformationsVBO
+                                                                                            *  - _currentInstanceNumber
+                                                                                            */
+
+
+        int getInstanceNumber(); /** Returns the number of visible instances in the current MeshInstance
+                                  *  Must be called after computeVisibleTransformations()
+                                  */
     };
 }
 

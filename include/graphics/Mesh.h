@@ -22,40 +22,48 @@ namespace Graphics
         unsigned int _triangleCount;            /** Number of triangles in the mesh */
         std::vector<VertexDescriptor> _vertices;/** Vertices attributes (position, normal , uv) */
         std::vector<int> _elementIndex;         /** Vertices indexes (vertices drawing order) */
-        Geometry::BoundingBox _boundaries       /** Bounding box of the mesh */;
+        Geometry::BoundingBox _boundaries       /** Mesh Bounding box */;
+        std::map<GLenum, Texture*> _textures     /** Textures attached to the mesh with
+                                                  *  a specific binding point (GL_TEXTURE0, GL_TEXTURE1, ...) */;
     public:
-        std::map<GLenum, Texture*> _textures    /** Textures attached to the mesh with a specific binding point (GL_TEXTURE0, GL_TEXTURE1, ...) */;
         Mesh();
         Mesh(Mesh&& mesh);
 
-        /** Add vertices to _vertices by copy */
-        void addVertices(const std::vector<VertexDescriptor>& vertices);
-        /** Add vertices to _vertices by move*/
-        void addVertices(std::vector<VertexDescriptor> &&vertices);
+        void addVertices(const std::vector<VertexDescriptor>& vertices); /** Add vertices to _vertices by copy */
 
-        /** Add indexes to _elementIndex by copy */
-        void addElementIndexes(const std::vector<int>& vertices);
-        /** Add indexes to _elementIndex by move */
-        void addElementIndexes(std::vector<int> &&vertices);
+
+        void addVertices(std::vector<VertexDescriptor> &&vertices); /** Add vertices to _vertices by move*/
+
+
+        void addElementIndexes(const std::vector<int>& vertices); /** Add indexes to _elementIndex by copy */
+
+
+        void addElementIndexes(std::vector<int> &&vertices); /** Add indexes to _elementIndex by move */
+
 
         void setTriangleCount(unsigned int value);
 
-        /** Add to _textures with a specified binding point (GL_TEXTURE0, GL_TEXTURE1, ...) */
-        void attachTexture(Graphics::Texture* tex, GLenum textureNumber);
 
-        /** Bind all Textures stored in _textures on their binding point */
-        void bindTextures();
+        void attachTexture(Graphics::Texture* tex, GLenum textureNumber); /** Add to _textures with a specified binding point :
+                                                                           *  GL_TEXTURE0, GL_TEXTURE1, ...
+                                                                           */
+
+
+        void bindTextures(); /** Bind all Textures stored in _textures on their binding point */
+
 
         const std::vector<VertexDescriptor>& getVertices() const;
         const std::vector<int>& getElementIndex() const;
-
         int getVertexCount() const;
         int getTriangleCount() const;
 
-        /** look over _vertices to create a bounding box containing all vertices */
-        void computeBoundingBox();
+
+        void computeBoundingBox(); /** look over _vertices to create a
+                                    *  square bounding box containing all vertices */
+
 
         const Geometry::BoundingBox& getBoundingBox();
+
 
         /** Static functions to generate simple primitives */
         static Mesh genCube();

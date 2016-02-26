@@ -9,6 +9,9 @@
 
 namespace Graphics
 {
+    /** Describe a 3d vertex :
+     * Position, Normal, & Texture Coordinates
+     */
     struct VertexDescriptor {
         glm::vec3 position;
         glm::vec3 normal;
