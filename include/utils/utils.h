@@ -11,4 +11,6 @@ void printMat4(const glm::mat4 & matrix);
 void printVec3(const glm::vec3 & vec);
 void printVec4(const glm::vec4 & vec);
 
+bool checkErrorGL(const char* title);
+
 #endif //LUMINOLGL_UTILS_H

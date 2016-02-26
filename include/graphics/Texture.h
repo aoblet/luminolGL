@@ -82,6 +82,10 @@ namespace Graphics
         void loadImage(const std::string &filePath);    /** Load a given image. Update _data, _bitDepth, _width, _height **/
 
     public:
+        static const GLenum GL_INDEX_DIFFUSE    = GL_TEXTURE0;
+        static const GLenum GL_INDEX_SPECULAR   = GL_TEXTURE1;
+        static const GLenum GL_INDEX_NORMAL_MAP = GL_TEXTURE2;
+
         Texture(const Texture& texture);
         Texture(Texture&& texture);
 

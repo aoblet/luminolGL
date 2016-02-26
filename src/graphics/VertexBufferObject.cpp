@@ -13,6 +13,10 @@ namespace Graphics
         _target = _dataType == ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
     }
 
+    VertexBufferObject::~VertexBufferObject() {
+        glDeleteBuffers(1, &_glId);
+    }
+
     void VertexBufferObject::init() {
         switch(_dataType){
             case VERTEX_DESCRIPTOR:
@@ -37,6 +41,10 @@ namespace Graphics
 
             case INSTANCE_BUFFER:
                 initVboInstanceVec3();
+                break;
+
+            case INSTANCE_TRANSFORMATION_BUFFER:
+                initVboInstanceMat4();
                 break;
 
             default: // no need to init element array buffer
@@ -87,8 +95,19 @@ namespace Graphics
     void VertexBufferObject::initVboInstanceVec3() {
         bind();
         glEnableVertexAttribArray( _attribArray );
-        glVertexAttribPointer( _attribArray, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0 );
+        glVertexAttribPointer( _attribArray, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0 );
         glVertexAttribDivisor( _attribArray, 1 );
+    }
+
+    void VertexBufferObject::initVboInstanceMat4() {
+        bind();
+
+        for( int c = 0; c < 4; ++c )
+        {
+            glEnableVertexAttribArray( _attribArray + c );
+            glVertexAttribPointer( _attribArray + c, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(c * sizeof(glm::vec4)) );
+            glVertexAttribDivisor( _attribArray + c, 1 );
+        }
     }
 
     void VertexBufferObject::bind(){
@@ -124,6 +143,12 @@ namespace Graphics
         glBufferData(_target, data.size() * sizeof(GL_INT), data.data(), GL_STATIC_DRAW);
     }
 
+
+    void VertexBufferObject::updateData(const std::vector<glm::mat4> &data) {
+        bind();
+        glBufferData(_target, data.size() * sizeof(glm::mat4), data.data(), GL_STATIC_DRAW);
+    }
+
     void VertexBufferObject::setAttribArray(GLuint value){
         _attribArray = value;
     }
@@ -131,5 +156,17 @@ namespace Graphics
     void VertexBufferObject::unbindAll(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
+        std::swap(_glId, other._glId);
+        std::swap(_dataType, other._dataType);
+        std::swap(_target, other._target);
+        std::swap(_attribArray, other._attribArray);
+    }
+
+    VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray){
+        _dataType = other._dataType;
+        _target = other._target;
     }
 }

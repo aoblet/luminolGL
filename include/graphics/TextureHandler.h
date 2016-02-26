@@ -12,8 +12,6 @@
 
 namespace Graphics
 {
-
-
     class TextureHandler {
     private:
         std::unordered_map<std::string, Texture> _map;

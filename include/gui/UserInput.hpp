@@ -13,7 +13,7 @@ namespace GUI {
         bool is_PRESSED_S;
         bool is_PRESSED_D;
         bool is_PRESSED_SPACE;
-        bool is_PRESSED_ALT;
+        bool is_PRESSED_CTRL;
         float velocityMovement;
         float velocityRotate;
         glm::vec2 rotate;

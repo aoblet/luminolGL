@@ -3,7 +3,14 @@
 //
 
 #include <glm/gtc/constants.hpp>
+#include <fstream>
 #include "graphics/Mesh.h"
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
+#include <stdexcept>
+#include <glm/ext.hpp>
 
 namespace Graphics
 {
@@ -191,25 +198,63 @@ namespace Graphics
     }
 
     void Mesh::addVertices(std::vector<VertexDescriptor> &&vertices) {
-        _vertices.insert(_vertices.begin(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.begin()));
+        _vertices.insert(_vertices.begin(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.end()));
     }
 
     void Mesh::addElementIndexes(const std::vector<int> &index) {
-        _elementIndex.insert(_elementIndex.begin(), index.begin(), index.end());
+        _elementIndex.insert(_elementIndex.end(), index.begin(), index.end());
     }
 
     void Mesh::addElementIndexes(std::vector<int> &&index) {
-        _elementIndex.insert(_elementIndex.begin(), std::make_move_iterator(index.begin()), std::make_move_iterator(index.begin()));
+        _elementIndex.insert(_elementIndex.end(), std::make_move_iterator(index.begin()), std::make_move_iterator(index.end()));
     }
 
-    Mesh Mesh::loadMesh(const std::string &filePath) {
-        Mesh mesh;
-        //TODO: load model with assimp
-        return mesh;
-    }
 
     void Mesh::setTriangleCount(unsigned int value) {
         _triangleCount = value;
         _vertexCount = value * 3;
+    }
+
+
+    void Mesh::saveOBJ(const std::string &filePath, const std::string& filename) {
+
+        std::ofstream file (filePath + filename + ".obj");
+
+        if (!file.is_open())
+            throw std::runtime_error("Unable to save mesh at \"" + filePath + "\"");
+
+        file << "# " + filename + ".obj" << std::endl;
+
+        // write positions
+        for(unsigned int i = 0; i < _vertices.size(); ++i){
+            file << "v ";
+            file << _vertices[i].position.x << " ";
+            file << _vertices[i].position.y << " ";
+            file << _vertices[i].position.z << std::endl;
+        }
+
+        // write texcoords
+        for(unsigned int i = 0; i < _vertices.size(); ++i){
+            file << "vt ";
+            file << _vertices[i].texcoord.x << " ";
+            file << _vertices[i].texcoord.y << std::endl;
+        }
+
+        // write normals
+        for(unsigned int i = 0; i < _vertices.size(); ++i){
+            file << "vn ";
+            file << _vertices[i].normal.x << " ";
+            file << _vertices[i].normal.y << " ";
+            file << _vertices[i].normal.z << std::endl;
+        }
+
+        //write indexes
+        for(unsigned int i = 0; i < _elementIndex.size(); i+=3){
+            file << "f ";
+            file << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << " ";
+            file << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << " ";
+            file << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << std::endl;
+        }
+
     }
 }

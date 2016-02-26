@@ -19,8 +19,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
 #include <libgen.h>
-#include <graphics/BeautyFBO.hpp>
-#include <graphics/PostFxFBO.hpp>
 
 #include "geometry/Spline3D.h"
 
@@ -35,16 +33,22 @@
 #include "graphics/UBO_keys.hpp"
 #include "graphics/ShadowMapFBO.hpp"
 #include "graphics/GeometricFBO.hpp"
+#include "graphics/BeautyFBO.hpp"
+#include "graphics/PostFxFBO.hpp"
+#include "graphics/ModelMeshGroup.hpp"
+#include "graphics/ModelMeshInstanced.hpp"
+#include "graphics/Scene.h"
 
 #include "gui/Gui.hpp"
 #include "lights/Light.hpp"
-#include "graphics/MeshInstance.h"
-#include "graphics/Scene.h"
 
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
 
 #include "gui/UserInput.hpp"
+#include "utils/utils.h"
+
+#include <glog/logging.h>
 
 
 #ifndef DEBUG_PRINT
@@ -62,10 +66,6 @@
 // Font buffers
 extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
-
-// OpenGL utils
-bool checkError(const char* title);
-
 
 
 struct UniformCamera
@@ -89,11 +89,12 @@ struct UniformCamera
 };
 
 
-
-
-
 int main( int argc, char **argv )
 {
+
+    // GLOG debug level, 0 == all
+    FLAGS_minloglevel=0;
+
     glm::ivec2 dimViewport(1300, 700);
     int& width = dimViewport.x, height= dimViewport.y;
     float fps = 0.f;
@@ -171,8 +172,7 @@ int main( int argc, char **argv )
         return(EXIT_FAILURE);
     }
 
-    // Shaders
-    Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "../shaders/aogl.geom", "../shaders/aogl.frag");
+    Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram debugShader("../shaders/blit.vert", "", "../shaders/blit.frag");
     Graphics::ShaderProgram pointLightShader(debugShader.vShader(), "../shaders/pointLight.frag");
     Graphics::ShaderProgram directionalLightShader(debugShader.vShader(), "../shaders/directionnalLight.frag");
@@ -190,100 +190,72 @@ int main( int argc, char **argv )
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::VertexBufferObject cubeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
-    Graphics::VertexBufferObject cubeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-    Graphics::VertexBufferObject cubeInstancePositionVbo(Graphics::INSTANCE_BUFFER, 3);
 
-    Graphics::VertexArrayObject cubeVAO;
-    cubeVAO.addVBO(&cubeVerticesVbo);
-    cubeVAO.addVBO(&cubeIdsVbo);
-    cubeVAO.addVBO(&cubeInstancePositionVbo);
-    cubeVAO.init();
-
-    Graphics::Mesh cubeMesh(Graphics::Mesh::genCube());
-    Graphics::MeshInstance cubeInstances(&cubeMesh);
+    Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
     int cubeInstanceWidth = 10;
     int cubeInstanceHeight = 10;
 
-    std::vector<glm::vec3> cubeInstancePosition;
+    std::vector<glm::mat4> cubeInstanceTransform;
 
     int k = 0;
     for(int i = 0; i < cubeInstanceHeight; ++i){
         for(int j = 0; j < cubeInstanceWidth; ++j){
             cubeInstances.addInstance(glm::vec3(i * 2, 1.5f, j * 2));
-            cubeInstancePosition.push_back(cubeInstances.getPosition(k));
+            cubeInstanceTransform.push_back(cubeInstances.getTransformationMatrix(k));
             ++k;
         }
     }
 
-    cubeVerticesVbo.updateData(cubeMesh.getVertices());
-    cubeIdsVbo.updateData(cubeMesh.getElementIndex());
 
-    cubeInstancePositionVbo.updateData(cubeInstancePosition);
-
-    if (!checkError("VAO/VBO")){
+    if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : cube vao" << std::endl;
         return -1;
     }
 
+
     // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::VertexBufferObject sphereVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
-    Graphics::VertexBufferObject sphereIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-    Graphics::VertexBufferObject sphereInstancePositionVbo(Graphics::INSTANCE_BUFFER, 3);
-
-    Graphics::VertexArrayObject sphereVAO;
-    sphereVAO.addVBO(&sphereVerticesVbo);
-    sphereVAO.addVBO(&sphereIdsVbo);
-    sphereVAO.addVBO(&sphereInstancePositionVbo);
-    sphereVAO.init();
-
     Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
-    Graphics::MeshInstance sphereInstances(&sphereMesh);
+    Graphics::ModelMeshInstanced sphereInstances("../assets/models/primitives/sphere.obj");
 
     int sphereInstanceWidth = 10;
     int sphereInstanceHeight = 10;
 
-    std::vector<glm::vec3> sphereInstancePositions;
 
-    k=0;
     for(int i = 0; i < sphereInstanceWidth; ++i){
         for(int j = 0; j < sphereInstanceHeight; ++j){
             sphereInstances.addInstance(glm::vec3(i * 2, 2.5f, j * 2));
-            sphereInstancePositions.push_back(sphereInstances.getPosition(k));
-            ++k;
         }
     }
 
-    sphereVerticesVbo.updateData(sphereMesh.getVertices());
-    sphereIdsVbo.updateData(sphereMesh.getElementIndex());
-    sphereInstancePositionVbo.updateData(sphereInstancePositions);
 
-    if (!checkError("VAO/VBO")){
+    if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : sphere vao" << std::endl;
         return -1;
     }
 
+    // unbind everything
+    Graphics::VertexArrayObject::unbindAll();
+    Graphics::VertexBufferObject::unbindAll();
+
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::VertexBufferObject planeVerticesVbo(Graphics::VERTEX_DESCRIPTOR);
-    Graphics::VertexBufferObject planeIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-
-    Graphics::VertexArrayObject planeVAO;
-    planeVAO.addVBO(&planeVerticesVbo);
-    planeVAO.addVBO(&planeIdsVbo);
-    planeVAO.init();
 
     Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
+    Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
+    planeInstances.addInstance(glm::vec3(0,1,0));
 
-    planeVerticesVbo.updateData(planeMesh.getVertices());
-    planeIdsVbo.updateData(planeMesh.getElementIndex());
+    std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
 
-    if (!checkError("VAO/VBO")){
+    if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : plane vao" << std::endl;
         return -1;
     }
+
+
+    Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
+    crysisModel.addInstance(glm::vec3(0,1,0));
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
@@ -317,37 +289,30 @@ int main( int argc, char **argv )
 
     // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
 
-    std::vector<int> debugId;
-    debugId.push_back(0);
-    debugId.push_back(1);
-    debugId.push_back(2);
-    debugId.push_back(3);
-    debugId.push_back(4);
-    debugId.push_back(5);
-    debugId.push_back(6);
-    debugId.push_back(7);
+//    std::vector<int> debugId = cubeMesh.getElementIndex();
+    std::vector<int> debugId = {0,1,2,3,4,5,6,7};
 
-    std::vector<glm::vec3> debugVertices = cubeMesh.getBoundingBox().getVector();
+    std::vector<glm::vec3> debugVertices = planeMesh.getBoundingBox().getVector();
 
     Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
     Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-    Graphics::VertexBufferObject debugInstancePositionVbo(Graphics::INSTANCE_BUFFER, 1);
+    Graphics::VertexBufferObject debugInstanceTransformVbo(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 1);
 
     Graphics::VertexArrayObject debugVAO;
     debugVAO.addVBO(&debugVerticesVbo);
     debugVAO.addVBO(&debugIdsVbo);
-    debugVAO.addVBO(&debugInstancePositionVbo);
+    debugVAO.addVBO(&debugInstanceTransformVbo);
     debugVAO.init();
 
     debugVerticesVbo.updateData(debugVertices);
     debugIdsVbo.updateData(debugId);
-    debugInstancePositionVbo.updateData(cubeInstancePosition);
+    debugInstanceTransformVbo.updateData(planeTransform);
 
     // unbind everything
     Graphics::VertexArrayObject::unbindAll();
     Graphics::VertexBufferObject::unbindAll();
 
-    if (!checkError("VAO/VBO")){
+    if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : debug vao" << std::endl;
         return -1;
     }
@@ -358,8 +323,19 @@ int main( int argc, char **argv )
 
     const std::string cubeInstanceName = "cube_instance";
     const std::string sphereInstanceName = "sphere_instance";
-    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
-    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
+    const std::string planeInstanceName = "plane_instance";
+    const std::string crysisName = "crysis";
+
+//    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
+//    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
+//    scene.addMeshInstance(&planeInstances, planeInstanceName);
+    scene.addMeshInstance(&crysisModel, crysisName);
+    scene.init();
+
+    if (!checkErrorGL("Scene")){
+        std::cerr << "Error : scene" << std::endl;
+        return -1;
+    }
 
     // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
@@ -368,7 +344,7 @@ int main( int argc, char **argv )
     std::string TexBricksDiff = "bricks_diff";
     texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_diff.tga"), TexBricksDiff);
 
-    if (!checkError("Texture")){
+    if (!checkErrorGL("Texture")){
         std::cout << "Error : bricks_diff" << std::endl;
         return -1;
     }
@@ -376,7 +352,7 @@ int main( int argc, char **argv )
     std::string TexBricksSpec = "bricks_spec";
     texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_spec.tga"), TexBricksSpec);
 
-    if (!checkError("Texture")){
+    if (!checkErrorGL("Texture")){
         std::cout << "Error : bricks_spec" << std::endl;
         return -1;
     }
@@ -384,22 +360,34 @@ int main( int argc, char **argv )
     std::string TexBricksNormal = "bricks_normal";
     texHandler.add(Graphics::Texture("../assets/textures/spnza_bricks_a_normal.tga"), TexBricksNormal);
 
-    if (!checkError("Texture")){
+    if (!checkErrorGL("Texture")){
         std::cout << "Error : bricks_normal" << std::endl;
         return -1;
     }
 
-    cubeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
-    cubeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
-    cubeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+    const std::string TexCatDiffuse = "cat_diff";
+    const std::string TexCatSpec    = "cat_spec";
+    const std::string TexCatNormal  = "cat_normal";
 
-    planeMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
-    planeMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
-    planeMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+    texHandler.add(Graphics::Texture("../assets/models/cat/cat_diff.tga"), TexCatDiffuse);
+    texHandler.add(Graphics::Texture("../assets/models/cat/cat_spec.tga"), TexCatSpec);
+    texHandler.add(Graphics::Texture("../assets/models/cat/normal_map.tga"), TexCatNormal);
+    int shadowTexWidth = 4096;
+    int shadowTexHeight = 4096;
+    std::string shadowBufferTexture = "shadow_buffer_texture";
+    texHandler.add(Graphics::Texture(shadowTexWidth, shadowTexHeight, Graphics::FRAMEBUFFER_DEPTH), shadowBufferTexture);
+    if (!checkErrorGL("Texture")){
+        std::cout << "Error : shadow_buffer_texture" << std::endl;
+        return -1;
+    }
 
-    sphereMesh.attachTexture(&texHandler[TexBricksDiff], GL_TEXTURE0);
-    sphereMesh.attachTexture(&texHandler[TexBricksSpec], GL_TEXTURE1);
-    sphereMesh.attachTexture(&texHandler[TexBricksNormal], GL_TEXTURE2);
+    planeMesh.attachTexture(&texHandler[TexBricksDiff],   Graphics::Texture::GL_INDEX_DIFFUSE);
+    planeMesh.attachTexture(&texHandler[TexBricksSpec],   Graphics::Texture::GL_INDEX_SPECULAR);
+    planeMesh.attachTexture(&texHandler[TexBricksNormal], Graphics::Texture::GL_INDEX_NORMAL_MAP);
+
+    sphereMesh.attachTexture(&texHandler[TexBricksDiff],  Graphics::Texture::GL_INDEX_DIFFUSE);
+    sphereMesh.attachTexture(&texHandler[TexBricksSpec],  Graphics::Texture::GL_INDEX_SPECULAR);
+    sphereMesh.attachTexture(&texHandler[TexBricksNormal],Graphics::Texture::GL_INDEX_NORMAL_MAP);
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -425,7 +413,7 @@ int main( int argc, char **argv )
     mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
     shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
-    if (!checkError("Uniforms")){
+    if (!checkErrorGL("Uniforms")){
         std::cerr << "Error : geometry uniforms" << std::endl;
         return -1;
     }
@@ -444,12 +432,11 @@ int main( int argc, char **argv )
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
 
-    if (!checkError("Uniforms"))
+    if (!checkErrorGL("Uniforms"))
         return(1);
 
-    GLint blurDirectionLocation = glGetUniformLocation(blurShader.id(), "BlurDirection");
     // ---------------------- FX Variables
-    float shadowBias = 0.00013;
+    float shadowBias = 0.00019;
 
     float gamma = 1.22;
     float sobelIntensity = 0.5;
@@ -475,7 +462,7 @@ int main( int argc, char **argv )
     depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_BLUR, 2);
 
 
-    if (!checkError("Uniforms")){
+    if (!checkErrorGL("Uniforms")){
         std::cout << "Error : post_fx Uniforms" << std::endl;
         return -1;
     }
@@ -594,44 +581,19 @@ int main( int argc, char **argv )
         circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
 
         //******************************************************* FIRST PASS
+
         //-------------------------------------Bind gbuffer
         gBufferFBO.bind();
         gBufferFBO.clear();
 
-
-        //-------------------------------------Render Cubes
-
-        scene.setCurrentInstance(cubeInstanceName);
-        cubeInstancePositionVbo.updateData(scene.computeVisiblePositions(vp));
-
-        cubeVAO.bind();
-        cubeMesh.bindTextures();
-        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
-
-        //-------------------------------------Render Plane
-        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
-
-        planeVAO.bind();
-        planeMesh.bindTextures();
-        glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        //-------------------------------------Render Sphere
-        mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
-
-
-        scene.setCurrentInstance(sphereInstanceName);
-        sphereInstancePositionVbo.updateData(scene.computeVisiblePositions(vp));
-
-        sphereVAO.bind();
-        sphereMesh.bindTextures();
-        glDrawElementsInstanced(GL_TRIANGLES, sphereMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //-------------------------------------Render Scene
+        scene.draw(vp);
 
         //-------------------------------------Unbind the frambuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //******************************************************* SECOND PASS
+
         //-------------------------------------Shadow pass
         shadowMapFBO.bind();
         // Clear only the depth buffer
@@ -643,24 +605,8 @@ int main( int argc, char **argv )
         // Render the scene
         shadowShader.useProgram();
 
-        scene.setCurrentInstance(cubeInstanceName);
-        cubeInstancePositionVbo.updateData(scene.computeVisiblePositions(worldToLightScreen));
+        scene.draw(worldToLightScreen);
 
-        //cubes
-        cubeVAO.bind();
-        glDrawElementsInstanced(GL_TRIANGLES, cubeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
-
-        //plane
-        shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, -1);
-
-        planeVAO.bind();
-        glDrawElements(GL_TRIANGLES, planeMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0);
-
-        scene.setCurrentInstance(sphereInstanceName);
-        sphereInstancePositionVbo.updateData(scene.computeVisiblePositions(worldToLightScreen));
-
-        sphereVAO.bind();
-        glDrawElementsInstanced(GL_TRIANGLES, sphereMesh.getVertexCount(), GL_UNSIGNED_INT, (void*)0, scene.getInstanceNumber());
 
         // Fallback to default framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -704,8 +650,8 @@ int main( int argc, char **argv )
         }
 
         // ------------------------------------ Spot Lights
-        
-        spotLightShader.useProgram(); // spot light shaders    
+
+        spotLightShader.useProgram(); // spot light shaders
         quadVAO.bind(); // Bind quad vao
 
         gBufferFBO.color().bind(GL_TEXTURE0);
@@ -737,9 +683,7 @@ int main( int argc, char **argv )
                 quadIdsVbo.updateData(quadIds);
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
                 glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-            }        
-            
-            // glDrawElements(GL_POINTS, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            }
         }
         quadVerticesVbo.updateData(quadVertices);
         quadIdsVbo.updateData(quadIds);
@@ -832,7 +776,9 @@ int main( int argc, char **argv )
         debugShapesShader.useProgram();
         debugVAO.bind();
 
-        glDrawElementsInstanced(GL_LINES, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstancePosition.size());
+        glPointSize(2);
+
+        glDrawElementsInstanced(GL_POINTS, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstanceTransform.size());
 
         int screenNumber = 6;
 
@@ -955,7 +901,7 @@ int main( int argc, char **argv )
         glDisable(GL_BLEND);
 #endif
         // Check for errors
-        checkError("End loop");
+        checkErrorGL("End loop");
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -964,7 +910,7 @@ int main( int argc, char **argv )
         fps = 1.f/ (newTime - t);
 
     } // Check if the ESC key was pressed
-    while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS );
+    while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
 
     //*********************************************************************************************
     //************************************* MAIN LOOP END *****************************************
@@ -974,36 +920,4 @@ int main( int argc, char **argv )
     glfwTerminate();
 
     return EXIT_SUCCESS;
-}
-
-bool checkError(const char* title)
-{
-    int error;
-    if((error = glGetError()) != GL_NO_ERROR)
-    {
-        std::string errorString;
-        switch(error)
-        {
-            case GL_INVALID_ENUM:
-                errorString = "GL_INVALID_ENUM";
-                break;
-            case GL_INVALID_VALUE:
-                errorString = "GL_INVALID_VALUE";
-                break;
-            case GL_INVALID_OPERATION:
-                errorString = "GL_INVALID_OPERATION";
-                break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION:
-                errorString = "GL_INVALID_FRAMEBUFFER_OPERATION";
-                break;
-            case GL_OUT_OF_MEMORY:
-                errorString = "GL_OUT_OF_MEMORY";
-                break;
-            default:
-                errorString = "UNKNOWN";
-                break;
-        }
-        fprintf(stdout, "OpenGL Error(%s): %s\n", errorString.c_str(), title);
-    }
-    return error == GL_NO_ERROR;
 }

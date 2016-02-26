@@ -1,37 +1,37 @@
 
 #include "gui/Gui.hpp"
 
-  
+
 namespace Gui{
-	
-	Gui::Gui(int _DPI, int _width, int _height, const char * _name): 
-		DPI(_DPI), width(_width), height(_height), name(_name)
-	{
 
-	}
+    Gui::Gui(int _DPI, int _width, int _height, const char * _name):
+            DPI(_DPI), width(_width), height(_height), name(_name)
+    {
+
+    }
 
 
-	void Gui::beginFrame(){
-		imguiBeginFrame(mousex, mousey, mbut, mscroll);
-	}
+    void Gui::beginFrame(){
+        imguiBeginFrame(mousex, mousey, mbut, mscroll);
+    }
 
-	void Gui::getCursorPos(GLFWwindow * window){
+    void Gui::getCursorPos(GLFWwindow * window){
 
-		glfwGetCursorPos(window, &mousex, &mousey);
-	}
+        glfwGetCursorPos(window, &mousex, &mousey);
+    }
 
-	void Gui::updateFrame(){
-		mousex*=DPI;
+    void Gui::updateFrame(){
+        mousex*=DPI;
         mousey*=DPI;
         mousey = height - mousey;
-	}
+    }
 
-	void Gui::updateMbut(bool leftButtonPress){
-		mscroll = 0;
-        if(leftButtonPress) 
-        	mbut |= IMGUI_MBUT_LEFT;
+    void Gui::updateMbut(bool leftButtonPress){
+        mscroll = 0;
+        if(leftButtonPress)
+            mbut |= IMGUI_MBUT_LEFT;
         else mbut = '0';
-	}
+    }
 
     void Gui::init(GLFWwindow * window){
         beginFrame();
@@ -40,19 +40,19 @@ namespace Gui{
         setScrollArea();
     }
 
-	void Gui::addSlider(const char * name, float * var, float begin, float end, float step){
-		imguiSlider(name, var, begin, end, step);
-	}
+    void Gui::addSlider(const char * name, float * var, float begin, float end, float step){
+        imguiSlider(name, var, begin, end, step);
+    }
 
     void Gui::addSlider(Param & p){
         imguiSlider(p._name, p._var, p._begin, p._end, p._step);
     }
 
-	void Gui::addSlider(std::vector<Param> & params){
+    void Gui::addSlider(std::vector<Param> & params){
         for(size_t i=0; i<params.size(); ++i){
             addSlider(params[i]);
         }
-	}
+    }
 
     void Gui::addSliderInt(const char* text, int* val, float vmin, float vmax, float vinc, bool enabled){
         imguiSliderInt(text, val, vmin, vmax, vinc, enabled);
@@ -72,6 +72,7 @@ namespace Gui{
         imguiLabel(lineBuffer);
     }
 
+
     void Gui::setScrollArea(){
         imguiBeginScrollArea(name, width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
     }
@@ -81,7 +82,7 @@ namespace Gui{
     }
 
     bool Gui::addButton(const char * name, bool & display){
-        if(imguiButton(name)){   
+        if(imguiButton(name)){
             if(!display) display = true;
             else display = false;
         }
@@ -95,9 +96,9 @@ namespace Gui{
         imguiSlider("DL: direction.x", &lightHandler._directionnalLights[0]._pos.x, posBegin, posEnd, posStep);
         imguiSlider("DL: direction.y", &lightHandler._directionnalLights[0]._pos.y, posBegin, posEnd, posStep);
         imguiSlider("DL: direction.z", &lightHandler._directionnalLights[0]._pos.z, posBegin, posEnd, posStep);
-            imgui3Slider("Red", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01, 1);
-            imgui3Slider("Green", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01, 2);
-            imgui3Slider("Blue", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01, 3);
+        imgui3Slider("Red", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01, 3);
         imguiSlider("DL: intensity", &lightHandler._directionnalLights[0]._intensity, attBegin, attEnd, attStep);
         imguiSlider("DL: attenuation", &lightHandler._directionnalLights[0]._attenuation, attBegin, attEnd, attStep);
         addUnindent();
@@ -200,15 +201,9 @@ namespace Gui{
         imguiSeparatorLine();
     }
 
-	void Gui::scrollAreaEnd(){
-		imguiEndScrollArea();
+    void Gui::scrollAreaEnd(){
+        imguiEndScrollArea();
         imguiEndFrame();
         imguiRenderGLDraw(width, height);
-	}
-
-
-
-
-
-
+    }
 }

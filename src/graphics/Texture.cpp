@@ -44,7 +44,6 @@ namespace Graphics
     Texture::Texture(const Texture& texture):
             _texId(0), _data(nullptr), _width(texture._width), _height(texture._height), _bitDepth(texture._bitDepth),
             _texParams(texture._texParams), _path(texture._path){
-
         if(!_path.empty())
             loadImage(_path);
         genGlTex();
