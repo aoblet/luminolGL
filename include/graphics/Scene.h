@@ -5,6 +5,7 @@
 #ifndef LUMINOLGL_SCENE_H
 #define LUMINOLGL_SCENE_H
 
+#include <list>
 #include <vector>
 #include <string>
 #include <glm/detail/type_vec.hpp>
@@ -12,72 +13,39 @@
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/VertexBufferObject.h"
 
+
 namespace Graphics
 {
     class Scene {
     private:
-        std::map<std::string, ModelMeshInstanced*> _meshInstances;  /** Each mesh instance is associated to a name */
-        std::string _currentInstance;                               /** The name of the current instance called by setCurrentInstance() */
+        std::list<ModelMeshInstanced*> _meshInstances;              /** Each mesh instance is associated to a name */
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
 
-        /** Current instance that will impact :
-         * computeVisibleTransformations(), getInstance(), or getInstanceNumber()
+        /**
+         * Must be called after all MeshInstances has been attached.
+         *  _visibleTransformationsVBO is attached to each MeshInstance VAO
+         *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
          */
-        int _currentInstanceNumber;
+        void initGL();
+
     public:
+        Scene(const std::list<ModelMeshInstanced*>& meshes);
 
-        /** Just init The VBO containing Instance transformations */
-        Scene(const std::string& path="");
-
-        /** Must be called after all MeshInstances has been attached.
-          *  _visibleTransformationsVBO is attached to each MeshInstance VAO
-          *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
-          */
-        void init();
-
-        /** Call the draw() function of each MeshInstance.
+        /**
+         * Call the draw() function of each MeshInstance.
          *  Performs frustum culling to update _visibleTransformationsVBO :
          *  Only visible instances of VP Matrix are sent to the GPU
          */
         void draw(const glm::mat4 &VP);
 
-        /** Add a MeshInstance to _meshInstances
-         *  a name must be specified
-         */
-        void addMeshInstance(ModelMeshInstanced *instance, const std::string& name);
-
-
-        /** Switch the MeshInstance that will be updated.
-         *  Modify the behavior of :
-         *  - computeVisibleTransformations()
-         *  - getInstanceNumber()
-         *  - getInstance()
-         */
-        void setCurrentInstance(const std::string& name);
-
         /**
-         * Returns the currentInstance
-         */
-        ModelMeshInstanced* getInstance();
-
-        /** Compute frustum culling on current instance.
+         * Compute frustum culling on current instance.
          *  VP is the matrix that will be used
          *  to say if an instance Transform is visible or not.
-         *  Updates :
          *  - _visibleTransformations vector
-         *  - _visibleTransformationsVBO
-         *  - _currentInstanceNumber
          */
-        const std::vector<glm::mat4>& computeVisibleTransformations(const glm::mat4 & VP);
-
-        /** Returns the number of visible instances in the current MeshInstance
-         *  Must be called after computeVisibleTransformations()
-         */
-        int getInstanceNumber();
-
-        void saveAsTxt(const std::string& path);
-        void loadFromTxt(const std::string& path);
+        void computeVisibleTransformations(const glm::mat4 & VP, ModelMeshInstanced* mesh);
     };
 }
 

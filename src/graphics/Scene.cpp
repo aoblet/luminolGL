@@ -5,56 +5,39 @@
 #include <glm/ext.hpp>
 #include <glog/logging.h>
 #include "graphics/Scene.h"
+#include <fstream>
+#include <iomanip>
 
 namespace Graphics
 {
 
 
-    Scene::Scene() : _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3) { }
+    Scene::Scene(const std::list<ModelMeshInstanced*>& meshes) :
+            _meshInstances(meshes), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3){
+        initGL();
+    }
 
-
-    void Scene::init() {
-        for(auto& instance : _meshInstances){
-            instance.second->initGLBuffers(_visibleTransformationsVBO);
-        }
+    void Scene::initGL() {
+        for(auto& instance : _meshInstances)
+            instance->initGLBuffers(_visibleTransformationsVBO);
     }
 
     void Scene::draw(const glm::mat4 &VP) {
         for(auto& instance : _meshInstances){
-            setCurrentInstance(instance.first);
-            _visibleTransformationsVBO.updateData(computeVisibleTransformations(VP));
-            instance.second->draw(getInstanceNumber());
+            computeVisibleTransformations(VP, instance);
+            _visibleTransformationsVBO.updateData(_visibleTransformations);
+
+            // Draw for current instance nb transformations visible i.e total amount of instanced elements
+            instance->draw((int)_visibleTransformations.size());
         }
     }
 
-    void Scene::addMeshInstance(ModelMeshInstanced *instance, const std::string& name) {
-        _meshInstances.insert({name, instance});
-    }
-
-    ModelMeshInstanced *Scene::getInstance() {
-        return _meshInstances.at(_currentInstance);
-    }
-
-
-    void Scene::setCurrentInstance(const std::string &name) {
-        if(_meshInstances.count(name) < 1)
-            throw std::runtime_error("Scene::setCurrentInstance : trying to access instance that doesn't exist");
-        _currentInstance = name;
-    }
-
-    const std::vector<glm::mat4> &Scene::computeVisibleTransformations(const glm::mat4 &VP) {
+    void Scene::computeVisibleTransformations(const glm::mat4 &VP, ModelMeshInstanced* mesh) {
         _visibleTransformations.clear();
-        for(int i = 0; i < _meshInstances[_currentInstance]->getInstanceNumber(); ++i){
-            if(_meshInstances[_currentInstance]->getBoundingBox(i).isVisible(VP)){
-                _visibleTransformations.push_back(_meshInstances[_currentInstance]->getTransformationMatrix(i));
+        for(int i = 0; i < mesh->getInstanceNumber(); ++i){
+            if(mesh->getBoundingBox(i).isVisible(VP)){
+                _visibleTransformations.push_back(mesh->getTransformationMatrix(i));
             }
         }
-        _currentInstanceNumber = _visibleTransformations.size();
-
-        return _visibleTransformations;
-    }
-
-    int Scene::getInstanceNumber() {
-        return _currentInstanceNumber;
     }
 }

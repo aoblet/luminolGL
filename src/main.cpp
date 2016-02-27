@@ -49,6 +49,7 @@
 #include "utils/utils.h"
 
 #include <glog/logging.h>
+#include <glm/ext.hpp>
 
 
 #ifndef DEBUG_PRINT
@@ -319,18 +320,7 @@ int main( int argc, char **argv )
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::Scene scene;
-
-    const std::string cubeInstanceName = "cube_instance";
-    const std::string sphereInstanceName = "sphere_instance";
-    const std::string planeInstanceName = "plane_instance";
-    const std::string crysisName = "crysis";
-
-//    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
-//    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
-//    scene.addMeshInstance(&planeInstances, planeInstanceName);
-    scene.addMeshInstance(&crysisModel, crysisName);
-    scene.init();
+    Graphics::Scene scene({&crysisModel});
 
     if (!checkErrorGL("Scene")){
         LOG(ERROR) << "Error : scene" << std::endl;
