@@ -117,4 +117,5 @@ void main(void)
 	vec3 color = computeFragmentColor(DirectionnalLight.Color, DirectionnalLight.Intensity, computeIlluminationParams(DirectionnalLight.Direction));
 
     Color = vec4(color, 1);
+//    Color = vec4(point.SpecularPower);
 }

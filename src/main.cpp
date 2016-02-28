@@ -88,7 +88,6 @@ struct UniformCamera
 
 };
 
-
 int main( int argc, char **argv )
 {
 
@@ -187,6 +186,24 @@ int main( int argc, char **argv )
 
     // Viewport
     glViewport( 0, 0, width, height );
+
+    // Create MeshGrid -------------------------------------------------------------------------------------------------------------------------------
+
+//    LOG(INFO) << "loading meshgrid texture...";
+//
+//    Graphics::Texture heightmap("../assets/textures/moutain_height.png");
+//
+//    LOG(INFO) << "creating meshgrid...";
+//    Graphics::Mesh grid(Graphics::Mesh::genGrid(500,500, heightmap, glm::vec3(1,1,1), 0.25f));
+//    LOG(INFO) << "meshgrid created!";
+//
+//    LOG(INFO) << "saving grid...";
+//    grid.saveOBJ("../assets/models/", "meshgrid");
+//    LOG(INFO) << "grid saved !";
+
+    Graphics::ModelMeshInstanced meshgridInstances("../assets/models/meshgrid/meshgrid.obj");
+    meshgridInstances.addInstance(glm::vec3(0, -10, 0), glm::vec4(1,1,1,0), glm::vec3(100,100,100));
+
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
 
@@ -325,11 +342,13 @@ int main( int argc, char **argv )
     const std::string sphereInstanceName = "sphere_instance";
     const std::string planeInstanceName = "plane_instance";
     const std::string crysisName = "crysis";
+    const std::string meshgridName = "mesh_grid";
 
 //    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
 //    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
 //    scene.addMeshInstance(&planeInstances, planeInstanceName);
     scene.addMeshInstance(&crysisModel, crysisName);
+    scene.addMeshInstance(&meshgridInstances, meshgridName);
     scene.init();
 
     if (!checkErrorGL("Scene")){
@@ -343,8 +362,8 @@ int main( int argc, char **argv )
 
     Light::LightHandler lightHandler;
 
-    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2);
-    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
+    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.7,0.9,1), 1);
+    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
 //    lightHandler.addPointLight(glm::vec3(2.5,0.5,4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
 
 
@@ -390,7 +409,7 @@ int main( int argc, char **argv )
     float shadowBias = 0.00019;
 
     float gamma = 1.22;
-    float sobelIntensity = 0.5;
+    float sobelIntensity = 0.15;
     float sampleCount = 9; // blur
     glm::vec3 focus(0, 1, 100);
 
@@ -556,7 +575,7 @@ int main( int argc, char **argv )
         // Render the scene
         shadowShader.useProgram();
 
-//        scene.draw(worldToLightScreen);
+        scene.draw(worldToLightScreen);
 
 
         // Fallback to default framebuffer

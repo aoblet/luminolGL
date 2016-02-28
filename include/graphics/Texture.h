@@ -54,7 +54,7 @@ namespace Graphics
         }
 
         static TexParams normalEncodedFBO(){
-            return TexParams(GL_RGB,  GL_RGB, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+            return TexParams(GL_RGBA8,  GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
         }
     };
 
@@ -101,8 +101,10 @@ namespace Graphics
 
         GLuint& glId();
         GLuint glId() const;
-        int width();
-        int height();
+        int width() const;
+        int height() const;
+
+        unsigned char * data() const;
     };
 }
 

@@ -115,11 +115,15 @@ namespace Graphics
         return _texId;
     }
 
-    int Texture::width(){
+    int Texture::width() const{
         return _width;
     }
 
-    int Texture::height(){
+    int Texture::height() const{
         return _height;
+    }
+
+    unsigned char *Texture::data() const{
+        return _data;
     }
 }

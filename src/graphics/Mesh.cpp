@@ -189,6 +189,93 @@ namespace Graphics
         return mesh;
     }
 
+
+    Mesh Mesh::genGrid(int width, int height, const Texture& heightmap, glm::vec3 scale, float intensity) {
+        Mesh mesh;
+
+        mesh._vertexCount = 0;
+        mesh._triangleCount = 0;
+
+        unsigned char* texData = heightmap.data();
+
+        std::vector<Graphics::VertexDescriptor> gridVertices;
+
+        glm::vec3 offset(0.5f, 0, 0.5f);
+        offset *= scale;
+
+        for (int i = 0; i < height; ++i)
+        {
+            for (int j = 0; j < width; ++j)
+            {
+                int texI = int((i / float(height)) * float(heightmap.height()));
+                int texJ = int((j / float(width)) * float(heightmap.width()));
+
+                float value = texData[(texJ + texI * heightmap.height()) * 3] / (255.f);
+                value *= intensity;
+
+                glm::vec3 pos(j/float(width-1), value, i/float(height-1));
+                pos *= scale;
+                pos -= offset;
+
+                glm::vec3 norm(0,1,0);
+                glm::vec2 uv(j/float(width-1), 1-i/float(height-1));
+                gridVertices.push_back(VertexDescriptor(pos, norm, uv));
+                ++mesh._vertexCount;
+            }
+        }
+
+        std::vector<int> gridIds;
+        for (int i = 0; i < height - 1; ++i)
+        {
+            for (int j = 0; j < width - 1; ++j)
+            {
+                // ---  first triangle
+
+                //insert ids
+                int ip0 = (j + 0) + (i + 0) * height;
+                int ip1 = (j + 1) + (i + 0) * height;
+                int ip2 = (j + 0) + (i + 1) * height;
+                gridIds.push_back(ip0);
+                gridIds.push_back(ip1);
+                gridIds.push_back(ip2);
+
+                //compute new normal
+                glm::vec3 v0 = gridVertices[ip1].position - gridVertices[ip0].position;
+                glm::vec3 v1 = gridVertices[ip2].position - gridVertices[ip0].position;
+                glm::vec3 newNormal = glm::normalize(glm::cross(v1,v0));
+                gridVertices[ip0].normal = newNormal;
+                gridVertices[ip1].normal = newNormal;
+                gridVertices[ip2].normal = newNormal;
+
+                // ---  second triangle
+                //insert ids
+                int ip3 = (j + 0) + (i + 1) * height;
+                int ip4 = (j + 1) + (i + 0) * height;
+                int ip5 = (j + 1) + (i + 1) * height;
+                gridIds.push_back(ip3);
+                gridIds.push_back(ip4);
+                gridIds.push_back(ip5);
+
+                //compute new normal
+                v0 = gridVertices[ip4].position - gridVertices[ip3].position;
+                v1 = gridVertices[ip5].position - gridVertices[ip3].position;
+                newNormal = glm::normalize(glm::cross(v1, v0));
+                gridVertices[ip3].normal = newNormal;
+                gridVertices[ip4].normal = newNormal;
+                gridVertices[ip5].normal = newNormal;
+
+                mesh._triangleCount += 2;
+            }
+        }
+
+        mesh.addVertices(gridVertices);
+        mesh.addElementIndexes(gridIds);
+
+        mesh.computeBoundingBox();
+
+        return mesh;
+    }
+
     const Geometry::BoundingBox &Mesh::getBoundingBox() {
         return _boundaries;
     }
@@ -224,6 +311,7 @@ namespace Graphics
             throw std::runtime_error("Unable to save mesh at \"" + filePath + "\"");
 
         file << "# " + filename + ".obj" << std::endl;
+        file << "mtllib " + filename + ".mtl" << std::endl;
 
         // write positions
         for(unsigned int i = 0; i < _vertices.size(); ++i){
@@ -248,6 +336,7 @@ namespace Graphics
             file << _vertices[i].normal.z << std::endl;
         }
 
+        file << "usemtl " + filename << std::endl;
         //write indexes
         for(unsigned int i = 0; i < _elementIndex.size(); i+=3){
             file << "f ";

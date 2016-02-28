@@ -29,7 +29,6 @@ void main()
 {	
 	Out.TexCoord = TexCoord;
 	Out.Normal = Normal;
-//	Out.Position = Position + InstancePosition;
 	Out.Position = (InstanceTransform * vec4(Position,1)).xyz;
 
 	// If there is geometry shader, comment this
