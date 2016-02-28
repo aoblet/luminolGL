@@ -47,9 +47,10 @@
 
 #include "gui/UserInput.hpp"
 #include "utils/utils.h"
+#include "data/SceneIOJson.hpp"
 
 #include <glog/logging.h>
-#include <glm/gtx/string_cast.hpp>
+#include <glm/ext.hpp>
 
 
 #ifndef DEBUG_PRINT
@@ -189,26 +190,8 @@ int main( int argc, char **argv )
     // Viewport
     glViewport( 0, 0, width, height );
 
-    // Create MeshGrid -------------------------------------------------------------------------------------------------------------------------------
-
-//    LOG(INFO) << "loading meshgrid texture...";
-//
-//    Graphics::Texture heightmap("../assets/textures/moutain_height.png");
-//
-//    LOG(INFO) << "creating meshgrid...";
-//    Graphics::Mesh grid(Graphics::Mesh::genGrid(500,500, heightmap, glm::vec3(1,1,1), 0.25f));
-//    LOG(INFO) << "meshgrid created!";
-//
-//    LOG(INFO) << "saving grid...";
-//    grid.saveOBJ("../assets/models/", "meshgrid");
-//    LOG(INFO) << "grid saved !";
-
-    Graphics::ModelMeshInstanced meshgridInstances("../assets/models/meshgrid/meshgrid.obj");
-    meshgridInstances.addInstance(glm::vec3(0, -10, 0), glm::vec4(1,1,1,0), glm::vec3(100,100,100));
-
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
-
 
     Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
@@ -216,6 +199,7 @@ int main( int argc, char **argv )
     int cubeInstanceHeight = 10;
 
     std::vector<glm::mat4> cubeInstanceTransform;
+    cubeInstanceTransform.reserve((int)cubeInstanceHeight*cubeInstanceWidth);
 
     int k = 0;
     for(int i = 0; i < cubeInstanceHeight; ++i){
@@ -226,28 +210,23 @@ int main( int argc, char **argv )
         }
     }
 
-
     if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : cube vao" << std::endl;
         return -1;
     }
 
-
     // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
-
     Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
     Graphics::ModelMeshInstanced sphereInstances("../assets/models/primitives/sphere.obj");
 
     int sphereInstanceWidth = 10;
     int sphereInstanceHeight = 10;
 
-
     for(int i = 0; i < sphereInstanceWidth; ++i){
         for(int j = 0; j < sphereInstanceHeight; ++j){
             sphereInstances.addInstance(glm::vec3(i * 2, 2.5f, j * 2));
         }
     }
-
 
     if (!checkErrorGL("VAO/VBO")){
         std::cerr << "Error : sphere vao" << std::endl;
@@ -258,9 +237,8 @@ int main( int argc, char **argv )
     Graphics::VertexArrayObject::unbindAll();
     Graphics::VertexBufferObject::unbindAll();
 
+
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
-
-
     Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
     planeInstances.addInstance(glm::vec3(0,1,0));
@@ -276,18 +254,17 @@ int main( int argc, char **argv )
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
     crysisModel.addInstance(glm::vec3(0,1,0));
 
-    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
 
+    // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
     int   quad_triangleList[] = {0, 1, 2, 2, 1, 3};
-    // float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
 
-    std::vector<glm::vec2> quadVertices;
-
-    quadVertices.push_back(glm::vec2(-1.0, -1.0));
-    quadVertices.push_back(glm::vec2(1.0, -1.0));
-    quadVertices.push_back(glm::vec2(-1.0, 1.0));
-    quadVertices.push_back(glm::vec2(1.0, 1.0));
+    std::vector<glm::vec2> quadVertices = {
+        glm::vec2(-1.0, -1.0),
+        glm::vec2(1.0, -1.0),
+        glm::vec2(-1.0, 1.0),
+        glm::vec2(1.0, 1.0)
+    };
 
     std::vector<int> quadIds(quad_triangleList, quad_triangleList + sizeof(quad_triangleList) / sizeof (quad_triangleList[0]));
 
@@ -308,9 +285,7 @@ int main( int argc, char **argv )
 
     // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
 
-//    std::vector<int> debugId = cubeMesh.getElementIndex();
     std::vector<int> debugId = {0,1,2,3,4,5,6,7};
-
     std::vector<glm::vec3> debugVertices = crysisModel.getBoundingBox(0).getVector();
 
     Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
@@ -337,28 +312,18 @@ int main( int argc, char **argv )
     }
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
+    std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
+    sceneMeshes.push_back(std::move(crysisModel));
 
-    Graphics::Scene scene;
+    Data::SceneIOJson sceneIOJson;
+    Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
 
-    const std::string cubeInstanceName = "cube_instance";
-    const std::string sphereInstanceName = "sphere_instance";
-    const std::string planeInstanceName = "plane_instance";
-    const std::string crysisName = "crysis";
-    const std::string meshgridName = "mesh_grid";
 
-//    scene.addMeshInstance(&cubeInstances, cubeInstanceName);
-//    scene.addMeshInstance(&sphereInstances, sphereInstanceName);
-//    scene.addMeshInstance(&planeInstances, planeInstanceName);
-    scene.addMeshInstance(&crysisModel, crysisName);
-    scene.addMeshInstance(&meshgridInstances, meshgridName);
-    scene.init();
 
     if (!checkErrorGL("Scene")){
         LOG(ERROR) << "Error : scene" << std::endl;
         return -1;
     }
-
-    // My GL Textures -------------------------------------------------------------------------------------------------------------------------------
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
@@ -366,8 +331,6 @@ int main( int argc, char **argv )
 
     lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.7,0.9,1), 1);
     lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
-//    lightHandler.addPointLight(glm::vec3(2.5,0.5,4), glm::vec3(0.2,0.2,0.95), 0.9, 2.0);
-
 
     // ---------------------- For Geometry Shading
     float t = 0;
@@ -418,7 +381,7 @@ int main( int argc, char **argv )
 
 
     // ---------------------- FX uniform update
-    // For shadow pass shading
+    // For shadow pass shading (unit texture)
     spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BUFFER, 3);
 
     gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);

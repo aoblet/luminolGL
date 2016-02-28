@@ -1,6 +1,7 @@
 #pragma once
 #include "graphics/ModelMeshGroup.hpp"
 #include "geometry/Transformation.h"
+#include <string>
 
 namespace Graphics {
 
@@ -13,11 +14,12 @@ namespace Graphics {
         VertexBufferObject _verticesVBO;                        /** Stores every vertices attributes of the ModelMeshGroup (Position, Normal, UV) */
         VertexBufferObject _indexesVBO;                         /** Stores the indexes of the mesh (i.e in which order the vertices will be drawn) */
         std::vector<Geometry::Transformation> _transformations; /** Stores Transform property of every instances */
+        std::string _modelPath;
 
     public:
         ModelMeshInstanced(const std::string &modelPath);
+        ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
-        ModelMeshInstanced(ModelMeshInstanced&& other) = delete;
 
         void initGLBuffers(VertexBufferObject& scenePositionsVBO);
         void draw(int nbInstanceToDraw);
@@ -35,19 +37,24 @@ namespace Graphics {
 
         /** Returns the Transformation property (position, rotation, scale) of a specified index */
         const Geometry::Transformation& getTransformation(int index) const;
+        const std::vector<Geometry::Transformation>& getTransformations() const;
+        void setTransformations(std::vector<Geometry::Transformation>&& transformations);
 
         /** Returns the Transformation matrix of a specified index */
         glm::mat4 getTransformationMatrix(int index) const;
 
-        /** Returns the bounding box a specified index
+        /**
+         * Returns the bounding box a specified index
          * This bounding box is computed using the Transformation matrix at the specified index,
          * And the original BoundingBox of _referenceMesh
          */
         Geometry::BoundingBox getBoundingBox(int index) const;
 
-        /** Returns the TOTAL number of instance
-         *  This method is different from Scene::getInstanceNumber(), which performs frustum culling
+        /**
+         * Returns the TOTAL number of instance
+         * This method is different from Scene::getInstanceNumber(), which performs frustum culling
          */
-        int getInstanceNumber();
+        int getInstanceNumber() const;
+        std::string modelPath() const;
     };
 }

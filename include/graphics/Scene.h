@@ -1,82 +1,54 @@
 //
 // Created by mehdi on 18/02/16.
 //
+#pragma once
 
-#ifndef LUMINOLGL_SCENE_H
-#define LUMINOLGL_SCENE_H
-
+#include <list>
 #include <vector>
 #include <string>
 #include <glm/detail/type_vec.hpp>
 
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/VertexBufferObject.h"
+#include "data/SceneIO.hpp"
 
-namespace Graphics
-{
+namespace Graphics {
     class Scene {
     private:
-        std::map<std::string, ModelMeshInstanced*> _meshInstances; /** Each mesh instance is associated to a name */
+        std::vector<ModelMeshInstanced> _meshInstances;            /** Scene meshes instanced*/
+        std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
+        VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
+        Data::SceneIO* _ioHandler;
 
-        std::string _currentInstance;                        /** The name of the current instance called by setCurrentInstance() */
+        /**
+         * Must be called after all MeshInstances has been attached.
+         *  _visibleTransformationsVBO is attached to each MeshInstance VAO
+         *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
+         */
+        void initGL();
 
-        std::vector<glm::mat4> _visibleTransformations;      /** This vector is updated with visible Transformations of the current instance */
-
-        VertexBufferObject _visibleTransformationsVBO;       /** A VBO containing the Transformations of visible current instances */
-
-        int _currentInstanceNumber;                          /** Current instance that will impact :
-                                                             *   computeVisibleTransformations(), getInstance(), or getInstanceNumber()
-                                                             */
     public:
+        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={});
 
+        /**
+         * Call the draw() function of each MeshInstance.
+         *  Performs frustum culling to update _visibleTransformationsVBO :
+         *  Only visible instances of VP Matrix are sent to the GPU
+         */
+        void draw(const glm::mat4 &VP);
 
-        Scene(); /** Just init The VBO containing Instance transformations */
+        /**
+         * Compute frustum culling on current instance.
+         *  VP is the matrix that will be used
+         *  to say if an instance Transform is visible or not.
+         *  - _visibleTransformations vector
+         */
+        void computeVisibleTransformations(const glm::mat4 & VP, const ModelMeshInstanced& mesh);
 
-        void init(); /** Must be called after all MeshInstances has been attached.
-                      *  _visibleTransformationsVBO is attached to each MeshInstance VAO
-                      *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
-                      */
-
-
-        void draw(const glm::mat4 &VP); /** Call the draw() function of each MeshInstance.
-                                         *  Performs frustum culling to update _visibleTransformationsVBO :
-                                         *  Only visible instances of VP Matrix are sent to the GPU
-                                         */
-
-
-        void addMeshInstance(ModelMeshInstanced *instance, const std::string& name); /** Add a MeshInstance to _meshInstances
-                                                                                *  a name must be specified
-                                                                                */
-
-
-        void setCurrentInstance(const std::string& name); /** Switch the MeshInstance that will be updated.
-                                                           *  Modify the behavior of :
-                                                           *  - computeVisibleTransformations()
-                                                           *  - getInstanceNumber()
-                                                           *  - getInstance()
-                                                           */
-
-
-        ModelMeshInstanced* getInstance();         /** Returns the currentInstance */
-
-
-        const std::vector<glm::mat4>& computeVisibleTransformations(const glm::mat4 & VP); /** Compute frustum culling on current instance.
-                                                                                            *  VP is the matrix that will be used
-                                                                                            *  to say if an instance Transform is visible or not.
-                                                                                            *  Updates :
-                                                                                            *  - _visibleTransformations vector
-                                                                                            *  - _visibleTransformationsVBO
-                                                                                            *  - _currentInstanceNumber
-                                                                                            */
-
-
-        int getInstanceNumber(); /** Returns the number of visible instances in the current MeshInstance
-                                  *  Must be called after computeVisibleTransformations()
-                                  */
+        void setIOHandler(Data::SceneIO * io);
+        void save(const std::string& path);
+        void load(const std::string& path);
+        std::vector<ModelMeshInstanced>& meshInstances();
+        const std::vector<ModelMeshInstanced>& meshInstances() const;
     };
 }
-
-
-
-
-#endif //LUMINOLGL_SCENE_H

@@ -34,6 +34,14 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
     DLOG(INFO) << "Loading model " << modelPath << " DONE" << std::endl << std::endl;
 }
 
+ModelMeshGroup::ModelMeshGroup(ModelMeshGroup &&other):
+        _textures(std::move(other._textures)), _meshes(std::move(other._meshes)),
+        _directoryPath(std::move(other._directoryPath)), _modelMatrix(std::move(other._modelMatrix)),
+        _boundingBox(std::move(other._boundingBox)), _allVertices(std::move(other._allVertices)),
+        _allIds(std::move(other._allIds)){}
+
+
+
 void ModelMeshGroup::loadMeshes(const aiScene* scene) {
     for(unsigned int i=0; i<scene->mNumMeshes; ++i){
         aiMeshToMesh(scene->mMeshes[i], scene);
@@ -120,7 +128,7 @@ void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
 
 Texture*ModelMeshGroup::saveTexture(const std::string &pathTexture) {
 
-    DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
+    // DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
 
     // If the texture does not exist we create it
     if(_textures.find(pathTexture) == _textures.end())
