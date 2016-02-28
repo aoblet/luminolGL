@@ -37,7 +37,8 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
 ModelMeshGroup::ModelMeshGroup(ModelMeshGroup &&other):
         _textures(std::move(other._textures)), _meshes(std::move(other._meshes)),
         _directoryPath(std::move(other._directoryPath)), _modelMatrix(std::move(other._modelMatrix)),
-        _boundingBox(std::move(other._boundingBox)){}
+        _boundingBox(std::move(other._boundingBox)), _allVertices(std::move(other._allVertices)),
+        _allIds(std::move(other._allIds)){}
 
 
 

@@ -13,7 +13,7 @@ namespace Data{
 
     class SceneIO{
     public:
-        virtual void load(const Graphics::Scene& scene, const std::string& inPath) = 0;
+        virtual void load(Graphics::Scene& scene, const std::string& inPath) = 0;
         virtual void save(const Graphics::Scene& scene, const std::string& outPath) = 0;
     };
 }

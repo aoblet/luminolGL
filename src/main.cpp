@@ -320,9 +320,13 @@ int main( int argc, char **argv )
     }
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
+    std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
+    sceneMeshes.push_back(std::move(crysisModel));
 
     Data::SceneIOJson sceneIOJson;
-    Graphics::Scene scene(&sceneIOJson, "", {&crysisModel});
+    Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
+//    scene.save("test.json");
+    return 0;
 
     if (!checkErrorGL("Scene")){
         LOG(ERROR) << "Error : scene" << std::endl;

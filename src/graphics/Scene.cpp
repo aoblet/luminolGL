@@ -9,7 +9,7 @@
 #include <iomanip>
 
 namespace Graphics {
-    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, const std::list<ModelMeshInstanced*>&& meshes):
+    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes):
             _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3), _ioHandler(ioHandler){
 
         if(!scenePath.empty())
@@ -20,7 +20,7 @@ namespace Graphics {
 
     void Scene::initGL() {
         for(auto& instance : _meshInstances)
-            instance->initGLBuffers(_visibleTransformationsVBO);
+            instance.initGLBuffers(_visibleTransformationsVBO);
     }
 
     void Scene::draw(const glm::mat4 &VP) {
@@ -29,15 +29,15 @@ namespace Graphics {
             _visibleTransformationsVBO.updateData(_visibleTransformations);
 
             // Draw for current instance nb transformations visible i.e total amount of instanced elements
-            instance->draw((int)_visibleTransformations.size());
+            instance.draw((int)_visibleTransformations.size());
         }
     }
 
-    void Scene::computeVisibleTransformations(const glm::mat4 &VP, ModelMeshInstanced* mesh) {
+    void Scene::computeVisibleTransformations(const glm::mat4 &VP, const ModelMeshInstanced& mesh) {
         _visibleTransformations.clear();
-        for(int i = 0; i < mesh->getInstanceNumber(); ++i){
-            if(mesh->getBoundingBox(i).isVisible(VP)){
-                _visibleTransformations.push_back(mesh->getTransformationMatrix(i));
+        for(int i = 0; i < mesh.getInstanceNumber(); ++i){
+            if(mesh.getBoundingBox(i).isVisible(VP)){
+                _visibleTransformations.push_back(mesh.getTransformationMatrix(i));
             }
         }
     }
@@ -54,11 +54,11 @@ namespace Graphics {
         _ioHandler->load(*this, path);
     }
 
-    std::list<ModelMeshInstanced *>& Scene::meshInstances() {
+    std::vector<ModelMeshInstanced>& Scene::meshInstances() {
         return _meshInstances;
     }
 
-    const std::list<ModelMeshInstanced *>& Scene::meshInstances() const{
+    const std::vector<ModelMeshInstanced>& Scene::meshInstances() const{
         return _meshInstances;
     }
 }

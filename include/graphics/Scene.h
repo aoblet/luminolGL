@@ -1,9 +1,7 @@
 //
 // Created by mehdi on 18/02/16.
 //
-
-#ifndef LUMINOLGL_SCENE_H
-#define LUMINOLGL_SCENE_H
+#pragma once
 
 #include <list>
 #include <vector>
@@ -14,11 +12,10 @@
 #include "graphics/VertexBufferObject.h"
 #include "data/SceneIO.hpp"
 
-namespace Graphics
-{
+namespace Graphics {
     class Scene {
     private:
-        std::list<ModelMeshInstanced*> _meshInstances;              /** Each mesh instance is associated to a name */
+        std::vector<ModelMeshInstanced> _meshInstances;            /** Scene meshes instanced*/
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
         Data::SceneIO* _ioHandler;
@@ -31,7 +28,7 @@ namespace Graphics
         void initGL();
 
     public:
-        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", const std::list<ModelMeshInstanced*>&& meshes={});
+        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={});
 
         /**
          * Call the draw() function of each MeshInstance.
@@ -46,17 +43,12 @@ namespace Graphics
          *  to say if an instance Transform is visible or not.
          *  - _visibleTransformations vector
          */
-        void computeVisibleTransformations(const glm::mat4 & VP, ModelMeshInstanced* mesh);
+        void computeVisibleTransformations(const glm::mat4 & VP, const ModelMeshInstanced& mesh);
 
         void setIOHandler(Data::SceneIO * io);
         void save(const std::string& path);
         void load(const std::string& path);
-        std::list<ModelMeshInstanced*>& meshInstances();
-        const std::list<ModelMeshInstanced*>& meshInstances() const;
+        std::vector<ModelMeshInstanced>& meshInstances();
+        const std::vector<ModelMeshInstanced>& meshInstances() const;
     };
 }
-
-
-
-
-#endif //LUMINOLGL_SCENE_H

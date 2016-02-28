@@ -1,7 +1,9 @@
 #pragma once
 
 #include "data/SceneIO.hpp"
-
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <rapidjson/document.h>
 
 namespace Data{
 
@@ -15,16 +17,16 @@ namespace Data{
      *              "mesh_path": '../assets/<model>",
      *              "mesh_transformations": {
      *                  "positions": [
-     *                      {"v": [x1, y1, z1]},
-     *                      {"v": [x2, y2, z2]},
+     *                      {"value": [x1, y1, z1]},
+     *                      {"value": [x2, y2, z2]},
      *                  ],
      *                  "rotations": [
-     *                      {"v": [x1, y1, z1, theta1]},
-     *                      {"v": [x2, y2, z2, theta2]},
+     *                      {"value": [x1, y1, z1, theta1]},
+     *                      {"value": [x2, y2, z2, theta2]},
      *                  ],
      *                  "scales": [
-     *                      {"v": [x1, y1, z1]},
-     *                      {"v": [x2, y2, z2]},
+     *                      {"value": [x1, y1, z1]},
+     *                      {"value": [x2, y2, z2]},
      *                  ],
      *              }
      *          },
@@ -37,7 +39,7 @@ namespace Data{
      */
 
     namespace SceneIOJsonKeys{
-        const char value[] = "v";
+        const char value[] = "value";
         const char data[] = "data";
         const char mesh_path[] = "mesh_path";
         const char mesh_transformations[] = "mesh_transformations";
@@ -47,8 +49,15 @@ namespace Data{
     }
 
     class SceneIOJson: public SceneIO{
+        bool _isPrettyOutput;
+
+        void addVec3ToJson(const glm::vec3& vec, rapidjson::Value& value, rapidjson::Document::AllocatorType& allocator);
+        void addVec4ToJson(const glm::vec4& vec, rapidjson::Value& value, rapidjson::Document::AllocatorType& allocator);
+        glm::vec3 jsonArrayToVec3(const rapidjson::Value& value);
+        glm::vec4 jsonArrayToVec4(const rapidjson::Value& value);
     public:
-        void load(const Graphics::Scene &scene, const std::string& inPath) override ;
+        SceneIOJson(bool isPrettyOutput=true);
+        void load(Graphics::Scene &scene, const std::string& inPath) override ;
         void save(const Graphics::Scene &scene, const std::string& outPath) override ;
     };
 }

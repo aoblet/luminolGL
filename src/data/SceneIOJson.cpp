@@ -1,20 +1,72 @@
 #include "data/SceneIOJson.hpp"
-#include "fstream"
+#include "graphics/Scene.h"
+#include <fstream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/document.h>
 #include <glog/logging.h>
-#include <graphics/Scene.h>
 #include <rapidjson/prettywriter.h>
+#include <rapidjson/error/en.h>
+#include <string>
 
 
 using namespace Data;
 using namespace rapidjson;
 
-void SceneIOJson::load(const Graphics::Scene &scene, const std::string &inPath) {
+SceneIOJson::SceneIOJson(bool isPrettyOutput): _isPrettyOutput(isPrettyOutput){ }
+
+void SceneIOJson::load(Graphics::Scene &scene, const std::string &inPath) {
     DLOG(INFO) << "Loading scene " << inPath;
+
+    std::ifstream inFile(inPath);
+    std::stringstream buffer;
+    buffer << inFile.rdbuf();
+
+    if(!inFile.is_open())
+        throw std::runtime_error("SceneIOJson::save cannot open the file " + inPath);
+
+    Document dom;
+    dom.Parse(buffer.str().c_str());
+
+    if(dom.HasParseError())
+        throw std::runtime_error("SceneIOJson::load error while parsing json data: " + std::string(GetParseError_En(dom.GetParseError())));
+    assert(dom.IsObject());
+
+    Value& data = dom[SceneIOJsonKeys::data];
+    assert(data.IsArray());
+
+    scene.meshInstances().reserve(scene.meshInstances().size() + data.Size());
+
+    for(auto it = data.Begin(); it != data.End(); ++it){
+        Value& meshJS = *it;
+        assert(meshJS.IsObject());
+
+        Graphics::ModelMeshInstanced mesh(meshJS[SceneIOJsonKeys::mesh_path].GetString());
+
+        Value& transformationsJS = meshJS[SceneIOJsonKeys::mesh_transformations];
+        assert(transformationsJS.IsObject());
+
+        int nbTransformations = transformationsJS[SceneIOJsonKeys::positions].Size();
+        std::vector<Geometry::Transformation> transformations;
+        transformations.reserve((size_t)nbTransformations);
+
+        for(int i=0; i<nbTransformations; ++i){
+            Value& pos = transformationsJS[SceneIOJsonKeys::positions][i][SceneIOJsonKeys::value];
+            Value& rot = transformationsJS[SceneIOJsonKeys::rotations][i][SceneIOJsonKeys::value];
+            Value& scale = transformationsJS[SceneIOJsonKeys::scales][i][SceneIOJsonKeys::value];
+
+            // Arrays structure check
+            assert(pos.IsArray() && rot.IsArray() && scale.IsArray());
+            assert(pos.Size() == 3  && rot.Size() == 4 && scale.Size() == 3);
+
+            Geometry::Transformation tr(jsonArrayToVec3(pos), jsonArrayToVec4(rot), jsonArrayToVec3(scale));
+            transformations.push_back(std::move(tr));
+        }
+        mesh.setTransformations(std::move(transformations));
+        scene.meshInstances().push_back(std::move(mesh));
+    }
 }
 
 void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath) {
@@ -24,7 +76,7 @@ void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath)
     if(!outFile.is_open())
         throw std::runtime_error("SceneIOJson::save cannot open the file " + outPath);
 
-    // Js init config
+    // Dom init config
     Document dom;
     dom.SetObject();
     Document::AllocatorType& allocator = dom.GetAllocator();
@@ -32,27 +84,19 @@ void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath)
 
     for(const auto& meshInstanced : scene.meshInstances()){
         Value mesh(kObjectType);
-        std::string mPath = meshInstanced->modelPath();
-        mesh.AddMember(SceneIOJsonKeys::mesh_path, Value(mPath.c_str(), mPath.size(), allocator), allocator);
+        std::string mPath = meshInstanced.modelPath();
+        mesh.AddMember(SceneIOJsonKeys::mesh_path, Value(mPath.c_str(), (int)mPath.size(), allocator), allocator);
 
         Value transformations(kObjectType), positions(kArrayType), rotations(kArrayType), scales(kArrayType);
-        for(const auto& transf : meshInstanced->getTransformations()){
+
+        for(const auto& transf : meshInstanced.getTransformations()){
             Value pos(kArrayType);
             Value rot(kArrayType);
             Value scale(kArrayType);
 
-            pos.PushBack<float>(transf.position.x, allocator);
-            pos.PushBack<float>(transf.position.y, allocator);
-            pos.PushBack<float>(transf.position.z, allocator);
-
-            rot.PushBack<float>(transf.rotation.x, allocator);
-            rot.PushBack<float>(transf.rotation.y, allocator);
-            rot.PushBack<float>(transf.rotation.z, allocator);
-            rot.PushBack<float>(transf.rotation.w, allocator);
-
-            scale.PushBack<float>(transf.scale.x, allocator);
-            scale.PushBack<float>(transf.scale.y, allocator);
-            scale.PushBack<float>(transf.scale.z, allocator);
+            addVec3ToJson(transf.position, pos, allocator);
+            addVec4ToJson(transf.rotation, rot, allocator);
+            addVec3ToJson(transf.scale, scale, allocator);
 
             positions.PushBack(Value().SetObject().AddMember(SceneIOJsonKeys::value, pos.Move(), allocator), allocator);
             rotations.PushBack(Value().SetObject().AddMember(SceneIOJsonKeys::value, rot.Move(), allocator), allocator);
@@ -67,9 +111,38 @@ void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath)
     }
     dom.AddMember(SceneIOJsonKeys::data, rootMeshes, allocator);
 
-    rapidjson::StringBuffer strbuf;
-    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(strbuf);
-    dom.Accept(writer);
+    // Write to file
+    StringBuffer strbuf;
+
+    // polymorphism does not work here with Writer(no virtual methods)
+    if(_isPrettyOutput){
+        PrettyWriter<StringBuffer> writer(strbuf);
+        dom.Accept(writer);
+    }
+    else{
+        Writer<StringBuffer> writer(strbuf);
+        dom.Accept(writer);
+    }
+
     outFile << strbuf.GetString();
 }
 
+
+void SceneIOJson::addVec3ToJson(const glm::vec3 &vec, rapidjson::Value &value, rapidjson::Document::AllocatorType &allocator) {
+    value.PushBack<float>(vec.x, allocator);
+    value.PushBack<float>(vec.y, allocator);
+    value.PushBack<float>(vec.z, allocator);
+}
+
+void SceneIOJson::addVec4ToJson(const glm::vec4 &vec, rapidjson::Value &value, rapidjson::Document::AllocatorType &allocator) {
+    addVec3ToJson(glm::vec3(vec), value, allocator);
+    value.PushBack<float>(vec.w, allocator);
+}
+
+glm::vec3 SceneIOJson::jsonArrayToVec3(const rapidjson::Value &value) {
+    return glm::vec3((float)value[0].GetDouble(), (float)value[1].GetDouble(), (float)value[2].GetDouble());
+}
+
+glm::vec4 SceneIOJson::jsonArrayToVec4(const rapidjson::Value &value) {
+    return glm::vec4(jsonArrayToVec3(value), (float) value[3].GetDouble());
+}

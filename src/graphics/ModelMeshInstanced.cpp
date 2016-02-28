@@ -12,7 +12,8 @@ ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath):
 ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
         _modelMeshGroup(std::move(other._modelMeshGroup)), _VAO(std::move(other._VAO)),
         _verticesVBO(std::move(other._verticesVBO)), _indexesVBO(std::move(other._indexesVBO)),
-        _transformations(std::move(other._transformations)), _modelPath(std::move(other._modelPath)){}
+        _transformations(std::move(other._transformations)), _modelPath(std::move(other._modelPath)){
+}
 
 void ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
     _transformations.push_back(trans);
