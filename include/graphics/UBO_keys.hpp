@@ -36,6 +36,10 @@ namespace Graphics{
         const std::string WORLD_TO_LIGHT_SCREEN = "WorldToLightScreen";
         const std::string SCREEN_TO_VIEW  = "ScreenToView";
 
+        // Camera Motion Blur
+        const std::string PREVIOUS_MVP  = "PreviousMVP";
+
+
         // FX
         const std::string FOCUS            = "Focus";
         const std::string SHADOW_BUFFER    = "ShadowBuffer";
@@ -47,5 +51,9 @@ namespace Graphics{
         const std::string DOF_COLOR        = "Color";
         const std::string DOF_COC          = "CoC";
         const std::string DOF_BLUR         = "Blur";
+
+        const std::string MOTION_BLUR_COLOR        = "LastPass";
+        const std::string MOTION_BLUR_DEPTH        = "Depth";
+        const std::string MOTION_BLUR_SAMPLE_COUNT = "SampleCount";
     }
 }

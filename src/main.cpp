@@ -49,6 +49,7 @@
 #include "utils/utils.h"
 
 #include <glog/logging.h>
+#include <glm/gtx/string_cast.hpp>
 
 
 #ifndef DEBUG_PRINT
@@ -183,6 +184,7 @@ int main( int argc, char **argv )
     Graphics::ShaderProgram blurShader(debugShader.vShader(), "../shaders/blur.frag");
     Graphics::ShaderProgram circleConfusionShader(debugShader.vShader(), "../shaders/coc.frag");
     Graphics::ShaderProgram depthOfFieldShader(debugShader.vShader(), "../shaders/dof.frag");
+    Graphics::ShaderProgram cameraMotionBlurShader(debugShader.vShader(), "../shaders/cameraMotionBlur.frag");
 
     // Viewport
     glViewport( 0, 0, width, height );
@@ -411,6 +413,7 @@ int main( int argc, char **argv )
     float gamma = 1.22;
     float sobelIntensity = 0.15;
     float sampleCount = 9; // blur
+    float motionBlurSampleCount = 8; // motion blur
     glm::vec3 focus(0, 1, 100);
 
 
@@ -431,6 +434,9 @@ int main( int argc, char **argv )
     depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_COC, 1);
     depthOfFieldShader.updateUniform(Graphics::UBO_keys::DOF_BLUR, 2);
 
+    // ---------------------- For camera motion blur
+    cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_COLOR, 0);
+    cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_DEPTH, 1);
 
     if (!checkErrorGL("Uniforms")){
         LOG(ERROR) << "Error : post_fx Uniforms";
@@ -447,8 +453,6 @@ int main( int argc, char **argv )
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
     Graphics::BeautyFBO beautyFBO(dimViewport);
     Graphics::PostFxFBO fxFBO(dimViewport, 4);
-
-
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
     // Create two ubo for light and camera
@@ -474,6 +478,8 @@ int main( int argc, char **argv )
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
     do {
+        glm::mat4 previousMVP = camera.getProjectionMatrix() * camera.getViewMatrix();
+
         t = glfwGetTime();
         userInput.update(window);
         cameraController.update(t);
@@ -549,6 +555,11 @@ int main( int argc, char **argv )
         blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, (int)sampleCount);
         circleConfusionShader.updateUniform(Graphics::UBO_keys::SCREEN_TO_VIEW, screenToView);
         circleConfusionShader.updateUniform(Graphics::UBO_keys::FOCUS, focus);
+
+        cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::PREVIOUS_MVP, previousMVP);
+        cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::SCREEN_TO_VIEW, screenToView);
+        cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
+        cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_SAMPLE_COUNT, (int) motionBlurSampleCount);
 
         //******************************************************* FIRST PASS
 
@@ -732,11 +743,24 @@ int main( int argc, char **argv )
         fxFBO.texture(2).bind(GL_TEXTURE2); // Blur
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
+        // ------- CAMERA MOTION BLUR ------
+
+        fxFBO.changeCurrentTexture(0);
+        cameraMotionBlurShader.useProgram();
+        fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
+        gBufferFBO.depth().bind(GL_TEXTURE1); // depth
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+//        LOG(INFO) << "----------------------------";
+//        LOG(INFO) << glm::to_string(previousMVP);
+//        LOG(INFO) << glm::to_string(mvp);
+
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gammaShader.useProgram();
-        fxFBO.texture(3).bind(GL_TEXTURE0);
+//        fxFBO.texture(3).bind(GL_TEXTURE0);
+        fxFBO.texture(0).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //-------------------------------------Debug Draw
@@ -834,6 +858,7 @@ int main( int argc, char **argv )
             gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
             gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
             gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
+            gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
             gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
             gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
             gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
