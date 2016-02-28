@@ -8,12 +8,13 @@
 #include <fstream>
 #include <iomanip>
 
-namespace Graphics
-{
+namespace Graphics {
+    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, const std::list<ModelMeshInstanced*>&& meshes):
+            _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3), _ioHandler(ioHandler){
 
+        if(!scenePath.empty())
+            load(scenePath);
 
-    Scene::Scene(const std::list<ModelMeshInstanced*>& meshes) :
-            _meshInstances(meshes), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3){
         initGL();
     }
 
@@ -39,5 +40,25 @@ namespace Graphics
                 _visibleTransformations.push_back(mesh->getTransformationMatrix(i));
             }
         }
+    }
+
+    void Scene::setIOHandler(Data::SceneIO *io) {
+        _ioHandler = io;
+    }
+
+    void Scene::save(const std::string &path) {
+        _ioHandler->save(*this, path);
+    }
+
+    void Scene::load(const std::string &path) {
+        _ioHandler->load(*this, path);
+    }
+
+    std::list<ModelMeshInstanced *>& Scene::meshInstances() {
+        return _meshInstances;
+    }
+
+    const std::list<ModelMeshInstanced *>& Scene::meshInstances() const{
+        return _meshInstances;
     }
 }

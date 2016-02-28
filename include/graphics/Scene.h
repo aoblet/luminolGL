@@ -12,7 +12,7 @@
 
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/VertexBufferObject.h"
-
+#include "data/SceneIO.hpp"
 
 namespace Graphics
 {
@@ -21,6 +21,7 @@ namespace Graphics
         std::list<ModelMeshInstanced*> _meshInstances;              /** Each mesh instance is associated to a name */
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
+        Data::SceneIO* _ioHandler;
 
         /**
          * Must be called after all MeshInstances has been attached.
@@ -30,7 +31,7 @@ namespace Graphics
         void initGL();
 
     public:
-        Scene(const std::list<ModelMeshInstanced*>& meshes);
+        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", const std::list<ModelMeshInstanced*>&& meshes={});
 
         /**
          * Call the draw() function of each MeshInstance.
@@ -46,6 +47,12 @@ namespace Graphics
          *  - _visibleTransformations vector
          */
         void computeVisibleTransformations(const glm::mat4 & VP, ModelMeshInstanced* mesh);
+
+        void setIOHandler(Data::SceneIO * io);
+        void save(const std::string& path);
+        void load(const std::string& path);
+        std::list<ModelMeshInstanced*>& meshInstances();
+        const std::list<ModelMeshInstanced*>& meshInstances() const;
     };
 }
 

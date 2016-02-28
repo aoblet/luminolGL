@@ -120,7 +120,7 @@ void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
 
 Texture*ModelMeshGroup::saveTexture(const std::string &pathTexture) {
 
-    DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
+    // DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
 
     // If the texture does not exist we create it
     if(_textures.find(pathTexture) == _textures.end())

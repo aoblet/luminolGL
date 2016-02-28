@@ -6,7 +6,8 @@ ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath):
         _modelMeshGroup(modelPath),
         _VAO(),
         _verticesVBO(Graphics::VERTEX_DESCRIPTOR),
-        _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER) {}
+        _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER),
+        _modelPath(modelPath){}
 
 void ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
     _transformations.push_back(trans);
@@ -46,8 +47,8 @@ const glm::vec4& ModelMeshInstanced::getRotation(int index) {
     return _transformations.at(index).rotation;
 }
 
-int ModelMeshInstanced::getInstanceNumber() {
-    return _transformations.size();
+int ModelMeshInstanced::getInstanceNumber() const {
+    return (int)_transformations.size();
 }
 
 const Geometry::Transformation &ModelMeshInstanced::getTransformation(int index) const {
@@ -76,4 +77,12 @@ void ModelMeshInstanced::initGLBuffers(VertexBufferObject &scenePositionsVBO) {
 void ModelMeshInstanced::draw(int nbInstanceToDraw) {
     _VAO.bind();
     _modelMeshGroup.draw(nbInstanceToDraw);
+}
+
+std::string ModelMeshInstanced::modelPath() const {
+    return _modelPath;
+}
+
+const std::vector<Geometry::Transformation>& ModelMeshInstanced::getTransformations() const {
+    return _transformations;
 }
