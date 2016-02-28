@@ -91,5 +91,8 @@ namespace Geometry
         return box;
     }
 
+    BoundingBox::BoundingBox() {
+        _points.reserve(8);
+    }
 }
 

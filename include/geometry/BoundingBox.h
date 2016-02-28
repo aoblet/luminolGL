@@ -18,6 +18,7 @@ namespace Geometry
     private:
         std::vector<glm::vec3> _points; /** points which are composing the bounding box */
     public:
+        BoundingBox();
 
         bool isVisible(const glm::mat4 &MVP) const; /** Check if the bounding is visible
                                                      * by a matrix (usually MVP)

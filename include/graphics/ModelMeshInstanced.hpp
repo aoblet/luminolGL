@@ -18,8 +18,8 @@ namespace Graphics {
 
     public:
         ModelMeshInstanced(const std::string &modelPath);
+        ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
-        ModelMeshInstanced(ModelMeshInstanced&& other) = delete;
 
         void initGLBuffers(VertexBufferObject& scenePositionsVBO);
         void draw(int nbInstanceToDraw);
@@ -38,6 +38,7 @@ namespace Graphics {
         /** Returns the Transformation property (position, rotation, scale) of a specified index */
         const Geometry::Transformation& getTransformation(int index) const;
         const std::vector<Geometry::Transformation>& getTransformations() const;
+        void setTransformations(std::vector<Geometry::Transformation>&& transformations);
 
         /** Returns the Transformation matrix of a specified index */
         glm::mat4 getTransformationMatrix(int index) const;
