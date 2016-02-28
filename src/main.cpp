@@ -47,6 +47,7 @@
 
 #include "gui/UserInput.hpp"
 #include "utils/utils.h"
+#include "data/SceneIOJson.hpp"
 
 #include <glog/logging.h>
 #include <glm/ext.hpp>
@@ -320,7 +321,8 @@ int main( int argc, char **argv )
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
 
-    Graphics::Scene scene({&crysisModel});
+    Data::SceneIOJson sceneIOJson;
+    Graphics::Scene scene(&sceneIOJson, "", {&crysisModel});
 
     if (!checkErrorGL("Scene")){
         LOG(ERROR) << "Error : scene" << std::endl;
