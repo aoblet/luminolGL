@@ -5,6 +5,7 @@
 #include "graphics/VertexArrayObject.h"
 #include <iostream>
 #include <utils/utils.h>
+#include <logging.h>
 
 namespace Graphics
 {
@@ -42,6 +43,7 @@ namespace Graphics
 
     VertexArrayObject::~VertexArrayObject() {
         glDeleteVertexArrays(1, &_glId);
+        _glId = 0;
     }
 
     VertexArrayObject::VertexArrayObject(const VertexArrayObject &other):VertexArrayObject() {

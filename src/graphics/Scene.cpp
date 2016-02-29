@@ -52,7 +52,9 @@ namespace Graphics {
     }
 
     void Scene::load(const std::string &path) {
+        _meshInstances.clear();
         _ioHandler->load(*this, path);
+        initGL();
     }
 
     std::vector<ModelMeshInstanced>& Scene::meshInstances() {

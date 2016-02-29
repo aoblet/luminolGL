@@ -15,6 +15,7 @@ namespace Graphics
 
     VertexBufferObject::~VertexBufferObject() {
         glDeleteBuffers(1, &_glId);
+        _glId = 0;
     }
 
     void VertexBufferObject::init() {

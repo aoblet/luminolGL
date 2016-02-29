@@ -18,6 +18,7 @@ void FrameBufferObject::checkStatus(){
 
 FrameBufferObject::~FrameBufferObject() {
     glDeleteFramebuffers(1, &_id);
+    _id = 0;
 }
 
 void FrameBufferObject::bind(){

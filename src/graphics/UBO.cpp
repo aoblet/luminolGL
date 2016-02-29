@@ -12,6 +12,7 @@ UBO::UBO(GLuint bindingPointIndex, int sizeBuffer):_bindingPointIndex(bindingPoi
 
 UBO::~UBO() {
     glDeleteBuffers(1, &_bufferId);
+    _bufferId = 0;
 }
 
 void UBO::reserveBuffer(int size){

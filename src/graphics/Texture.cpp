@@ -51,6 +51,7 @@ namespace Graphics
 
     Texture::~Texture() {
         glDeleteTextures(1, &_texId);
+        _texId = 0;
         free(_data);
     }
 

@@ -97,6 +97,7 @@ void ShaderProgram::updateBindingPointUBO(const std::string &uniformName, GLuint
 
 ShaderProgram::~ShaderProgram() {
     glDeleteProgram(_programId);
+    _programId = 0;
 }
 
 void ShaderProgram::useProgram() const {
