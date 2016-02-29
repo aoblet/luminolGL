@@ -2,6 +2,7 @@
 #include "graphics/ModelMeshGroup.hpp"
 #include "geometry/Transformation.h"
 #include <string>
+#include <vector>
 
 namespace Graphics {
 
@@ -15,9 +16,10 @@ namespace Graphics {
         VertexBufferObject _indexesVBO;                         /** Stores the indexes of the mesh (i.e in which order the vertices will be drawn) */
         std::vector<Geometry::Transformation> _transformations; /** Stores Transform property of every instances */
         std::string _modelPath;
+        VertexBufferObject * _scenePositionsVBO = nullptr;
 
     public:
-        ModelMeshInstanced(const std::string &modelPath);
+        ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations = {});
         ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
 
@@ -45,10 +47,12 @@ namespace Graphics {
 
         /**
          * Returns the bounding box a specified index
-         * This bounding box is computed using the Transformation matrix at the specified index,
-         * And the original BoundingBox of _referenceMesh
+         * This bounding box is computed using the Transformation matrix at the specified index.
+         * @return Model Space
          */
         Geometry::BoundingBox getBoundingBox(int index) const;
+
+        const ModelMeshGroup& modelMeshGroup() const;
 
         /**
          * Returns the TOTAL number of instance
