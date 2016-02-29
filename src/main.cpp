@@ -47,8 +47,12 @@
 #include "view/CameraController.hpp"
 
 #include "gui/UserInput.hpp"
+
 #include "utils/utils.h"
+
 #include "data/SceneIOJson.hpp"
+#include "data/UniformCamera.hpp"
+
 
 #include <glog/logging.h>
 #include <glm/ext.hpp>
@@ -58,27 +62,6 @@
 // Font buffers
 extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
-
-
-struct UniformCamera
-{
-    glm::vec3 _pos;
-    int _padding;
-    glm::mat4 _screenToWorld;
-    glm::mat4 _viewToWorld;
-
-    UniformCamera(){}
-    UniformCamera(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
-        update(pos, screenToWorld, viewToWorld);
-    }
-
-    void update(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
-        _pos = pos;
-        _screenToWorld = screenToWorld;
-        _viewToWorld = viewToWorld;
-    }
-
-};
 
 int main( int argc, char **argv ) {
 
@@ -358,7 +341,7 @@ int main( int argc, char **argv ) {
     const GLuint CameraBindingPoint = 1;
 
     Graphics::UBO uboLight(LightBindingPoint, sizeof(Light::SpotLight));
-    Graphics::UBO uboCamera(CameraBindingPoint, sizeof(UniformCamera));
+    Graphics::UBO uboCamera(CameraBindingPoint, sizeof(Data::UniformCamera));
 
     // LIGHT
     pointLightShader.updateBindingPointUBO("Light", uboLight.bindingPoint());
@@ -487,8 +470,8 @@ int main( int argc, char **argv ) {
         glBlendFunc(GL_ONE, GL_ONE);
 
         // Update Camera pos and screenToWorld matrix to all light shaders
-        UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
-        uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
+        Data::UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
+        uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
 
         //------------------------------------ Directionnal Lights
 
