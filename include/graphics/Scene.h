@@ -13,42 +13,64 @@
 #include "data/SceneIO.hpp"
 
 namespace Graphics {
+
+    /**
+     * Scene managing openGL draw calls and loading/saving.
+     */
+
     class Scene {
     private:
-        std::vector<ModelMeshInstanced> _meshInstances;            /** Scene meshes instanced*/
+        std::vector<ModelMeshInstanced> _meshInstances;             /** Scene meshes instanced*/
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
         Data::SceneIO* _ioHandler;
 
         /**
-         * Must be called after all MeshInstances has been attached.
-         *  _visibleTransformationsVBO is attached to each MeshInstance VAO
-         *  MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
+         * Must be called after all MeshInstances has been attached
+         * _visibleTransformationsVBO is attached to each MeshInstance VAO
+         * MeshInstance::init() is called for every MeshInstance to generate VAOs & VBOs
          */
         void initGL();
 
     public:
-        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={});
+        /**
+         * Build a scene from optional parameters
+         * @param scene scene path
+         * @param meshes must be set with move semantic if given
+         */
+        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={}, bool debugBoundingBoxes=false);
 
         /**
          * Call the draw() function of each MeshInstance.
-         *  Performs frustum culling to update _visibleTransformationsVBO :
-         *  Only visible instances of VP Matrix are sent to the GPU
+         * Performs frustum culling to update _visibleTransformationsVBO :
+         * Only visible instances of VP Matrix are sent to the GPU
          */
         void draw(const glm::mat4 &VP);
 
         /**
          * Compute frustum culling on current instance.
-         *  VP is the matrix that will be used
-         *  to say if an instance Transform is visible or not.
-         *  - _visibleTransformations vector
+         * @VP matrix used to perform culling
          */
+
         void computeVisibleTransformations(const glm::mat4 & VP, const ModelMeshInstanced& mesh);
 
+        /**
+         * Modify the IO behavior called when loading and saving scene
+         */
         void setIOHandler(Data::SceneIO * io);
+
+        /**
+         * Save scene at given path
+         */
         void save(const std::string& path);
+
+        /**
+         * Load scene from given path
+         */
         void load(const std::string& path);
         std::vector<ModelMeshInstanced>& meshInstances();
         const std::vector<ModelMeshInstanced>& meshInstances() const;
+
+        void addModelMeshInstanced(const std::string& modelPath, const Geometry::Transformation& transformation={});
     };
 }
