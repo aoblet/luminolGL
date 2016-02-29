@@ -5,7 +5,7 @@ using namespace Graphics;
 
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
-const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default_normal.png";
+const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default.png";
 
 
 ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
@@ -31,6 +31,7 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
     computeBoundingBox();
 
     DLOG(INFO) << "Vertices count " << _allVertices.size();
+    DLOG(INFO) << "Textures count " << _textures.size();
     DLOG(INFO) << "Loading model " << modelPath << " DONE" << std::endl << std::endl;
 }
 
