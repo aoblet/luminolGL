@@ -19,8 +19,8 @@ namespace Graphics
         FLOAT,
         INT,
         ELEMENT_ARRAY_BUFFER,
-        INSTANCE_BUFFER, /** to store instance position or rotation or whatever you want */
-        INSTANCE_TRANSFORMATION_BUFFER /** to store instance position, rotation and scale */
+        INSTANCE_BUFFER,                /** to store instance position or rotation or whatever you want */
+        INSTANCE_TRANSFORMATION_BUFFER  /** to store transformations matrix */
     };
 
     class VertexBufferObject {
