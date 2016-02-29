@@ -38,6 +38,7 @@
 #include "graphics/ModelMeshGroup.hpp"
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/Scene.h"
+#include "graphics/DebugBoundingBoxes.hpp"
 
 #include "gui/Gui.hpp"
 #include "lights/Light.hpp"
@@ -46,52 +47,23 @@
 #include "view/CameraController.hpp"
 
 #include "gui/UserInput.hpp"
+
 #include "utils/utils.h"
+
 #include "data/SceneIOJson.hpp"
+#include "data/UniformCamera.hpp"
+
 
 #include <glog/logging.h>
 #include <glm/ext.hpp>
 
-
-#ifndef DEBUG_PRINT
-#define DEBUG_PRINT 1
-#endif
-
-#if DEBUG_PRINT == 0
-#define debug_print(FORMAT, ...) ((void)0)
-#else
-#define debug_print(FORMAT, ...) \
-    fprintf(stderr, "%s() in %s, line %i: " FORMAT "\n", \
-        __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#endif
+#define IMGUI_DRAW 1
 
 // Font buffers
 extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
 
-
-struct UniformCamera
-{
-    glm::vec3 _pos;
-    int _padding;
-    glm::mat4 _screenToWorld;
-    glm::mat4 _viewToWorld;
-
-    UniformCamera(){}
-    UniformCamera(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
-        update(pos, screenToWorld, viewToWorld);
-    }
-
-    void update(glm::vec3 pos, glm::mat4 screenToWorld, glm::mat4 viewToWorld){
-        _pos = pos;
-        _screenToWorld = screenToWorld;
-        _viewToWorld = viewToWorld;
-    }
-
-};
-
-int main( int argc, char **argv )
-{
+int main( int argc, char **argv ) {
 
     // GLOG debug level, 0 == all
     FLAGS_minloglevel=0;
@@ -137,19 +109,17 @@ int main( int argc, char **argv )
 
     // Open a window and create its OpenGL context
     GLFWwindow * window = glfwCreateWindow(width/DPI, height/DPI, "aogl", 0, 0);
-    if( ! window )
-    {
+    if( ! window ){
         fprintf( stderr, "Failed to open GLFW window\n" );
         glfwTerminate();
         return( EXIT_FAILURE );
     }
-    glfwMakeContextCurrent(window);
 
+    glfwMakeContextCurrent(window);
     // Init glew
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
-    if (GLEW_OK != err)
-    {
+    if (GLEW_OK != err) {
         /* Problem: glewInit failed, something is seriously wrong. */
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
         return EXIT_FAILURE;
@@ -210,10 +180,7 @@ int main( int argc, char **argv )
         }
     }
 
-    if (!checkErrorGL("VAO/VBO")){
-        std::cerr << "Error : cube vao" << std::endl;
-        return -1;
-    }
+    checkErrorGL("VAO/VBO");
 
     // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
     Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
@@ -228,10 +195,7 @@ int main( int argc, char **argv )
         }
     }
 
-    if (!checkErrorGL("VAO/VBO")){
-        std::cerr << "Error : sphere vao" << std::endl;
-        return -1;
-    }
+    checkErrorGL("VAO/VBO");
 
     // unbind everything
     Graphics::VertexArrayObject::unbindAll();
@@ -241,14 +205,10 @@ int main( int argc, char **argv )
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
     Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,1,0));
+    planeInstances.addInstance(glm::vec3(0,10,0));
 
     std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
-
-    if (!checkErrorGL("VAO/VBO")){
-        std::cerr << "Error : plane vao" << std::endl;
-        return -1;
-    }
+    checkErrorGL("VAO/VBO");
 
 
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
@@ -267,7 +227,6 @@ int main( int argc, char **argv )
     };
 
     std::vector<int> quadIds(quad_triangleList, quad_triangleList + sizeof(quad_triangleList) / sizeof (quad_triangleList[0]));
-
     Graphics::VertexBufferObject quadVerticesVbo(Graphics::VEC2);
     Graphics::VertexBufferObject quadIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
 
@@ -283,54 +242,23 @@ int main( int argc, char **argv )
     Graphics::VertexArrayObject::unbindAll();
     Graphics::VertexBufferObject::unbindAll();
 
-    // Create Debug Shape -------------------------------------------------------------------------------------------------------------------------------
-
-    std::vector<int> debugId = {0,1,2,3,4,5,6,7};
-    std::vector<glm::vec3> debugVertices = crysisModel.getBoundingBox(0).getVector();
-
-    Graphics::VertexBufferObject debugVerticesVbo(Graphics::VEC3);
-    Graphics::VertexBufferObject debugIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
-    Graphics::VertexBufferObject debugInstanceTransformVbo(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 1);
-
-    Graphics::VertexArrayObject debugVAO;
-    debugVAO.addVBO(&debugVerticesVbo);
-    debugVAO.addVBO(&debugIdsVbo);
-    debugVAO.addVBO(&debugInstanceTransformVbo);
-    debugVAO.init();
-
-    debugVerticesVbo.updateData(debugVertices);
-    debugIdsVbo.updateData(debugId);
-    debugInstanceTransformVbo.updateData(planeTransform);
-
-    // unbind everything
-    Graphics::VertexArrayObject::unbindAll();
-    Graphics::VertexBufferObject::unbindAll();
-
-    if (!checkErrorGL("VAO/VBO")){
-        LOG(ERROR) << "Error : debug VAO" << std::endl;
-        return -1;
-    }
-
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
+    Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
+//    scene.save("test.json");
 
-
-
-    if (!checkErrorGL("Scene")){
-        LOG(ERROR) << "Error : scene" << std::endl;
-        return -1;
-    }
+    checkErrorGL("Scene");
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
     Light::LightHandler lightHandler;
 
-    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.7,0.9,1), 1);
-    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
+    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2);
+    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
 
     // ---------------------- For Geometry Shading
     float t = 0;
@@ -345,11 +273,8 @@ int main( int argc, char **argv )
     mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
     mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
     shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
+    checkErrorGL("Uniforms");
 
-    if (!checkErrorGL("Uniforms")){
-        LOG(ERROR) << "Error : geometry uniforms";
-        return -1;
-    }
 
     // ---------------------- For Light Pass Shading
     directionalLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
@@ -363,12 +288,7 @@ int main( int argc, char **argv )
     directionalLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
     spotLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
-
-
-    if (!checkErrorGL("Uniforms")){
-        LOG(ERROR) << "Uniforms error";
-        return -1;
-    }
+    checkErrorGL("Uniforms");
 
     // ---------------------- FX Variables
     float shadowBias = 0.00019;
@@ -401,10 +321,7 @@ int main( int argc, char **argv )
     cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_COLOR, 0);
     cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_DEPTH, 1);
 
-    if (!checkErrorGL("Uniforms")){
-        LOG(ERROR) << "Error : post_fx Uniforms";
-        return -1;
-    }
+    checkErrorGL("Uniforms - post_fx Uniforms");
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
     Graphics::GeometricFBO gBufferFBO(dimViewport);
@@ -417,13 +334,14 @@ int main( int argc, char **argv )
     Graphics::BeautyFBO beautyFBO(dimViewport);
     Graphics::PostFxFBO fxFBO(dimViewport, 4);
 
+
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
     // Create two ubo for light and camera
     const GLuint LightBindingPoint = 0;
     const GLuint CameraBindingPoint = 1;
 
     Graphics::UBO uboLight(LightBindingPoint, sizeof(Light::SpotLight));
-    Graphics::UBO uboCamera(CameraBindingPoint, sizeof(UniformCamera));
+    Graphics::UBO uboCamera(CameraBindingPoint, sizeof(Data::UniformCamera));
 
     // LIGHT
     pointLightShader.updateBindingPointUBO("Light", uboLight.bindingPoint());
@@ -435,8 +353,6 @@ int main( int argc, char **argv )
     directionalLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
     spotLightShader.updateBindingPointUBO("Camera", uboCamera.bindingPoint());
 
-    // Viewer Structures ----------------------------------------------------------------------------------------------------------------------
-
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
@@ -447,14 +363,6 @@ int main( int argc, char **argv )
         userInput.update(window);
         cameraController.update(t);
 
-
-        int leftButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT );
-        // int rightButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_RIGHT );
-        // int middleButton = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_MIDDLE);
-
-        // Camera movements
-        // int altPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
-
         // Get camera matrices
         glm::mat4 projection = camera.getProjectionMatrix();
         glm::mat4 worldToView = camera.getViewMatrix();
@@ -464,7 +372,6 @@ int main( int argc, char **argv )
         glm::mat4 mvInverse = glm::inverse(mv);
         glm::mat4 screenToView = glm::inverse(projection);
         glm::mat4 vp = camera.getProjectionMatrix() * camera.getViewMatrix();
-
 
         // Light space matrices
         // From light space to shadow map screen space
@@ -489,26 +396,24 @@ int main( int argc, char **argv )
         mainShader.useProgram();
 
         //-------------------------------------Upload Uniforms
-
         mainShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         mainShader.updateUniform(Graphics::UBO_keys::MV, mv);
         mainShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
         debugShapesShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         debugShapesShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
 
-
-        // Upload value
         mainShader.updateUniform(Graphics::UBO_keys::TIME, t);
         mainShader.updateUniform(Graphics::UBO_keys::SLIDER, SliderValue);
         mainShader.updateUniform(Graphics::UBO_keys::SLIDER_MULT, SliderMult);
         mainShader.updateUniform(Graphics::UBO_keys::SPECULAR_POWER, lightHandler._specularPower);
         mainShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
 
-        // Update scene uniforms
+        // Scene
         shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToLightScreen);
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToLight);
 
+        // FX
         spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
@@ -548,7 +453,6 @@ int main( int argc, char **argv )
 
         // Render the scene
         shadowShader.useProgram();
-
         scene.draw(worldToLightScreen);
 
 
@@ -573,8 +477,8 @@ int main( int argc, char **argv )
         glBlendFunc(GL_ONE, GL_ONE);
 
         // Update Camera pos and screenToWorld matrix to all light shaders
-        UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
-        uboCamera.updateBuffer(&uCamera, sizeof(UniformCamera));
+        Data::UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
+        uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
 
         //------------------------------------ Directionnal Lights
 
@@ -726,27 +630,18 @@ int main( int argc, char **argv )
         fxFBO.texture(0).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        //-------------------------------------Debug Draw
-
         //------------------------------------ Debug Shape Drawing
-
-        debugShapesShader.useProgram();
-        debugVAO.bind();
-
-        glPointSize(2);
-
-        glDrawElementsInstanced(GL_LINE_STRIP, debugVertices.size(), GL_UNSIGNED_INT, (void*)0, cubeInstanceTransform.size());
+        debugScene.draw(mvp);
 
         int screenNumber = 6;
-
         glDisable(GL_DEPTH_TEST);
         glViewport( 0, 0, width/screenNumber, height/screenNumber );
+
 
         // Select shader
         debugShader.useProgram();
 
         // --------------- Color Buffer
-
         quadVAO.bind();
         gBufferFBO.color().bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
@@ -781,14 +676,14 @@ int main( int argc, char **argv )
 
         // --------------- Blur Buffer
         glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
-//        glViewport(0, 0, width, height);
 
         quadVAO.bind();
         fxFBO.texture(2).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
         //****************************************** EVENTS *******************************************
-#if 1
+
+#ifdef IMGUI_DRAW
+
         // Draw UI
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -797,7 +692,7 @@ int main( int argc, char **argv )
      
 
         gui.init(window);
-        gui.updateMbut(leftButton == GLFW_PRESS);  
+        gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
         gui.addLabel("FPS", &fps);
 
@@ -852,7 +747,9 @@ int main( int argc, char **argv )
             if(gui.addButton("Add Spline"))
                 cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
         }
-        
+
+        if(gui.addButton("Bounding Box"))
+            debugScene.toggle();
         gui.scrollAreaEnd();
 
 
@@ -860,22 +757,16 @@ int main( int argc, char **argv )
 #endif
         // Check for errors
         checkErrorGL("End loop");
-
         glfwSwapBuffers(window);
         glfwPollEvents();
 
         double newTime = glfwGetTime();
         fps = 1.f/ (newTime - t);
 
-    } // Check if the ESC key was pressed
+    }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
-
-    //*********************************************************************************************
-    //************************************* MAIN LOOP END *****************************************
-    //*********************************************************************************************
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
-
     return EXIT_SUCCESS;
 }

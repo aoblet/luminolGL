@@ -40,7 +40,8 @@ namespace Graphics{
         ModelMeshGroup(ModelMeshGroup && other);
         ModelMeshGroup(const ModelMeshGroup & other) = delete;
 
-        /** Draw each mesh with its textures.
+        /**
+         * Draw each mesh with its textures.
          * Since we are in instanced renderer we call this method from ModelMeshInstanced::draw which binds the good VAO.
          */
         void draw(int nbInstancesToDraw);

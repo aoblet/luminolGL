@@ -9,8 +9,9 @@
 #include <iomanip>
 
 namespace Graphics {
-    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes):
-            _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3), _ioHandler(ioHandler){
+    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes, bool debugBoundingBoxes):
+            _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3),
+            _ioHandler(ioHandler){
 
         if(!scenePath.empty())
             load(scenePath);
@@ -60,5 +61,27 @@ namespace Graphics {
 
     const std::vector<ModelMeshInstanced>& Scene::meshInstances() const{
         return _meshInstances;
+    }
+
+    void Scene::addModelMeshInstanced(const std::string &modelPath, const Geometry::Transformation &transformation) {
+        DLOG(INFO) << "Scene::addModelMeshInstanced: " << modelPath;
+
+        auto foundMesh = std::find_if(_meshInstances.begin(), _meshInstances.end(), [&modelPath](const ModelMeshInstanced& m) { return m.modelPath() == modelPath;});
+
+        if(foundMesh == _meshInstances.end()){
+            DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh not found " << modelPath;
+            try{
+                ModelMeshInstanced m(modelPath, {transformation});
+                m.initGLBuffers(_visibleTransformationsVBO);
+                _meshInstances.push_back(std::move(m));
+            }
+            catch (std::exception& e){
+                DLOG(ERROR) << e.what();
+            }
+        }
+        else{
+            DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh found " << modelPath;
+            foundMesh->addInstance(transformation);
+        }
     }
 }

@@ -47,4 +47,12 @@ namespace Graphics
     VertexArrayObject::VertexArrayObject(const VertexArrayObject &other):VertexArrayObject() {
         _vbos = other._vbos;
     }
+
+    const std::vector<VertexBufferObject *> &VertexArrayObject::vbos() const {
+        return _vbos;
+    }
+
+    void VertexArrayObject::clearVBOs() {
+        _vbos.clear();
+    }
 }

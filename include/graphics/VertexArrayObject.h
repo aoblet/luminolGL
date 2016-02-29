@@ -17,15 +17,20 @@ namespace Graphics
     private:
         GLuint _glId;
         std::vector<VertexBufferObject*> _vbos;
+
     public:
         VertexArrayObject();
+        VertexArrayObject(VertexArrayObject&& other);
         VertexArrayObject(const VertexArrayObject& other);
         ~VertexArrayObject();
-        VertexArrayObject(VertexArrayObject&& other);
+
         void addVBO(VertexBufferObject* vbo);
         void init();
         void bind();
         GLuint glId();
+        const std::vector<VertexBufferObject*>& vbos() const;
+        void clearVBOs();
+
         static void unbindAll();
     };
 }

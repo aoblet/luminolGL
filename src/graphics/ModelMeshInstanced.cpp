@@ -2,17 +2,31 @@
 
 using namespace Graphics;
 
-ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath):
+ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations):
         _modelMeshGroup(modelPath),
         _VAO(),
         _verticesVBO(Graphics::VERTEX_DESCRIPTOR),
         _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER),
+        _transformations(transformations),
         _modelPath(modelPath){}
 
 ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
-        _modelMeshGroup(std::move(other._modelMeshGroup)), _VAO(std::move(other._VAO)),
-        _verticesVBO(std::move(other._verticesVBO)), _indexesVBO(std::move(other._indexesVBO)),
-        _transformations(std::move(other._transformations)), _modelPath(std::move(other._modelPath)){
+        _modelMeshGroup(std::move(other._modelMeshGroup)),
+        _VAO(std::move(other._VAO)),
+        _verticesVBO(std::move(other._verticesVBO)),
+        _indexesVBO(std::move(other._indexesVBO)),
+        _transformations(std::move(other._transformations)),
+        _modelPath(std::move(other._modelPath)){
+
+    // VertexArrayObject _VAO handles pointers so we need to properly update these values.
+    if(_VAO.vbos().size()){
+        _VAO.clearVBOs();
+        _VAO.addVBO(&_verticesVBO);
+        _VAO.addVBO(&_indexesVBO);
+
+        if(_scenePositionsVBO)
+            _VAO.addVBO(_scenePositionsVBO);
+    }
 }
 
 void ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
@@ -71,6 +85,8 @@ Geometry::BoundingBox ModelMeshInstanced::getBoundingBox(int index) const {
 }
 
 void ModelMeshInstanced::initGLBuffers(VertexBufferObject &scenePositionsVBO) {
+    _scenePositionsVBO = &scenePositionsVBO;
+
     _VAO.addVBO(&_verticesVBO);
     _VAO.addVBO(&_indexesVBO);
     _VAO.addVBO(&scenePositionsVBO);
@@ -95,4 +111,8 @@ const std::vector<Geometry::Transformation>& ModelMeshInstanced::getTransformati
 
 void ModelMeshInstanced::setTransformations(std::vector<Geometry::Transformation>&& transformations){
     _transformations = std::move(transformations);
+}
+
+const ModelMeshGroup &ModelMeshInstanced::modelMeshGroup() const {
+    return _modelMeshGroup;
 }

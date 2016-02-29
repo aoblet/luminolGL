@@ -82,10 +82,8 @@ namespace Gui{
     }
 
     bool Gui::addButton(const char * name, bool & display){
-        if(imguiButton(name)){
-            if(!display) display = true;
-            else display = false;
-        }
+        if(imguiButton(name))
+            display = !display;
         return display;
     }
 

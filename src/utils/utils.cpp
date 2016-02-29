@@ -4,13 +4,13 @@
 
 #include "utils/utils.h"
 #include <iostream>
-
+#include <glog/logging.h>
 #include <GL/glew.h>
 
-bool checkErrorGL(const char* title) {
+void checkErrorGL(const std::string& title) {
     int error;
     if((error = glGetError()) == GL_NO_ERROR)
-        return true;
+        return;
 
     std::string errorString;
     switch(error){
@@ -33,6 +33,6 @@ bool checkErrorGL(const char* title) {
             errorString = "UNKNOWN";
             break;
     }
-    fprintf(stdout, "OpenGL Error(%s): %s\n", errorString.c_str(), title);
-    return false;
+    DLOG(ERROR) << "OpenGL Error(" << errorString.c_str() << ") " << title;
+    throw;
 }
