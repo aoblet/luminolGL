@@ -203,9 +203,8 @@ int main( int argc, char **argv ) {
 
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Mesh planeMesh(Graphics::Mesh::genPlane(100,100,150));
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,10,0));
+    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(1,1,1,0), glm::vec3(50,1,50));
 
     std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
     checkErrorGL("VAO/VBO");
@@ -245,10 +244,12 @@ int main( int argc, char **argv ) {
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
+    sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
+    scene.addModelMeshInstanced("../assets/models/crysis/nanosuit.obj", Geometry::Transformation(glm::vec3(10,10,10)));
 //    scene.save("test.json");
 
     checkErrorGL("Scene");
@@ -257,7 +258,7 @@ int main( int argc, char **argv ) {
 
     Light::LightHandler lightHandler;
 
-    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0,0.5,1), 0.2);
+    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.6,0.9,1), 1);
     lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
 
     // ---------------------- For Geometry Shading
@@ -617,10 +618,6 @@ int main( int argc, char **argv ) {
         fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
         gBufferFBO.depth().bind(GL_TEXTURE1); // depth
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-//        LOG(INFO) << "----------------------------";
-//        LOG(INFO) << glm::to_string(previousMVP);
-//        LOG(INFO) << glm::to_string(mvp);
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
