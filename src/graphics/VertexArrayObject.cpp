@@ -14,8 +14,9 @@ namespace Graphics
     }
 
     VertexArrayObject::VertexArrayObject(VertexArrayObject &&other) {
-        std::swap(_glId, other._glId);
-        _vbos = std::move(other._vbos);
+        _glId = other._glId;
+        other._glId = 0;
+        _vbos = other._vbos;
     }
 
     void VertexArrayObject::addVBO(VertexBufferObject *vbo) {

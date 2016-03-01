@@ -19,6 +19,8 @@ namespace Graphics{
 
     public:
         FrameBufferObject(const glm::ivec2& resolutionTextures);
+        FrameBufferObject(const FrameBufferObject& ) = delete;
+        FrameBufferObject(FrameBufferObject&& ) = delete;
         virtual ~FrameBufferObject();
 
         void attachTexture(GLuint attachment, GLuint textureId);

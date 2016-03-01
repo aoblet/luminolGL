@@ -164,6 +164,7 @@ namespace Graphics
         std::swap(_dataType, other._dataType);
         std::swap(_target, other._target);
         std::swap(_attribArray, other._attribArray);
+        other._glId = 0;
     }
 
     VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray){

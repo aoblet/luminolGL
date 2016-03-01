@@ -39,6 +39,7 @@ namespace Graphics
         std::swap(_height, texture._height);
         std::swap(_bitDepth, texture._bitDepth);
         std::swap(_type, texture._type);
+        texture._texId = 0;
     }
 
     Texture::Texture(const Texture& texture):
