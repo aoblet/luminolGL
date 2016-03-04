@@ -5,7 +5,7 @@ using namespace Graphics;
 
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
-const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default.png";
+const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default_normal.png";
 
 
 ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
