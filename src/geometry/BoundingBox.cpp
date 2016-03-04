@@ -5,6 +5,7 @@
 #include <glog/logging.h>
 #include <stdexcept>
 #include "geometry/BoundingBox.h"
+#include "glm/ext.hpp"
 
 namespace Geometry
 {
@@ -24,7 +25,10 @@ namespace Geometry
             // no need to be in homogeneous coordinates
             if( projPoint.z > 0) isInFrontOfCamera = true;
 
-            projPoint /= projPoint.w;
+            // better behavior with absolute W. Don't know why could be < 0.
+            // Any mathematical explanations are welcome :)
+            projPoint /= glm::abs(projPoint.w);
+
             if( projPoint.x < xmin) xmin = projPoint.x;
             if( projPoint.y > ymax) ymax = projPoint.y;
             if( projPoint.x > xmax) xmax = projPoint.x;
