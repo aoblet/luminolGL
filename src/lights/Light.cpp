@@ -19,20 +19,20 @@ namespace Light{
 		_pointLights.push_back(PointLight(pl._pos, pl._color, pl._intensity, pl._attenuation));
 	}
 
-	void LightHandler::addDirectionalLight(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
-		_directionnalLights.push_back(DirectionalLight(pos,color,intensity,attenuation));
+	void LightHandler::setDirectionalLight(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
+        setDirectionalLight(DirectionalLight(pos, color, intensity, attenuation));
 	}
 
-	void LightHandler::addDirectionalLight(DirectionalLight dl){
-		_directionnalLights.push_back(DirectionalLight(dl._pos, dl._color, dl._intensity, dl._attenuation));
+	void LightHandler::setDirectionalLight(const DirectionalLight& dl){
+		_directionalLight = dl;
 	}
 
 	void LightHandler::addSpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff){
 		_spotLights.push_back(SpotLight(pos,dir,color,intensity,attenuation,angle,falloff));
 	}
 
-	void LightHandler::addSpotLight(SpotLight sl){
-		_spotLights.push_back(SpotLight(sl._pos, sl._dir, sl._color, sl._intensity, sl._attenuation, sl._angle, sl._falloff));
+	void LightHandler::addSpotLight(const SpotLight& sl){
+		_spotLights.push_back(sl);
 	}
 
 	// bool LightHandler::isVisible(const glm::mat4 &MVP)  const {

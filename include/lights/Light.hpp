@@ -108,17 +108,18 @@ namespace Light{
 		    float _specularPower = 20;								/** Global specular power for all the light */
 
 		    std::vector<PointLight> _pointLights;					/** A vector containing all the point lights that we want to render */
-   	 		std::vector<DirectionalLight> _directionnalLights;		/** A vector containing all the directionnal lights */	
+   	 		DirectionalLight _directionalLight;
    	 		std::vector<SpotLight> _spotLights;						/** A vector containing all the spot lights */
 
 			LightHandler();
 
    	 		void addPointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2);
    	 		void addPointLight(PointLight pl);
-   	 		void addDirectionalLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2);
-   	 		void addDirectionalLight(DirectionalLight dl);
+   	 		void setDirectionalLight(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 color = glm::vec3(0, 0, 0),
+                                     float intensity = 0.2, float attenuation = 0.2);
+   	 		void setDirectionalLight(const DirectionalLight& dl);
    	 		void addSpotLight(glm::vec3 pos, glm::vec3 dir, glm::vec3 color, float intensity, float attenuation, float angle, float falloff);	
-			void addSpotLight(SpotLight sl);
+			void addSpotLight(const SpotLight& sl);
 
 			bool isOnScreen(const glm::mat4 & mvp, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 & pos, const glm::vec3 & color, const float & intensity, const float & attenuation);
 
@@ -131,9 +132,6 @@ namespace Light{
 			void setLightAttenuation(float lightAttenuation){ _lightAttenuation = lightAttenuation; }
 			void setLightIntensity(float lightIntensity){ _lightIntensity = lightIntensity; }
 			void setLightAttenuationTreshold(float lightAttenuationTreshold){ _lightAttenuationThreshold = lightAttenuationTreshold; }
-
-
-
 	};
 
 }

@@ -91,14 +91,14 @@ namespace Gui{
         addIndent();
         addLabel("Directional Light: 0");
         addIndent();
-        imguiSlider("DL: direction.x", &lightHandler._directionnalLights[0]._pos.x, posBegin, posEnd, posStep);
-        imguiSlider("DL: direction.y", &lightHandler._directionnalLights[0]._pos.y, posBegin, posEnd, posStep);
-        imguiSlider("DL: direction.z", &lightHandler._directionnalLights[0]._pos.z, posBegin, posEnd, posStep);
-        imgui3Slider("Red", &lightHandler._directionnalLights[0]._color.r, 0, 1, 0.01, 1);
-        imgui3Slider("Green", &lightHandler._directionnalLights[0]._color.g, 0, 1, 0.01, 2);
-        imgui3Slider("Blue", &lightHandler._directionnalLights[0]._color.b, 0, 1, 0.01, 3);
-        imguiSlider("DL: intensity", &lightHandler._directionnalLights[0]._intensity, attBegin, attEnd, attStep);
-        imguiSlider("DL: attenuation", &lightHandler._directionnalLights[0]._attenuation, attBegin, attEnd, attStep);
+        imguiSlider("DL: direction.x", &lightHandler._directionalLight._pos.x, posBegin, posEnd, posStep);
+        imguiSlider("DL: direction.y", &lightHandler._directionalLight._pos.y, posBegin, posEnd, posStep);
+        imguiSlider("DL: direction.z", &lightHandler._directionalLight._pos.z, posBegin, posEnd, posStep);
+        imgui3Slider("Red", &lightHandler._directionalLight._color.r, 0, 1, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._directionalLight._color.g, 0, 1, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._directionalLight._color.b, 0, 1, 0.01, 3);
+        imguiSlider("DL: intensity", &lightHandler._directionalLight._intensity, attBegin, attEnd, attStep);
+        imguiSlider("DL: attenuation", &lightHandler._directionalLight._attenuation, attBegin, attEnd, attStep);
         addUnindent();
         addSeparatorLine();
     }
