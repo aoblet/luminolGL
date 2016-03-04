@@ -135,8 +135,7 @@ vec3 decodeNormal(vec3 enc){
     return n;
 }
 
-float blurShadow(vec3 projectedLightPos)
-{
+float blurShadow(vec3 projectedLightPos){
     vec2 lP = vec2(projectedLightPos.xy);
     vec2 step = 1.0/textureSize(ColorBuffer,0);
 

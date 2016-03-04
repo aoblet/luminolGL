@@ -28,9 +28,8 @@ void main()
 {	
 	Out.TexCoord = TexCoord;
     Out.Normal = Normal;
-//    Out.Position = Position + InstancePosition;
     Out.Position = (InstanceTransform * vec4(Position, 1)).xyz;
 
-	gl_Position = ShadowMVP*vec4(Out.Position, 1);
+	gl_Position = ShadowMVP * vec4(Out.Position, 1);
 }
 

@@ -24,6 +24,9 @@ namespace Graphics{
         bool _isDrawing;
 
     public:
+        /**
+         * Toggle the draw activation.
+         */
         void toggle();
         DebugBoundingBoxes(const std::vector<ModelMeshInstanced>& meshes);
         void draw(const glm::mat4& mvp);
