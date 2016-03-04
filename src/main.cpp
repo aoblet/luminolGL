@@ -69,7 +69,7 @@ int main( int argc, char **argv ) {
     FLAGS_minloglevel=0;
 
     glm::ivec2 dimViewport(1300, 700);
-    int& width = dimViewport.x, height= dimViewport.y;
+    int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
     GUI::UserInput userInput;
@@ -162,7 +162,6 @@ int main( int argc, char **argv ) {
 
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
-
     Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
     int cubeInstanceWidth = 10;
@@ -179,7 +178,6 @@ int main( int argc, char **argv ) {
             ++k;
         }
     }
-
     checkErrorGL("VAO/VBO");
 
     // Create Sphere -------------------------------------------------------------------------------------------------------------------------------
@@ -194,7 +192,6 @@ int main( int argc, char **argv ) {
             sphereInstances.addInstance(glm::vec3(i * 2, 2.5f, j * 2));
         }
     }
-
     checkErrorGL("VAO/VBO");
 
     // unbind everything
@@ -204,14 +201,13 @@ int main( int argc, char **argv ) {
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(1,1,1,0), glm::vec3(50,1,50));
+    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(1,1,1,0), glm::vec3(500,1,500));
 
     std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
     checkErrorGL("VAO/VBO");
 
-
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
-    crysisModel.addInstance(glm::vec3(0,1,0));
+    crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(1,1,1,0), glm::vec3(1,1,1));
 
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -249,24 +245,24 @@ int main( int argc, char **argv ) {
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
-    scene.addModelMeshInstanced("../assets/models/crysis/nanosuit.obj", Geometry::Transformation(glm::vec3(10,10,10)));
+//    scene.addModelMeshInstanced("../assets/models/crysis/nanosuit.obj", Geometry::Transformation(glm::vec3(10,10,10)));
 //    scene.save("test.json");
-
     checkErrorGL("Scene");
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
     Light::LightHandler lightHandler;
-
-    lightHandler.addDirectionalLight(glm::vec3(-1,-1,-1), glm::vec3(0.6,0.9,1), 1);
-    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 1, 0, 60, 66);
+    lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
+    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
+    lightHandler.addSpotLight(glm::vec3(4,5,4), glm::vec3(1,-1,1), glm::vec3(0,0,1), 0, 0, 60, 66);
 
     // ---------------------- For Geometry Shading
     float t = 0;
+    bool drawFBOTextures = true;
     float SliderValue = 0.3;
     float SliderMult = 80;
     float instanceNumber = 100;
-    int isNormalMapActive = 1;
+    int isNormalMapActive = 0;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
     mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
@@ -279,31 +275,33 @@ int main( int argc, char **argv ) {
 
     // ---------------------- For Light Pass Shading
     directionalLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
-    spotLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
-    pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
-
     directionalLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
-    spotLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
-    pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
-
     directionalLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+
+    spotLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    spotLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
     spotLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+
+    pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
     checkErrorGL("Uniforms");
 
     // ---------------------- FX Variables
     float shadowBias = 0.00019;
+    float shadowBiasDirLight = 0.001;
 
     float gamma = 1.22;
     float sobelIntensity = 0.15;
     float sampleCount = 9; // blur
     float motionBlurSampleCount = 8; // motion blur
+    float dirLightOrthoProjectionDim = 100;
     glm::vec3 focus(0, 1, 100);
-
 
     // ---------------------- FX uniform update
     // For shadow pass shading (unit texture)
     spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BUFFER, 3);
+    directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BUFFER, 3);
 
     gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
     sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
@@ -357,6 +355,9 @@ int main( int argc, char **argv ) {
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
+
+    // Identity matrix
+    glm::mat4 objectToWorld;
     do {
         glm::mat4 previousMVP = camera.getProjectionMatrix() * camera.getViewMatrix();
 
@@ -365,26 +366,32 @@ int main( int argc, char **argv ) {
         cameraController.update(t);
 
         // Get camera matrices
-        glm::mat4 projection = camera.getProjectionMatrix();
-        glm::mat4 worldToView = camera.getViewMatrix();
-        glm::mat4 objectToWorld;
-        glm::mat4 mvp = projection * worldToView * objectToWorld;
-        glm::mat4 mv = worldToView * objectToWorld;
-        glm::mat4 mvInverse = glm::inverse(mv);
-        glm::mat4 screenToView = glm::inverse(projection);
-        glm::mat4 vp = camera.getProjectionMatrix() * camera.getViewMatrix();
+        const glm::mat4& projection = camera.getProjectionMatrix();
+        const glm::mat4& worldToView = camera.getViewMatrix();
+        glm::mat4 mv  = worldToView * objectToWorld;
+        glm::mat4 mvp = projection * mv;
+        glm::mat4 vp  = projection * worldToView;
+        glm::mat4 mvInverse     = glm::inverse(mv);
+        glm::mat4 screenToView  = glm::inverse(projection);
 
         // Light space matrices
-        // From light space to shadow map screen space
-        glm::mat4 proj = glm::perspective(glm::radians(lightHandler._spotLights[0]._falloff*2.f), 1.0f, 0.1f, 100.f);
+
+        // Directional light
+        // Orthogonal projection matrix: parallel rays
+        glm::mat4 projDirLight = glm::ortho<float>(-dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
+                                                   -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
+                                                   -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim);
         // From world to light
-        glm::mat4 worldToLight = glm::lookAt(lightHandler._spotLights[0]._pos, lightHandler._spotLights[0]._pos + lightHandler._spotLights[0]._dir, glm::vec3(0.f, 1.f, 0.f));
+        // The "box" fallows the camera position
+        glm::mat4 worldToDirLight = glm::lookAt(camera.getEye(),
+                                                camera.getEye() + lightHandler._directionalLight._pos,
+                                                glm::vec3(0.f, 1.f, 0.f));
         // From object to light (MV for light)
-        glm::mat4 objectToLight = worldToLight * objectToWorld;
+        glm::mat4 objectToDirLight = worldToDirLight /** objectToWorld*/;
         // From object to shadow map screen space (MVP for light)
-        glm::mat4 objectToLightScreen = proj * objectToLight;
+        glm::mat4 objectToDirLightScreen = projDirLight * objectToDirLight;
         // From world to shadow map screen space
-        glm::mat4 worldToLightScreen = proj * worldToLight;
+        glm::mat4 worldToDirLightScreen = projDirLight * worldToDirLight;
 
         //****************************************** RENDER *******************************************
 
@@ -411,14 +418,18 @@ int main( int argc, char **argv ) {
 
         // Scene
         shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
-        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToLightScreen);
-        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToLight);
 
-        // FX
-        spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
+        // SHADOW
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
+
+        directionalLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToDirLightScreen);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
+
+        // FX
         gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
         sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
         blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, (int)sampleCount);
@@ -430,92 +441,112 @@ int main( int argc, char **argv ) {
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_SAMPLE_COUNT, (int) motionBlurSampleCount);
 
-        //******************************************************* FIRST PASS
-
-        //-------------------------------------Bind gbuffer
+        //******************************************************* FIRST PASS (Geometric pass)
+        // Render scene into Geometric buffer
         gBufferFBO.bind();
         gBufferFBO.clear();
-
-        //-------------------------------------Render Scene
         scene.draw(vp);
-
-        //-------------------------------------Unbind the frambuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        //******************************************************* SECOND PASS
-
-        //-------------------------------------Shadow pass
-        shadowMapFBO.bind();
-        // Clear only the depth buffer
-        shadowMapFBO.clearDepth();
-
-        // Set the viewport corresponding to shadow texture resolution
-        glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
-
-        // Render the scene
-        shadowShader.useProgram();
-        scene.draw(worldToLightScreen);
+        gBufferFBO.unbind();
 
 
-        // Fallback to default framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        // Revert to window size viewport
-        glViewport(0, 0, width, height);
-
-        //-------------------------------------Light Draw
+        //******************************************************* SECOND PASS (Shadow Pass)
+        // Update Camera pos and screenToWorld matrix to all light shaders
+        Data::UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
+        uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
         beautyFBO.bind();
         beautyFBO.clearColor();
 
-        // Set a full screen viewport
-        glViewport( 0, 0, width, height );
+        // ------------------------------------ Spot light Shadow pass
+        for(auto& light : lightHandler._spotLights){
+            glEnable(GL_DEPTH_TEST);
+            glDisable(GL_BLEND);
 
-        // Disable the depth test
+            shadowMapFBO.bind();
+            shadowMapFBO.clearDepth();
+            // Set the viewport corresponding to shadow texture resolution
+            glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
+
+            // Spot Light
+            // From light space to shadow map screen space
+            glm::mat4 proj = glm::perspective(glm::radians(light._falloff*2.f), 1.0f, 0.1f, 100.f);
+            glm::mat4 worldToLight = glm::lookAt(light._pos, light._pos + light._dir,glm::vec3(0.f, 1.f, 0.f));
+
+            // From object to light (MV for light)
+            glm::mat4 objectToLight = worldToLight /** objectToWorld*/;
+            // From object to shadow map screen space (MVP for light)
+            glm::mat4 objectToLightScreen = proj * objectToLight;
+            // From world to shadow map screen space
+            glm::mat4 worldToLightScreen = proj * worldToLight;
+
+            // Render the scene
+            shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToLightScreen);
+            shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToLight);
+            shadowShader.useProgram();
+            scene.draw(worldToLightScreen);
+            shadowMapFBO.unbind();
+
+            // ------------------------------------ Spot Lights Draw
+            beautyFBO.bind();
+
+            // Set a full screen viewport
+            glViewport( 0, 0, width, height );
+            glDisable(GL_DEPTH_TEST);
+            glEnable(GL_BLEND);
+            // Setup additive blending
+            glBlendFunc(GL_ONE, GL_ONE);
+
+            spotLightShader.useProgram();
+            spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
+            quadVAO.bind();
+
+            gBufferFBO.color().bind(GL_TEXTURE0);
+            gBufferFBO.normal().bind(GL_TEXTURE1);
+            gBufferFBO.depth().bind(GL_TEXTURE2);
+            shadowMapFBO.shadowTexture().bind(GL_TEXTURE3);
+
+            uboLight.updateBuffer(&light, sizeof(Light::SpotLight));
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        }
+
+        //------------------------------------ Directional Lights Shadow pass
+        // Fallback on shadow pass parameters
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        // Dir light Shadow pass
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBiasDirLight);
+        shadowMapFBO.bind();
+        shadowMapFBO.clearDepth();
+        glViewport(0, 0, shadowMapFBO.resolution().x, shadowMapFBO.resolution().y);
+
+        // Render the scene
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToDirLightScreen);
+        shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToDirLightScreen);
+        shadowShader.useProgram();
+        scene.draw(worldToDirLightScreen);
+        shadowMapFBO.unbind();
+
+        //-------------------------------------Light Draw
+        beautyFBO.bind();
+        glViewport( 0, 0, width, height);
+
         glDisable(GL_DEPTH_TEST);
-        // Enable blending
         glEnable(GL_BLEND);
         // Setup additive blending
         glBlendFunc(GL_ONE, GL_ONE);
 
-        // Update Camera pos and screenToWorld matrix to all light shaders
-        Data::UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
-        uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
-
-        //------------------------------------ Directionnal Lights
-
-        //directionnal light shaders
         directionalLightShader.useProgram();
-
-        // Bind quad vao
         quadVAO.bind();
-
-        gBufferFBO.color().bind(GL_TEXTURE0);
-        gBufferFBO.normal().bind(GL_TEXTURE1);
-        gBufferFBO.depth().bind(GL_TEXTURE2);
-
-        for(size_t i = 0; i < lightHandler._directionnalLights.size(); ++i){
-            uboLight.updateBuffer(&lightHandler._directionnalLights[i], sizeof(Light::DirectionalLight));
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
-
-        // ------------------------------------ Spot Lights
-
-        spotLightShader.useProgram(); // spot light shaders
-        quadVAO.bind(); // Bind quad vao
 
         gBufferFBO.color().bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
         gBufferFBO.depth().bind(GL_TEXTURE2);
         shadowMapFBO.shadowTexture().bind(GL_TEXTURE3);
 
-        for(size_t i = 0; i < lightHandler._spotLights.size(); ++i){
-            uboLight.updateBuffer(&lightHandler._spotLights[i], sizeof(Light::SpotLight));
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
-
+        uboLight.updateBuffer(&lightHandler._directionalLight, sizeof(Light::DirectionalLight));
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------------------------------------ Point Lights
-
         pointLightShader.useProgram(); // point light shaders
         quadVAO.bind(); // Bind quad vao
 
@@ -623,7 +654,6 @@ int main( int argc, char **argv ) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gammaShader.useProgram();
-//        fxFBO.texture(3).bind(GL_TEXTURE0);
         fxFBO.texture(0).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -632,55 +662,56 @@ int main( int argc, char **argv ) {
 
         int screenNumber = 6;
         glDisable(GL_DEPTH_TEST);
-        glViewport( 0, 0, width/screenNumber, height/screenNumber );
 
+        if(drawFBOTextures){
+            // Select shader
+            debugShader.useProgram();
 
-        // Select shader
-        debugShader.useProgram();
+            // --------------- Color Buffer
+            glViewport( 0, 0, width/screenNumber, height/screenNumber );
 
-        // --------------- Color Buffer
-        quadVAO.bind();
-        gBufferFBO.color().bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            gBufferFBO.color().bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // --------------- Normal Buffer
-        glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            // --------------- Normal Buffer
+            glViewport( width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        quadVAO.bind();
-        gBufferFBO.normal().bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            gBufferFBO.normal().bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // --------------- Depth Buffer
-        glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            // --------------- Depth Buffer
+            glViewport( 2*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        quadVAO.bind();
-        gBufferFBO.depth().bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            gBufferFBO.depth().bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // --------------- Beauty Buffer
-        glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            // --------------- Beauty Buffer
+            glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        quadVAO.bind();
-        beautyFBO.beauty().bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            beautyFBO.beauty().bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // --------------- Circle of confusion Buffer
-        glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            // --------------- Circle of confusion Buffer
+            glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        quadVAO.bind();
-        fxFBO.texture(1).bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            fxFBO.texture(1).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // --------------- Blur Buffer
-        glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            // --------------- Blur Buffer
+            glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
-        quadVAO.bind();
-        fxFBO.texture(2).bind(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            quadVAO.bind();
+            fxFBO.texture(2).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        }
+
         //****************************************** EVENTS *******************************************
-
 #ifdef IMGUI_DRAW
-
         // Draw UI
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -705,11 +736,11 @@ int main( int argc, char **argv ) {
             gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
             gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
             gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
+            drawFBOTextures = !drawFBOTextures == gui.addButton("Draw FBO textures");
             gui.addSeparatorLine();
         }
 
         if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){ 
-            gui.addSlider("Shadow Bias", &shadowBias, 0, 0.001, 0.00000001);
             gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
             gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
             gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
@@ -720,7 +751,7 @@ int main( int argc, char **argv ) {
             gui.addSeparatorLine();
         }
 
-        if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){   
+        if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){
             gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
             gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
             gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
@@ -731,11 +762,16 @@ int main( int argc, char **argv ) {
         if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
             gui.addSliderPointLights(lightHandler);
 
-        if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters))
+        if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters)){
+            gui.addSlider("Shadow Bias", &shadowBias, 0, 0.01, 0.00000001);
             gui.addSliderSpotLights(lightHandler);
+        }
 
-        if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters))
-            gui.addSliderDirectionalLights(lightHandler);
+        if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
+            gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
+            gui.addSliderDirectionalLights(lightHandler, -1, 1);
+            gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
+        }
 
         if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){ 
             gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
@@ -747,8 +783,8 @@ int main( int argc, char **argv ) {
 
         if(gui.addButton("Bounding Box"))
             debugScene.toggle();
-        gui.scrollAreaEnd();
 
+        gui.scrollAreaEnd();
 
         glDisable(GL_BLEND);
 #endif
@@ -758,7 +794,7 @@ int main( int argc, char **argv ) {
         glfwPollEvents();
 
         double newTime = glfwGetTime();
-        fps = 1.f/ (newTime - t);
+        fps = float(1.f/ (newTime - t));
 
     }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
