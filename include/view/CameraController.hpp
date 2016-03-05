@@ -19,7 +19,7 @@ namespace View{
         void updateFromInput(const GUI::UserInput& userInput);
 
     public:
-        CameraController(CameraFreefly& camera, GUI::UserInput& userInput, float velocitySplines=1, bool isSpectator=false);
+        CameraController(CameraFreefly& camera, GUI::UserInput& userInput, float velocitySplines=1, bool isSpectator=true);
 
         void setCamera(CameraFreefly& c);
         void setUserInput(GUI::UserInput& u);
