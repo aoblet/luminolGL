@@ -49,11 +49,11 @@ void ModelMeshGroup::loadMeshes(const aiScene* scene) {
     }
 }
 
-std::vector<Mesh>&ModelMeshGroup::meshes() {
+const std::vector<Mesh>&ModelMeshGroup::meshes() const {
     return _meshes;
 }
 
-std::map<std::string, Texture>&ModelMeshGroup::textures(){
+const std::map<std::string, Texture>&ModelMeshGroup::textures() const {
     return _textures;
 }
 
@@ -160,7 +160,7 @@ void ModelMeshGroup::draw(int nbInstancesToDraw){
 }
 
 
-std::vector<VertexDescriptor> &ModelMeshGroup::allVertices() {
+const std::vector<VertexDescriptor>& ModelMeshGroup::allVertices() const{
     return _allVertices;
 }
 

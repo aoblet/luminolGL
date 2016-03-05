@@ -23,7 +23,7 @@ namespace Graphics {
         ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
 
-        void initGLBuffers(VertexBufferObject& scenePositionsVBO);
+        void initGLBuffers(VertexBufferObject* scenePositionsVBO = nullptr);
         void draw(int nbInstanceToDraw);
 
         /** Several ways to add an instance to _transformations vector */

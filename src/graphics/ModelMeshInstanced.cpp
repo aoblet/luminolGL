@@ -84,12 +84,13 @@ Geometry::BoundingBox ModelMeshInstanced::getBoundingBox(int index) const {
     return _transformations.at(index).getTransformationMatrix() * _modelMeshGroup.getBoundingBox();
 }
 
-void ModelMeshInstanced::initGLBuffers(VertexBufferObject &scenePositionsVBO) {
-    _scenePositionsVBO = &scenePositionsVBO;
+void ModelMeshInstanced::initGLBuffers(VertexBufferObject* scenePositionsVBO) {
+    _scenePositionsVBO = scenePositionsVBO;
 
     _VAO.addVBO(&_verticesVBO);
     _VAO.addVBO(&_indexesVBO);
-    _VAO.addVBO(&scenePositionsVBO);
+    if(scenePositionsVBO)
+        _VAO.addVBO(scenePositionsVBO);
     _VAO.init();
 
     _verticesVBO.updateData(_modelMeshGroup.allVertices());

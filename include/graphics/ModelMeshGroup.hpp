@@ -48,9 +48,9 @@ namespace Graphics{
         void computeBoundingBox();
         const Geometry::BoundingBox& getBoundingBox() const;
 
-        std::vector<Mesh>& meshes();
-        std::map<std::string, Texture>& textures();
-        std::vector<VertexDescriptor>& allVertices();
-        std::vector<int>&allIndexes();
+        const std::vector<Mesh>& meshes() const;
+        const std::map<std::string, Texture>& textures() const;
+        const std::vector<VertexDescriptor>& allVertices() const;
+        std::vector<int>& allIndexes();
     };
 }

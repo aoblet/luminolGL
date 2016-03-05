@@ -3,7 +3,6 @@
 //
 #pragma once
 
-#include <list>
 #include <vector>
 #include <string>
 #include <glm/detail/type_vec.hpp>
