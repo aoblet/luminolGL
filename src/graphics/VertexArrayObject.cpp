@@ -10,7 +10,7 @@
 namespace Graphics
 {
     VertexArrayObject::VertexArrayObject() {
-        glGenVertexArrays(1, &_glId);
+//        glGenVertexArrays(1, &_glId);
     }
 
     VertexArrayObject::VertexArrayObject(VertexArrayObject &&other) {
@@ -28,6 +28,7 @@ namespace Graphics
     }
 
     void VertexArrayObject::init() {
+        glGenVertexArrays(1, &_glId);
         bind();
         for(auto& vbo : _vbos){
             vbo->init();

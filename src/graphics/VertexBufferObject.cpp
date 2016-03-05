@@ -4,12 +4,13 @@
 
 #include "graphics/VertexBufferObject.h"
 #include <iostream>
+#include <glog/logging.h>
 
 namespace Graphics
 {
 
     VertexBufferObject::VertexBufferObject(DataType dataType, GLuint attribArray) : _dataType(dataType), _attribArray(attribArray) {
-        glGenBuffers(1, &_glId);
+//        glGenBuffers(1, &_glId);
         _target = _dataType == ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
     }
 
@@ -19,6 +20,7 @@ namespace Graphics
     }
 
     void VertexBufferObject::init() {
+        glGenBuffers(1, &_glId);
         switch(_dataType){
             case VERTEX_DESCRIPTOR:
                 initVboVertexDescriptor();

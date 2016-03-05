@@ -39,8 +39,10 @@
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/Scene.h"
 #include "graphics/DebugBoundingBoxes.hpp"
+#include "graphics/DebugRay.h"
 
 #include "gui/Gui.hpp"
+#include "gui/ObjectPicker.h"
 #include "lights/Light.hpp"
 
 #include "view/CameraFreefly.hpp"
@@ -73,9 +75,11 @@ int main( int argc, char **argv ) {
     float fps = 0.f;
 
     GUI::UserInput userInput;
+
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
     camera.setEye(glm::vec3(10,10,-10));
     View::CameraController cameraController(camera, userInput, 0.05);
+
 
     cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.positions().add(glm::vec3(10,10,0) );
@@ -247,7 +251,7 @@ int main( int argc, char **argv ) {
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
-    sceneMeshes.push_back(std::move(planeInstances));
+//    sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
@@ -667,6 +671,8 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
 
+        Graphics::DebugRay::draw(glm::vec3(0), glm::vec3(10), debugShapesShader);
+
         int screenNumber = 6;
         glDisable(GL_DEPTH_TEST);
 
@@ -718,6 +724,10 @@ int main( int argc, char **argv ) {
         }
 
         //****************************************** EVENTS *******************************************
+
+
+
+
 #ifdef IMGUI_DRAW
         // Draw UI
         glDisable(GL_DEPTH_TEST);
@@ -728,6 +738,9 @@ int main( int argc, char **argv ) {
 
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+
+        Gui::ObjectPicker picker;
+        picker.pickObject(gui.getMousePosition(), scene, camera);
 
         gui.addLabel("FPS", &fps);
 
