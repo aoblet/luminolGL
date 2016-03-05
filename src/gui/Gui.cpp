@@ -4,40 +4,42 @@
 
 namespace Gui{
 
-    Gui::Gui(int _DPI, int _width, int _height, const char * _name):
-            DPI(_DPI), width(_width), height(_height), name(_name)
-    {
-
-    }
+    Gui::Gui(int DPI, int screenWidth, int screenHeight, int windowWidth, int windowHeight, const char * name):
+            _dpi(DPI),
+            _screenWidth(screenWidth),
+            _screenHeight(screenHeight),
+            _windowWidth(windowWidth),
+            _windowHeight(windowHeight),
+            _name(name)
+    { }
 
 
     void Gui::beginFrame(){
-        imguiBeginFrame(mousex, mousey, mbut, mscroll);
+        imguiBeginFrame(_mouseX, _mouseY, _mbut, _mscroll);
     }
 
     void Gui::getCursorPos(GLFWwindow * window){
-
-        glfwGetCursorPos(window, &mousex, &mousey);
+        glfwGetCursorPos(window, &_mouseX, &_mouseY);
     }
 
     void Gui::updateFrame(){
-        mousex*=DPI;
-        mousey*=DPI;
-        mousey = height - mousey;
+        _mouseX *= _dpi;
+        _mouseY *= _dpi;
+        _mouseY = _screenHeight - _mouseY;
     }
 
     void Gui::updateMbut(bool leftButtonPress){
-        mscroll = 0;
+        _mscroll = 0;
         if(leftButtonPress)
-            mbut |= IMGUI_MBUT_LEFT;
-        else mbut = '0';
+            _mbut |= IMGUI_MBUT_LEFT;
+        else _mbut = '0';
     }
 
     void Gui::init(GLFWwindow * window){
         beginFrame();
         getCursorPos(window);
         updateFrame();
-        setScrollArea();
+        beginScrollArea();
     }
 
     void Gui::addSlider(const char * name, float * var, float begin, float end, float step){
@@ -63,18 +65,19 @@ namespace Gui{
     }
 
     void Gui::addLabel(const char * label, float * var){
-        sprintf(lineBuffer, "%s %f", label, *var );
-        imguiLabel(lineBuffer);
+        sprintf(_lineBuffer, "%s %f", label, *var );
+        imguiLabel(_lineBuffer);
     }
 
     void Gui::addLabel(const char * label, int var){
-        sprintf(lineBuffer, "%s %d", label, var );
-        imguiLabel(lineBuffer);
+        sprintf(_lineBuffer, "%s %d", label, var );
+        imguiLabel(_lineBuffer);
     }
 
 
-    void Gui::setScrollArea(){
-        imguiBeginScrollArea(name, width - xwidth - 10, height - ywidth - 10, xwidth, ywidth, &logScroll);
+    void Gui::beginScrollArea(){
+        imguiBeginScrollArea(_name, _screenWidth - _windowWidth - 10, _screenHeight - _windowHeight - 10, _windowWidth,
+                             _windowHeight, &_logScroll);
     }
 
     bool Gui::addButton(const char * name){
@@ -202,6 +205,23 @@ namespace Gui{
     void Gui::scrollAreaEnd(){
         imguiEndScrollArea();
         imguiEndFrame();
-        imguiRenderGLDraw(width, height);
+        imguiRenderGLDraw(_screenWidth, _screenHeight);
+    }
+
+
+    int Gui::getWindowWidth() {
+        return _windowWidth;
+    }
+
+    int Gui::getWindowHeight() {
+        return _windowHeight;
+    }
+
+    void Gui::setWindowWidth(int width) {
+        _windowWidth = width;
+    }
+
+    void Gui::setWindowHeight(int height) {
+        _windowHeight = height;
     }
 }

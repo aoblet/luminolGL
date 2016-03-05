@@ -83,14 +83,18 @@ int main( int argc, char **argv ) {
 
     GUI::UserInput userInput;
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
+    camera.setEye(glm::vec3(10,10,-10));
     View::CameraController cameraController(camera, userInput, 0.05);
 
-    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.positions().add(glm::vec3(10,10,0) );
     cameraController.positions().add(glm::vec3(10,10,10));
-    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
-    Gui::Gui gui(DPI, width, height, "LuminoGL");
+
+    int guiExpandWidth = 400, guiExpandHeight = 550;
+    int guiMinimalWidth = 400, guiMinimalHeight = 80;
+    Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
 
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
@@ -656,65 +660,84 @@ int main( int argc, char **argv ) {
 
         gui.addLabel("FPS", &fps);
 
-        if(gui.addButton("Camera switch"))
-            cameraController.setSpectator(!cameraController.isSpectator());
+        if(gui.addButton("Menu", gui.displayMenu)){
+            gui.setWindowWidth(guiExpandWidth);
+            gui.setWindowHeight(guiExpandHeight);
+        }
+        else{
+            gui.setWindowWidth(guiMinimalWidth);
+            gui.setWindowHeight(guiMinimalHeight);
+        }
 
-        if(gui.addButton("IsNormalMapActive"))
-            mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
 
-        gui.addSeparatorLine();
+        if(gui.displayMenu){
 
-        if(gui.addButton("General Parameters", gui.displayGeneralParameters) ){         
-            gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
-            gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
-            gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
-            drawFBOTextures = !drawFBOTextures == gui.addButton("Draw FBO textures");
             gui.addSeparatorLine();
-        }
+            gui.addIndent();
 
-        if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){ 
-            gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
-            gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
-            gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
-            gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
-            gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
-            gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
-            gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+            if(gui.addButton("Camera switch"))
+                cameraController.setSpectator(!cameraController.isSpectator());
+            if(gui.addButton("IsNormalMapActive"))
+                mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
+            if(gui.addButton("Draw FBO textures"))
+                drawFBOTextures = !drawFBOTextures;
+            
             gui.addSeparatorLine();
+
+            if(gui.addButton("General Parameters", gui.displayGeneralParameters) ){
+                gui.addSlider("Slider", &SliderValue, 0.0, 1.0, 0.001);
+                gui.addSlider("InstanceNumber", &instanceNumber, 100, 100000, 1);
+                gui.addSlider("SliderMultiply", &SliderMult, 0.0, 1000.0, 0.1);
+                gui.addSeparatorLine();
+            }
+
+            if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){
+                gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
+                gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
+                gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
+                gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
+                gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
+                gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
+                gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+                gui.addSeparatorLine();
+            }
+
+            if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){
+                gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
+                gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
+                gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
+                gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+                gui.addSeparatorLine();
+            }
+
+            if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
+                gui.addSliderPointLights(lightHandler);
+
+            if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters)){
+                gui.addSlider("Shadow Bias", &shadowBias, 0, 0.01, 0.00000001);
+                gui.addSliderSpotLights(lightHandler);
+            }
+
+            if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
+                gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
+                gui.addSliderDirectionalLights(lightHandler, -1, 1);
+                gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
+            }
+
+            if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){
+                gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+                gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
+                gui.addSliderSpline(cameraController.viewTargets());
+                if(gui.addButton("Add Spline"))
+                    cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
+            }
+
+            if(gui.addButton("Bounding Box"))
+                debugScene.toggle();
+
+            gui.addUnindent();
+
         }
-
-        if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){
-            gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
-            gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
-            gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
-            gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
-            gui.addSeparatorLine();
-        }
-
-        if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
-            gui.addSliderPointLights(lightHandler);
-
-        if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters)){
-            gui.addSlider("Shadow Bias", &shadowBias, 0, 0.01, 0.00000001);
-            gui.addSliderSpotLights(lightHandler);
-        }
-
-        if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
-            gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
-            gui.addSliderDirectionalLights(lightHandler, -1, 1);
-            gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
-        }
-
-        if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){ 
-            gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
-            gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
-            gui.addSliderSpline(cameraController.viewTargets());
-            if(gui.addButton("Add Spline"))
-                cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
-        }
-
-        if(gui.addButton("Bounding Box"))
-            debugScene.toggle();
 
         gui.scrollAreaEnd();
 
