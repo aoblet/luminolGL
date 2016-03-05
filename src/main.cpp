@@ -59,7 +59,7 @@
 
 #define IMGUI_DRAW 1
 
-// Font buffers
+// Font buffers IMGUI
 extern const unsigned char DroidSans_ttf[];
 extern const unsigned int DroidSans_ttf_len;
 
@@ -68,9 +68,18 @@ int main( int argc, char **argv ) {
     // GLOG debug level, 0 == all
     FLAGS_minloglevel=0;
 
+    int DPI;
+    GLFWwindow * window = nullptr;
     glm::ivec2 dimViewport(1300, 700);
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
+
+    // Init glfw, GL and IMGUI
+    initContextWindowGL("luminolGL", window, DPI, dimViewport);
+    glViewport( 0, 0, width, height );
+
+    if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
+        throw std::runtime_error("Could not init GUI renderer");
 
     GUI::UserInput userInput;
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
@@ -81,99 +90,33 @@ int main( int argc, char **argv ) {
     cameraController.positions().add(glm::vec3(10,10,10));
     cameraController.positions().add(glm::vec3(0,10,0)  );
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
-
-    // Initialise GLFW
-    if( !glfwInit() )
-    {
-        fprintf( stderr, "Failed to initialize GLFW\n" );
-        return EXIT_FAILURE;
-    }
-    glfwInit();
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-    glfwWindowHint(GLFW_DECORATED, GL_TRUE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-
-#if defined(__APPLE__)
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    int const DPI = 2; // For retina screens only
-#else
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    int const DPI = 1;
-# endif
-
-    // Open a window and create its OpenGL context
-    GLFWwindow * window = glfwCreateWindow(width/DPI, height/DPI, "aogl", 0, 0);
-    if( ! window ){
-        fprintf( stderr, "Failed to open GLFW window\n" );
-        glfwTerminate();
-        return( EXIT_FAILURE );
-    }
-
-    glfwMakeContextCurrent(window);
-    // Init glew
-    glewExperimental = GL_TRUE;
-    GLenum err = glewInit();
-    if (GLEW_OK != err) {
-        /* Problem: glewInit failed, something is seriously wrong. */
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-        return EXIT_FAILURE;
-    }
-
-    // Ensure we can capture the escape key being pressed below
-    glfwSetInputMode( window, GLFW_STICKY_KEYS, GL_TRUE );
-
-    // Enable vertical sync (on cards that support it)
-    glfwSwapInterval( 1 );
-    GLenum glerr = GL_NO_ERROR;
-    glerr = glGetError();
-
-
-    // GUI
     Gui::Gui gui(DPI, width, height, "LuminoGL");
 
-    if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
-    {
-        fprintf(stderr, "Could not init GUI renderer.\n");
-        return(EXIT_FAILURE);
-    }
-
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
-    Graphics::ShaderProgram debugShader("../shaders/blit.vert", "", "../shaders/blit.frag");
-    Graphics::ShaderProgram pointLightShader(debugShader.vShader(), "../shaders/pointLight.frag");
-    Graphics::ShaderProgram directionalLightShader(debugShader.vShader(), "../shaders/directionnalLight.frag");
-    Graphics::ShaderProgram spotLightShader(debugShader.vShader(), "../shaders/spotLight.frag");
+    Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
+    Graphics::ShaderProgram pointLightShader(blitShader.vShader(), "../shaders/pointLight.frag");
+    Graphics::ShaderProgram directionalLightShader(blitShader.vShader(), "../shaders/directionnalLight.frag");
+    Graphics::ShaderProgram spotLightShader(blitShader.vShader(), "../shaders/spotLight.frag");
     Graphics::ShaderProgram debugShapesShader("../shaders/debug.vert", "", "../shaders/debug.frag");
     Graphics::ShaderProgram shadowShader("../shaders/shadow.vert", "", "../shaders/shadow.frag");
-    Graphics::ShaderProgram gammaShader(debugShader.vShader(), "../shaders/gammaCorrection.frag");
-    Graphics::ShaderProgram sobelShader(debugShader.vShader(), "../shaders/sobel.frag");
-    Graphics::ShaderProgram blurShader(debugShader.vShader(), "../shaders/blur.frag");
-    Graphics::ShaderProgram circleConfusionShader(debugShader.vShader(), "../shaders/coc.frag");
-    Graphics::ShaderProgram depthOfFieldShader(debugShader.vShader(), "../shaders/dof.frag");
-    Graphics::ShaderProgram cameraMotionBlurShader(debugShader.vShader(), "../shaders/cameraMotionBlur.frag");
-
-    // Viewport
-    glViewport( 0, 0, width, height );
-
+    Graphics::ShaderProgram gammaShader(blitShader.vShader(), "../shaders/gammaCorrection.frag");
+    Graphics::ShaderProgram sobelShader(blitShader.vShader(), "../shaders/sobel.frag");
+    Graphics::ShaderProgram blurShader(blitShader.vShader(), "../shaders/blur.frag");
+    Graphics::ShaderProgram circleConfusionShader(blitShader.vShader(), "../shaders/coc.frag");
+    Graphics::ShaderProgram depthOfFieldShader(blitShader.vShader(), "../shaders/dof.frag");
+    Graphics::ShaderProgram cameraMotionBlurShader(blitShader.vShader(), "../shaders/cameraMotionBlur.frag");
 
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
-    int cubeInstanceWidth = 10;
-    int cubeInstanceHeight = 10;
-
+    int cubeInstanceWidth = 10, cubeInstanceHeight = 10;
     std::vector<glm::mat4> cubeInstanceTransform;
-    cubeInstanceTransform.reserve((int)cubeInstanceHeight*cubeInstanceWidth);
+    cubeInstanceTransform.reserve((size_t)cubeInstanceHeight*cubeInstanceWidth);
 
     int k = 0;
     for(int i = 0; i < cubeInstanceHeight; ++i){
         for(int j = 0; j < cubeInstanceWidth; ++j){
-            cubeInstances.addInstance(glm::vec3(i * 2, 1.5f, j * 2));
+            cubeInstances.addInstance(glm::vec3(i * 20, 1.5f, j * 20));
             cubeInstanceTransform.push_back(cubeInstances.getTransformationMatrix(k));
             ++k;
         }
@@ -184,12 +127,11 @@ int main( int argc, char **argv ) {
     Graphics::Mesh sphereMesh(Graphics::Mesh::genSphere(10,10,0.2));
     Graphics::ModelMeshInstanced sphereInstances("../assets/models/primitives/sphere.obj");
 
-    int sphereInstanceWidth = 10;
-    int sphereInstanceHeight = 10;
+    int sphereInstanceWidth = 10, sphereInstanceHeight = 10;
 
     for(int i = 0; i < sphereInstanceWidth; ++i){
         for(int j = 0; j < sphereInstanceHeight; ++j){
-            sphereInstances.addInstance(glm::vec3(i * 2, 2.5f, j * 2));
+            sphereInstances.addInstance(glm::vec3(i * 10, 2.5f, j * 10));
         }
     }
     checkErrorGL("VAO/VBO");
@@ -202,13 +144,10 @@ int main( int argc, char **argv ) {
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
     planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(1,1,1,0), glm::vec3(500,1,500));
-
     std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
     checkErrorGL("VAO/VBO");
 
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
-    crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(1,1,1,0), glm::vec3(1,1,1));
-
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -245,7 +184,7 @@ int main( int argc, char **argv ) {
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
-//    scene.addModelMeshInstanced("../assets/models/crysis/nanosuit.obj", Geometry::Transformation(glm::vec3(10,10,10)));
+    scene.addModelMeshInstanced("../assets/models/crysis/nanosuit.obj", Geometry::Transformation(glm::vec3(10,10,10)));
 //    scene.save("test.json");
     checkErrorGL("Scene");
 
@@ -253,16 +192,16 @@ int main( int argc, char **argv ) {
 
     Light::LightHandler lightHandler;
     lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
-    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
-    lightHandler.addSpotLight(glm::vec3(4,5,4), glm::vec3(1,-1,1), glm::vec3(0,0,1), 0, 0, 60, 66);
+//    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
+//    lightHandler.addSpotLight(glm::vec3(4,5,4), glm::vec3(1,-1,1), glm::vec3(0,0,1), 0, 0, 60, 66);
 
     // ---------------------- For Geometry Shading
     float t = 0;
-    bool drawFBOTextures = true;
-    float SliderValue = 0.3;
-    float SliderMult = 80;
-    float instanceNumber = 100;
-    int isNormalMapActive = 0;
+    bool drawFBOTextures    = true;
+    float SliderValue       = 0.3;
+    float SliderMult        = 80;
+    float instanceNumber    = 100;
+    int isNormalMapActive   = 0;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
     mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
@@ -288,12 +227,12 @@ int main( int argc, char **argv ) {
     checkErrorGL("Uniforms");
 
     // ---------------------- FX Variables
-    float shadowBias = 0.00019;
-    float shadowBiasDirLight = 0.001;
+    float shadowBias            = 0.00019;
+    float shadowBiasDirLight    = 0.001;
 
-    float gamma = 1.22;
-    float sobelIntensity = 0.15;
-    float sampleCount = 9; // blur
+    float gamma                 = 1.22;
+    float sobelIntensity        = 0.15;
+    float sampleCount           = 9; // blur
     float motionBlurSampleCount = 8; // motion blur
     float dirLightOrthoProjectionDim = 100;
     glm::vec3 focus(0, 1, 100);
@@ -324,15 +263,10 @@ int main( int argc, char **argv ) {
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
     Graphics::GeometricFBO gBufferFBO(dimViewport);
-
-    //TODO: remove poisson shadow ?
-    float shadowPoissonSampleCount = 1;
-    float shadowPoissonSpread = 1;
-
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
     Graphics::BeautyFBO beautyFBO(dimViewport);
     Graphics::PostFxFBO fxFBO(dimViewport, 4);
-
+    float shadowPoissonSampleCount = 1, shadowPoissonSpread = 1;
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
     // Create two ubo for light and camera
@@ -361,7 +295,7 @@ int main( int argc, char **argv ) {
     do {
         glm::mat4 previousMVP = camera.getProjectionMatrix() * camera.getViewMatrix();
 
-        t = glfwGetTime();
+        t = static_cast<float>(glfwGetTime());
         userInput.update(window);
         cameraController.update(t);
 
@@ -643,7 +577,6 @@ int main( int argc, char **argv ) {
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // ------- CAMERA MOTION BLUR ------
-
         fxFBO.changeCurrentTexture(0);
         cameraMotionBlurShader.useProgram();
         fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
@@ -665,7 +598,7 @@ int main( int argc, char **argv ) {
 
         if(drawFBOTextures){
             // Select shader
-            debugShader.useProgram();
+            blitShader.useProgram();
 
             // --------------- Color Buffer
             glViewport( 0, 0, width/screenNumber, height/screenNumber );
@@ -717,7 +650,6 @@ int main( int argc, char **argv ) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
-     
 
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
@@ -795,7 +727,6 @@ int main( int argc, char **argv ) {
 
         double newTime = glfwGetTime();
         fps = float(1.f/ (newTime - t));
-
     }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
 
