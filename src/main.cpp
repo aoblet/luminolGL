@@ -74,12 +74,13 @@ int main( int argc, char **argv ) {
 
     GUI::UserInput userInput;
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
+    camera.setEye(glm::vec3(10,10,-10));
     View::CameraController cameraController(camera, userInput, 0.05);
 
-    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.positions().add(glm::vec3(10,10,0) );
     cameraController.positions().add(glm::vec3(10,10,10));
-    cameraController.positions().add(glm::vec3(0,10,0)  );
+    cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
 
     // Initialise GLFW
