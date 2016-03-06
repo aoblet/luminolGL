@@ -6,14 +6,13 @@
 using namespace Graphics;
 
 CubeMapTexture::CubeMapTexture(const std::string &folderTextures, const std::vector<std::string> &files,
-                               const std::string& extension, GLenum unitTextureTarget):
+                               const std::string& extension):
         _texId(0), _folder(folderTextures), _files(files){
 
     if(!files.empty() && files.size() != 6)
         throw std::runtime_error("CubeMapTexture error: given files size != 6");
 
     glGenTextures(1, &_texId);
-    glActiveTexture(unitTextureTarget);
 
     int width, height, bitDepth;
     unsigned char* image;

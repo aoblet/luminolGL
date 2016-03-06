@@ -39,6 +39,7 @@
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/Scene.h"
 #include "graphics/DebugBoundingBoxes.hpp"
+#include "graphics/CubeMapTexture.hpp"
 
 #include "gui/Gui.hpp"
 #include "lights/Light.hpp"
@@ -56,6 +57,7 @@
 
 #include <glog/logging.h>
 #include <glm/ext.hpp>
+#include <graphics/Skybox.hpp>
 
 #define IMGUI_DRAW 1
 
@@ -269,7 +271,7 @@ int main( int argc, char **argv ) {
     Graphics::GeometricFBO gBufferFBO(dimViewport);
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
     Graphics::BeautyFBO beautyFBO(dimViewport);
-    Graphics::PostFxFBO fxFBO(dimViewport, 4);
+    Graphics::PostFxFBO fxFBO(dimViewport, 5);
     float shadowPoissonSampleCount = 1, shadowPoissonSpread = 1;
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
@@ -294,6 +296,8 @@ int main( int argc, char **argv ) {
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
 
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skybox", {}, ".jpg"));
+
     // Identity matrix
     glm::mat4 objectToWorld;
     do {
@@ -311,6 +315,10 @@ int main( int argc, char **argv ) {
         glm::mat4 vp  = projection * worldToView;
         glm::mat4 mvInverse     = glm::inverse(mv);
         glm::mat4 screenToView  = glm::inverse(projection);
+
+        // For skybox
+        glm::mat4 unTranslatedMV = glm::mat4(glm::mat3(worldToView));
+        glm::mat4 screenToWorldUnTranslated = glm::inverse(unTranslatedMV) * screenToView;
 
         // Light space matrices
 
@@ -519,16 +527,32 @@ int main( int argc, char **argv ) {
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
 
-        // ------- SOBEL ------
+
+        // Set quad as vao: deferred
         fxFBO.bind();
+        quadVAO.bind();
+
+        // ------- SKYBOX ------
+        // Render skybox texture combined with beauty: mask with depth buffer
+        // All in one pass
+        fxFBO.changeCurrentTexture(4);
+        fxFBO.clearColor();
+        skybox.updateUniforms(screenToWorldUnTranslated, 0, 1, 2);
+        skybox.useProgramShader();
+
+        skybox.bindTexture(GL_TEXTURE0); // cubeMap
+        gBufferFBO.depth().bind(GL_TEXTURE1);
+        beautyFBO.beauty().bind(GL_TEXTURE2);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        // ------- SOBEL ------
         fxFBO.changeCurrentTexture(0);
         fxFBO.clearColor();
 
-        // Set quad as vao: deferred
-        quadVAO.bind();
         sobelShader.useProgram();
-        beautyFBO.beauty().bind(GL_TEXTURE0);
+        fxFBO.texture(4).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
 
         // ------- BLUR ------
         if(sampleCount > 0){
@@ -586,6 +610,7 @@ int main( int argc, char **argv ) {
         fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
         gBufferFBO.depth().bind(GL_TEXTURE1); // depth
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        quadVAO.bind();
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -593,6 +618,9 @@ int main( int argc, char **argv ) {
         gammaShader.useProgram();
         fxFBO.texture(0).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+
+
 
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
@@ -643,7 +671,7 @@ int main( int argc, char **argv ) {
             glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            fxFBO.texture(2).bind(GL_TEXTURE0);
+            fxFBO.texture(4).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 

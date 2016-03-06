@@ -57,6 +57,9 @@ namespace Graphics{
         const std::string MOTION_BLUR_SAMPLE_COUNT = "SampleCount";
 
         // Skybox
-        const std::string SKYBOX_CUBE_MAP          = "Skybox";
+        const std::string SKYBOX_CUBE_MAP       = "Skybox";
+        const std::string SKYBOX_BEAUTY         = "Beauty";
+        const std::string SKYBOX_DEPTH_BUFFER   = "Depth";
+        const std::string SKYBOX_SCREEN_TO_WORLD_NO_TRANSLATE = "ScreenToWorldNoTranslate";
     }
 }

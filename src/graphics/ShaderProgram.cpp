@@ -87,6 +87,10 @@ void ShaderProgram::updateUniform(const std::string& uniformName, const glm::vec
     glProgramUniform3fv(_programId, glGetUniformLocation(_programId, uniformName.c_str()), 1, glm::value_ptr(v));
 }
 
+void ShaderProgram::updateUniform(const std::string &uniformName, const glm::mat3 &v) {
+    glProgramUniformMatrix3fv(_programId, glGetUniformLocation(_programId, uniformName.c_str()), 1, 0, glm::value_ptr(v));
+}
+
 void ShaderProgram::updateUniform(const std::string& uniformName, const glm::mat4 & v){
     glProgramUniformMatrix4fv(_programId, glGetUniformLocation(_programId, uniformName.c_str()), 1, 0, glm::value_ptr(v));
 }
