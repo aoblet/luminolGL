@@ -108,6 +108,7 @@ namespace Gui{
 		void setWindowWidth(int width);
 		void setWindowHeight(int height);
 
+		glm::vec2 getMousePosition();
 
 		bool displayGeneralParameters = false;
 		bool displayGeneralLightParameters = false;

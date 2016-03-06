@@ -55,5 +55,9 @@ namespace Graphics{
         const std::string MOTION_BLUR_COLOR        = "LastPass";
         const std::string MOTION_BLUR_DEPTH        = "Depth";
         const std::string MOTION_BLUR_SAMPLE_COUNT = "SampleCount";
+
+        // DEBUG
+        const std::string DEBUG_COLOR        = "debugColor";
+
     }
 }

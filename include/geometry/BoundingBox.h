@@ -17,12 +17,16 @@ namespace Geometry
     class BoundingBox {
     private:
         std::vector<glm::vec3> _points; /** points which are composing the bounding box */
+        glm::vec3 _AABBmin; /** min coordinates in AABB model (axis-aligned bounding box) */
+        glm::vec3 _AABBmax; /** max coordinates in AABB model (axis-aligned bounding box) */
     public:
         BoundingBox();
 
         bool isVisible(const glm::mat4 &MVP) const; /** Check if the bounding is visible
                                                      * by a matrix (usually MVP)
                                                      */
+
+        bool intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::mat4& trans, float* distance);
 
 
         void compute(const std::vector<Graphics::VertexDescriptor>& vertices); /** Construct a the boundingBox using vertices as parameter

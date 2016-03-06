@@ -40,6 +40,7 @@ namespace Graphics {
         /** Returns the Transformation property (position, rotation, scale) of a specified index */
         const Geometry::Transformation& getTransformation(int index) const;
         const std::vector<Geometry::Transformation>& getTransformations() const;
+        std::vector<Geometry::Transformation>& getTransformations();
         void setTransformations(std::vector<Geometry::Transformation>&& transformations);
 
         /** Returns the Transformation matrix of a specified index */

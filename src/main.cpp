@@ -39,7 +39,7 @@
 #include "graphics/ModelMeshInstanced.hpp"
 #include "graphics/Scene.h"
 #include "graphics/DebugBoundingBoxes.hpp"
-#include "graphics/DebugRay.h"
+#include "graphics/DebugDrawer.h"
 
 #include "gui/Gui.hpp"
 #include "gui/ObjectPicker.h"
@@ -79,6 +79,10 @@ int main( int argc, char **argv ) {
     View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
     camera.setEye(glm::vec3(10,10,-10));
     View::CameraController cameraController(camera, userInput, 0.05);
+
+    View::CameraFreefly camera2(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
+    camera2.setEye(glm::vec3(10,10,-10));
+    camera2.computeDirs();
 
 
     cameraController.positions().add(glm::vec3(0,10,0));
@@ -144,6 +148,8 @@ int main( int argc, char **argv ) {
 
     int guiMinimalWidth = 400;
     int guiMinimalHeight = 80;
+
+    Gui::ObjectPicker picker;
 
     // GUI
     Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
@@ -269,7 +275,7 @@ int main( int argc, char **argv ) {
 
     // ---------------------- For Geometry Shading
     float t = 0;
-    bool drawFBOTextures = true;
+    bool drawFBOTextures = false;
     float SliderValue = 0.3;
     float SliderMult = 80;
     float instanceNumber = 100;
@@ -282,7 +288,6 @@ int main( int argc, char **argv ) {
     mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
     shadowShader.updateUniform(Graphics::UBO_keys::INSTANCE_NUMBER, int(instanceNumber));
     checkErrorGL("Uniforms");
-
 
     // ---------------------- For Light Pass Shading
     directionalLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
@@ -671,7 +676,7 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
 
-        Graphics::DebugRay::draw(glm::vec3(0), glm::vec3(10), debugShapesShader);
+        picker.drawPickedObject(debugShapesShader);
 
         int screenNumber = 6;
         glDisable(GL_DEPTH_TEST);
@@ -739,8 +744,9 @@ int main( int argc, char **argv ) {
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
-        Gui::ObjectPicker picker;
-        picker.pickObject(gui.getMousePosition(), scene, camera);
+        if(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS){
+            picker.pickObject(gui.getMousePosition(), scene, camera);
+        }
 
         gui.addLabel("FPS", &fps);
 

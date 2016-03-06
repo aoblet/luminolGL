@@ -24,7 +24,10 @@ void Graphics::DebugBoundingBoxes::draw(const glm::mat4& mvp){
 
     _debugShader.useProgram();
     _debugShader.updateUniform(UBO_keys::MVP, mvp);
+    _debugShader.updateUniform(UBO_keys::DEBUG_COLOR, glm::vec3(0.5,0,0));
     _VAO.bind();
+
+    glLineWidth( 1 );
 
     for(auto& meshInstanced: _meshes){
         const std::vector<glm::vec3>& bbVertices = meshInstanced.modelMeshGroup().getBoundingBox().getVector();
@@ -32,7 +35,7 @@ void Graphics::DebugBoundingBoxes::draw(const glm::mat4& mvp){
         std::vector<glm::mat4> trToMatrix;
 
         for(size_t i = 0; i<meshInstanced.getTransformations().size(); ++i){
-            trToMatrix.push_back(meshInstanced.getTransformation(i).getTransformationMatrix());
+            trToMatrix.push_back(meshInstanced.getTransformation(i).getTRSMatrix());
         }
         _transformVBO.updateData(trToMatrix);
         glDrawElementsInstanced(GL_LINE_STRIP, (int)_idsVertices.size(), GL_UNSIGNED_INT, (void*)0, (int)trToMatrix.size());

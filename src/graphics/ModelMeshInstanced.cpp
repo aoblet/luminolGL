@@ -77,11 +77,11 @@ const Geometry::Transformation &ModelMeshInstanced::getTransformation(int index)
 
 
 glm::mat4 ModelMeshInstanced::getTransformationMatrix(int index) const {
-    return _transformations.at(index).getTransformationMatrix();
+    return _transformations.at(index).getTRSMatrix();
 }
 
 Geometry::BoundingBox ModelMeshInstanced::getBoundingBox(int index) const {
-    return _transformations.at(index).getTransformationMatrix() * _modelMeshGroup.getBoundingBox();
+    return _transformations.at(index).getTRSMatrix() * _modelMeshGroup.getBoundingBox();
 }
 
 void ModelMeshInstanced::initGLBuffers(VertexBufferObject &scenePositionsVBO) {
@@ -106,6 +106,10 @@ std::string ModelMeshInstanced::modelPath() const {
 }
 
 const std::vector<Geometry::Transformation>& ModelMeshInstanced::getTransformations() const {
+    return _transformations;
+}
+
+std::vector<Geometry::Transformation>& ModelMeshInstanced::getTransformations() {
     return _transformations;
 }
 

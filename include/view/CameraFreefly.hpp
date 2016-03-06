@@ -18,10 +18,11 @@ namespace View{
         glm::vec3 _eye;             /** World camera position */
         glm::vec3 _up;              /** Up world vector */
         glm::vec3 _front;           /** Where the camera looks */
-        glm::vec3 _frontLeft;       /** Left vector from front: used for Up*/
+        glm::vec3 _left;            /** Left vector from front: used for Up*/
         glm::vec2 _sphericalAngles; /** In radians */
 
         float _fov;
+
         glm::vec2 _viewPort;
         glm::vec2 _nearFar;
 
@@ -40,9 +41,15 @@ namespace View{
 
         glm::vec3 getEye() const;
         glm::vec3 getFront() const;
+        glm::vec3 getUp() const;
+        glm::vec3 getLeft() const;
         glm::vec2 getViewPort() const;
+        glm::vec2 getNormalizedViewPort() const; /** width = 1 && height = ratio*/
         glm::vec2 getNearFar() const;
         float getFOV() const;
+
+        /** focal of the camera (with width of the screen = 1) */
+        float getFocal() const;
 
 
         const glm::mat4& getViewMatrix() const;

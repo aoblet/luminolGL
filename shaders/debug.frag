@@ -8,7 +8,9 @@ layout(location = FRAG_COLOR) out vec4 FragColor;
 
 in vec3 WorldPosition;
 
+uniform vec3 debugColor;
+
 void main()
 {
-	FragColor = vec4(vec3(0.2, 0.3, 0.2), 1);
+	FragColor = vec4(debugColor, 1);
 }

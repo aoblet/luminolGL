@@ -49,6 +49,111 @@ namespace Geometry
     }
 
 
+    bool BoundingBox::intersect(const glm::vec3 &rayOrigin, const glm::vec3 &rayDirection, const glm::mat4 &transformation, float *intersectionDistance) {
+        // Intersection method from Real-Time Rendering and Essential Mathematics for Games
+        float tMin = 0.0f;
+        float tMax = 100000.0f;
+
+        glm::vec3 OBBposition_worldspace(transformation[3].x, transformation[3].y, transformation[3].z);
+
+        glm::vec3 delta = OBBposition_worldspace - rayOrigin;
+
+        // Test intersection with the 2 planes perpendicular to the OBB's X axis
+        {
+            glm::vec3 xaxis(transformation[0].x, transformation[0].y, transformation[0].z);
+            float e = glm::dot(xaxis, delta);
+            float f = glm::dot(rayDirection, xaxis);
+
+            if ( fabs(f) > 0.001f ){ // Standard case
+
+                float t1 = (e+_AABBmin.x)/f; // Intersection with the "left" plane
+                float t2 = (e+_AABBmax.x)/f; // Intersection with the "right" plane
+                // t1 and t2 now contain distances betwen ray origin and ray-plane intersections
+
+                // We want t1 to represent the nearest intersection,
+                // so if it's not the case, invert t1 and t2
+                if (t1>t2){
+                    float w=t1;t1=t2;t2=w; // swap t1 and t2
+                }
+
+                // tMax is the nearest "far" intersection (amongst the X,Y and Z planes pairs)
+                if ( t2 < tMax )
+                    tMax = t2;
+                // tMin is the farthest "near" intersection (amongst the X,Y and Z planes pairs)
+                if ( t1 > tMin )
+                    tMin = t1;
+
+                // And here's the trick :
+                // If "far" is closer than "near", then there is NO intersection.
+                // See the images in the tutorials for the visual explanation.
+                if (tMax < tMin )
+                    return false;
+
+            }else{ // Rare case : the ray is almost parallel to the planes, so they don't have any "intersection"
+                if(-e+_AABBmin.x > 0.0f || -e+_AABBmax.x < 0.0f)
+                    return false;
+            }
+        }
+
+
+        // Test intersection with the 2 planes perpendicular to the OBB's Y axis
+        // Exactly the same thing than above.
+        {
+            glm::vec3 yaxis(transformation[1].x, transformation[1].y, transformation[1].z);
+            float e = glm::dot(yaxis, delta);
+            float f = glm::dot(rayDirection, yaxis);
+
+            if ( fabs(f) > 0.001f ){
+
+                float t1 = (e+_AABBmin.y)/f;
+                float t2 = (e+_AABBmax.y)/f;
+
+                if (t1>t2){float w=t1;t1=t2;t2=w;}
+
+                if ( t2 < tMax )
+                    tMax = t2;
+                if ( t1 > tMin )
+                    tMin = t1;
+                if (tMin > tMax)
+                    return false;
+
+            }else{
+                if(-e+_AABBmin.y > 0.0f || -e+_AABBmax.y < 0.0f)
+                    return false;
+            }
+        }
+
+        // Test intersection with the 2 planes perpendicular to the OBB's Z axis
+        // Exactly the same thing than above.
+        {
+            glm::vec3 zaxis(transformation[2].x, transformation[2].y, transformation[2].z);
+            float e = glm::dot(zaxis, delta);
+            float f = glm::dot(rayDirection, zaxis);
+
+            if ( fabs(f) > 0.001f ){
+
+                float t1 = (e+_AABBmin.z)/f;
+                float t2 = (e+_AABBmax.z)/f;
+
+                if (t1>t2){float w=t1;t1=t2;t2=w;}
+
+                if ( t2 < tMax )
+                    tMax = t2;
+                if ( t1 > tMin )
+                    tMin = t1;
+                if (tMin > tMax)
+                    return false;
+
+            }else{
+                if(-e+_AABBmin.z > 0.0f || -e+_AABBmax.z < 0.0f)
+                    return false;
+            }
+        }
+
+        *intersectionDistance = tMin;
+        return true;
+    }
+
     void BoundingBox::compute(const std::vector<Graphics::VertexDescriptor> &vertices) {
 
         float xmin, ymin, zmin;
@@ -77,6 +182,9 @@ namespace Geometry
               glm::vec3(xmax,ymax,zmax),
               glm::vec3(xmax,ymax,zmin)
         };
+
+        _AABBmin = glm::vec3(xmin, ymin, zmin);
+        _AABBmax = glm::vec3(xmax, ymax, zmax);
 
     }
 

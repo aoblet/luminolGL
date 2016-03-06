@@ -24,9 +24,22 @@ Geometry::Transformation::Transformation(const glm::vec4 &rot)
 { }
 
 
-glm::mat4 Geometry::Transformation::getTransformationMatrix() const {
+glm::mat4 Geometry::Transformation::getTRSMatrix() const {
     glm::mat4 r = glm::rotate(rotation.w, glm::vec3(rotation.x, rotation.y, rotation.z));
     glm::mat4 s = glm::scale(scale);
     glm::mat4 t = glm::translate(position);
     return t*r*s;
+}
+
+
+glm::mat4 Geometry::Transformation::getTMatrix() const {
+    return glm::translate(position);
+}
+
+glm::mat4 Geometry::Transformation::getRMatrix() const {
+    return glm::rotate(rotation.w, glm::vec3(rotation.x, rotation.y, rotation.z));
+}
+
+glm::mat4 Geometry::Transformation::getSMatrix() const {
+    return glm::scale(scale);
 }

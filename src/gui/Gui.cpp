@@ -224,4 +224,9 @@ namespace Gui{
     void Gui::setWindowHeight(int height) {
         _windowHeight = height;
     }
+
+
+    glm::vec2 Gui::getMousePosition() {
+        return glm::vec2(_mouseX, _mouseY);
+    }
 }
