@@ -175,3 +175,7 @@ void ModelMeshGroup::computeBoundingBox() {
 const Geometry::BoundingBox& ModelMeshGroup::getBoundingBox() const {
     return _boundingBox;
 }
+
+Geometry::BoundingBox* ModelMeshGroup::getBoundingBoxPtr(){
+    return &_boundingBox;
+}

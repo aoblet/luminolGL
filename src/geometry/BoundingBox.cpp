@@ -9,6 +9,36 @@
 
 namespace Geometry
 {
+    BoundingBox::BoundingBox() {
+        _points.reserve(8);
+    }
+
+
+    BoundingBox::BoundingBox(const glm::vec3 &AABBmin, const glm::vec3 &AABBmax) {
+        float xmin, ymin, zmin, xmax, ymax, zmax;
+        xmin = AABBmin.x;
+        ymin = AABBmin.y;
+        zmin = AABBmin.z;
+
+        xmax = AABBmax.x;
+        ymax = AABBmax.y;
+        zmax = AABBmax.z;
+
+        _points = {
+                glm::vec3(xmin,ymin,zmin),
+                glm::vec3(xmin,ymin,zmax),
+                glm::vec3(xmax,ymin,zmax),
+                glm::vec3(xmax,ymin,zmin),
+                glm::vec3(xmin,ymax,zmin),
+                glm::vec3(xmin,ymax,zmax),
+                glm::vec3(xmax,ymax,zmax),
+                glm::vec3(xmax,ymax,zmin)
+        };
+
+        _AABBmin = AABBmin;
+        _AABBmax = AABBmax;
+    }
+
     bool BoundingBox::isVisible(const glm::mat4 &VP)  const {
         glm::vec4 projInitPoint = VP * glm::vec4(_points[0], 1.0);
         projInitPoint /= projInitPoint.w;
@@ -49,7 +79,7 @@ namespace Geometry
     }
 
 
-    bool BoundingBox::intersect(const glm::vec3 &rayOrigin, const glm::vec3 &rayDirection, const glm::mat4 &transformation, float *intersectionDistance) {
+    bool BoundingBox::intersect(const glm::vec3 &rayOrigin, const glm::vec3 &rayDirection, const glm::mat4 &transformation, float *intersectionDistance) const {
         // Intersection method from Real-Time Rendering and Essential Mathematics for Games
         float tMin = 0.0f;
         float tMax = 100000.0f;
@@ -203,8 +233,6 @@ namespace Geometry
         return box;
     }
 
-    BoundingBox::BoundingBox() {
-        _points.reserve(8);
-    }
+
 }
 

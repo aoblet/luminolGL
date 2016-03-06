@@ -224,7 +224,8 @@ int main( int argc, char **argv ) {
     checkErrorGL("VAO/VBO");
 
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
-    crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(1,1,1,0), glm::vec3(1,1,1));
+    crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
+    crysisModel.addInstance(glm::vec3(-5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
 
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -745,8 +746,15 @@ int main( int argc, char **argv ) {
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
         if(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS){
-            picker.pickObject(gui.getMousePosition(), scene, camera);
+            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, true);
         }
+        else{
+            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, false);
+        }
+
+        if(glfwGetKey(window, GLFW_KEY_T)) picker.switchMode(Gui::PickerMode::TRANSLATION);
+        if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);
+        if(glfwGetKey(window, GLFW_KEY_R)) picker.switchMode(Gui::PickerMode::ROTATION);
 
         gui.addLabel("FPS", &fps);
 

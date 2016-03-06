@@ -54,6 +54,7 @@ namespace Gui{
 		const char *_name;
 
 		double _mouseX, _mouseY;
+		double _mouseRelX, _mouseRelY;
 
 		unsigned char _mbut = '0';
 		int _mscroll = 0;
@@ -108,7 +109,8 @@ namespace Gui{
 		void setWindowWidth(int width);
 		void setWindowHeight(int height);
 
-		glm::vec2 getMousePosition();
+		glm::vec2 getCursorPosition();
+		glm::vec2 getCursorSpeed();
 
 		bool displayGeneralParameters = false;
 		bool displayGeneralLightParameters = false;

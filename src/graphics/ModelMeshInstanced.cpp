@@ -120,3 +120,7 @@ void ModelMeshInstanced::setTransformations(std::vector<Geometry::Transformation
 const ModelMeshGroup &ModelMeshInstanced::modelMeshGroup() const {
     return _modelMeshGroup;
 }
+
+ModelMeshGroup &ModelMeshInstanced::modelMeshGroup(){
+    return _modelMeshGroup;
+}

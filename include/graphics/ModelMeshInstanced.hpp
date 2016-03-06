@@ -54,6 +54,7 @@ namespace Graphics {
         Geometry::BoundingBox getBoundingBox(int index) const;
 
         const ModelMeshGroup& modelMeshGroup() const;
+        ModelMeshGroup& modelMeshGroup();
 
         /**
          * Returns the TOTAL number of instance

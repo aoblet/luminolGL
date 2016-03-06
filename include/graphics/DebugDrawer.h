@@ -6,6 +6,7 @@
 #define LUMINOLGL_DEBUGRAY_H
 
 #include <vector>
+#include <geometry/BoundingBox.h>
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/ShaderProgram.hpp"
@@ -31,8 +32,15 @@ namespace Graphics
         DebugDrawer();
     public:
         static void drawRay(const glm::vec3 &point1, const glm::vec3 &point2, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1), float lineWidth = 1);
+        static void drawTriangle(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1));
+        static void drawPyramid(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, const glm::vec3 &color = glm::vec3(1, 1, 1));
+        static void drawCube(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, const glm::vec3 &color = glm::vec3(1, 1, 1));
         static void drawPoint(const glm::vec3 &point, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1), float pointSize = 1);
         static void drawAxis(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, float lineWidth = 1);
+        static void drawTranslateAxis(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, float lineWidth = 1);
+        static void drawScaleAxis(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, float lineWidth = 1);
+        static void drawRotationAxis(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, float lineWidth = 1);
+        static void drawBoundingBox(const Geometry::BoundingBox& box, const glm::mat4 &trans, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1));
     };
 }
 

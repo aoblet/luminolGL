@@ -21,12 +21,13 @@ namespace Geometry
         glm::vec3 _AABBmax; /** max coordinates in AABB model (axis-aligned bounding box) */
     public:
         BoundingBox();
+        BoundingBox(const glm::vec3& AABBmin, const glm::vec3& AABBmax);
 
         bool isVisible(const glm::mat4 &MVP) const; /** Check if the bounding is visible
                                                      * by a matrix (usually MVP)
                                                      */
 
-        bool intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::mat4& trans, float* distance);
+        bool intersect(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::mat4& trans, float* distance) const;
 
 
         void compute(const std::vector<Graphics::VertexDescriptor>& vertices); /** Construct a the boundingBox using vertices as parameter

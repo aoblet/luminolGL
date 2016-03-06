@@ -1,5 +1,7 @@
 
 #include "gui/Gui.hpp"
+#include <glog/logging.h>
+
 
 
 namespace Gui{
@@ -19,7 +21,13 @@ namespace Gui{
     }
 
     void Gui::getCursorPos(GLFWwindow * window){
+        double oldMouseX = _mouseX;
+        double oldMouseY = - (_mouseY-_screenHeight);
+
         glfwGetCursorPos(window, &_mouseX, &_mouseY);
+
+        _mouseRelX = (_mouseX - oldMouseX) / (float)_screenWidth;
+        _mouseRelY = (_mouseY - oldMouseY) / (float)_screenHeight;
     }
 
     void Gui::updateFrame(){
@@ -226,7 +234,12 @@ namespace Gui{
     }
 
 
-    glm::vec2 Gui::getMousePosition() {
+    glm::vec2 Gui::getCursorPosition() {
         return glm::vec2(_mouseX, _mouseY);
+    }
+
+
+    glm::vec2 Gui::getCursorSpeed() {
+        return glm::vec2(_mouseRelX, _mouseRelY);
     }
 }
