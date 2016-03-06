@@ -6,6 +6,7 @@
 #include <iostream>
 #include <glog/logging.h>
 #include <GL/glew.h>
+#include <stdexcept>
 
 void checkErrorGL(const std::string& title) {
     int error;
