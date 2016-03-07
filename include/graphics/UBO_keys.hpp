@@ -19,6 +19,7 @@ namespace Graphics{
 
         const std::string MVP              = "MVP";
         const std::string MV               = "MV";
+        const std::string MV_NORMAL        = "MVNormal";
         const std::string MV_INVERSE       = "MVInverse";
         const std::string TIME             = "Time";
         const std::string SLIDER           = "Slider";

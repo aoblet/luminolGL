@@ -112,6 +112,8 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram depthOfFieldShader(blitShader.vShader(), "../shaders/dof.frag");
     Graphics::ShaderProgram cameraMotionBlurShader(blitShader.vShader(), "../shaders/cameraMotionBlur.frag");
 
+
+
     // Create Cube -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced cubeInstances("../assets/models/primitives/cube.obj");
 
@@ -194,12 +196,11 @@ int main( int argc, char **argv ) {
 //    scene.save("test.json");
     checkErrorGL("Scene");
 
+
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
     Light::LightHandler lightHandler;
     lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
-//    lightHandler.addSpotLight(glm::vec3(-4,5,-4), glm::vec3(1,-1,1), glm::vec3(1,0.5,0), 0, 0, 60, 66);
-//    lightHandler.addSpotLight(glm::vec3(4,5,4), glm::vec3(1,-1,1), glm::vec3(0,0,1), 0, 0, 60, 66);
 
     // ---------------------- For Geometry Shading
     float t = 0;
@@ -238,7 +239,7 @@ int main( int argc, char **argv ) {
 
     float gamma                 = 1.22;
     float sobelIntensity        = 0.15;
-    float sampleCount           = 9; // blur
+    float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
     float dirLightOrthoProjectionDim = 100;
     glm::vec3 focus(0, 1, 100);
@@ -314,6 +315,7 @@ int main( int argc, char **argv ) {
         glm::mat4 mvp = projection * mv;
         glm::mat4 vp  = projection * worldToView;
         glm::mat4 mvInverse     = glm::inverse(mv);
+        glm::mat4 mvNormal  = glm::transpose(mvInverse);
         glm::mat4 screenToView  = glm::inverse(projection);
 
         // For skybox
@@ -346,12 +348,10 @@ int main( int argc, char **argv ) {
         // Clear the front buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Select shader
-        mainShader.useProgram();
-
-        //-------------------------------------Upload Uniforms
+       //-------------------------------------Upload Uniforms
         mainShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         mainShader.updateUniform(Graphics::UBO_keys::MV, mv);
+        mainShader.updateUniform(Graphics::UBO_keys::MV_NORMAL, mvNormal);
         mainShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
         debugShapesShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         debugShapesShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
@@ -389,6 +389,7 @@ int main( int argc, char **argv ) {
 
         //******************************************************* FIRST PASS (Geometric pass)
         // Render scene into Geometric buffer
+        mainShader.useProgram();
         gBufferFBO.bind();
         gBufferFBO.clear();
         scene.draw(vp);
