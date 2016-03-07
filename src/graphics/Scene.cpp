@@ -21,7 +21,7 @@ namespace Graphics {
 
     void Scene::initGL() {
         for(auto& instance : _meshInstances)
-            instance.initGLBuffers(&_visibleTransformationsVBO);
+            instance.initGLBuffers(_visibleTransformationsVBO);
     }
 
     void Scene::draw(const glm::mat4 &VP) {
@@ -74,7 +74,7 @@ namespace Graphics {
             DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh not found " << modelPath;
             try{
                 ModelMeshInstanced m(modelPath, {transformation});
-                m.initGLBuffers(&_visibleTransformationsVBO);
+                m.initGLBuffers(_visibleTransformationsVBO);
                 _meshInstances.push_back(std::move(m));
             }
             catch (std::exception& e){
