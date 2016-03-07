@@ -29,6 +29,7 @@ namespace Graphics
         DataType _dataType;
         GLenum _target;
         GLuint _attribArray;
+        bool _isInGPU;
         void initVboVertexDescriptor();
         void initVboVec3();
         void initVboVec2();
@@ -37,15 +38,16 @@ namespace Graphics
         void initVboInstanceVec3();
         void initVboInstanceMat4();
     public:
-        VertexBufferObject(DataType dataType, GLuint attribArray = 0);
+        VertexBufferObject(DataType dataType, GLuint attribArray = 0, bool initGL = true);
         VertexBufferObject(VertexBufferObject&& other);
         VertexBufferObject(const VertexBufferObject& other);
         ~VertexBufferObject();
 
         GLuint glId();
 
-        /** Should not use directly but inside VAO.init() */
+        /** Should not be used directly but inside VAO.init() */
         void init();
+        void initGL();
         void bind();
         void updateData(const std::vector<VertexDescriptor>& data);
         void updateData(const std::vector<glm::vec3>& data);

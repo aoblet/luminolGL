@@ -4,13 +4,35 @@
 
 #include "graphics/VertexBufferObject.h"
 #include <iostream>
+#include <glog/logging.h>
 
 namespace Graphics
 {
 
-    VertexBufferObject::VertexBufferObject(DataType dataType, GLuint attribArray) : _dataType(dataType), _attribArray(attribArray) {
-        glGenBuffers(1, &_glId);
+    VertexBufferObject::VertexBufferObject(DataType dataType, GLuint attribArray, bool initGL) : _dataType(dataType), _attribArray(attribArray), _isInGPU(initGL) {
+        if(initGL)
+            glGenBuffers(1, &_glId);
         _target = _dataType == ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+    }
+
+    VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
+        std::swap(_glId, other._glId);
+        std::swap(_dataType, other._dataType);
+        std::swap(_target, other._target);
+        std::swap(_attribArray, other._attribArray);
+        std::swap(_isInGPU, other._isInGPU);
+        other._glId = 0;
+    }
+
+    VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray, other._isInGPU) {}
+
+    void VertexBufferObject::initGL() {
+        if(_isInGPU){
+            DLOG(WARNING) << "VBO has been already initialized, skip glGenBuffers call";
+            return;
+        }
+        glGenBuffers(1, &_glId);
+        _isInGPU = true;
     }
 
     VertexBufferObject::~VertexBufferObject() {
@@ -159,16 +181,4 @@ namespace Graphics
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
-    VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
-        std::swap(_glId, other._glId);
-        std::swap(_dataType, other._dataType);
-        std::swap(_target, other._target);
-        std::swap(_attribArray, other._attribArray);
-        other._glId = 0;
-    }
-
-    VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray){
-        _dataType = other._dataType;
-        _target = other._target;
-    }
 }
