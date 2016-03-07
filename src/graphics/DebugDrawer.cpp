@@ -31,10 +31,10 @@ namespace Graphics
     }
 
     DebugDrawer::DebugDrawer() :
-            _VAO(),
-            _verticesVBO(Graphics::VEC3),
-            _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER),
-            _transformVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 1)
+            _VAO(false),
+            _verticesVBO(Graphics::VEC3, 0, false),
+            _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER, 0, false),
+            _transformVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 1, false)
     { }
 
     void DebugDrawer::drawRay(const glm::vec3 &point1, const glm::vec3 &point2, ShaderProgram &program, const glm::vec3 &color, float lineWidth) {

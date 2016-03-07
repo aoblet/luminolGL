@@ -70,7 +70,7 @@ void SceneIOJson::load(Graphics::Scene &scene, const std::string &inPath) {
 }
 
 void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath) {
-    DLOG(INFO) << "Saving scene " << outPath;
+    DLOG(INFO) << "Saving scene at " << outPath;
 
     std::ofstream outFile(outPath);
     if(!outFile.is_open())
@@ -125,6 +125,8 @@ void SceneIOJson::save(const Graphics::Scene &scene, const std::string &outPath)
     }
 
     outFile << strbuf.GetString();
+
+    DLOG(INFO) << "Scene saved ! ";
 }
 
 

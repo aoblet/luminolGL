@@ -59,5 +59,10 @@ namespace Graphics{
         // DEBUG
         const std::string DEBUG_COLOR        = "debugColor";
 
+
+        // UBO STRUCTS BINDING POINTS
+        const std::string STRUCT_BINDING_POINT_CAMERA = "Camera";
+        const std::string STRUCT_BINDING_POINT_LIGHT = "Light";
+
     }
 }

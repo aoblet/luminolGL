@@ -15,8 +15,8 @@ namespace Graphics {
 
         if(!scenePath.empty())
             load(scenePath);
-
-        initGL();
+        else
+            initGL();
     }
 
     void Scene::initGL() {

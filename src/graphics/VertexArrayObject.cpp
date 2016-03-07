@@ -5,18 +5,29 @@
 #include "graphics/VertexArrayObject.h"
 #include <iostream>
 #include <utils/utils.h>
-#include <logging.h>
+#include <glog/logging.h>
 
 namespace Graphics
 {
-    VertexArrayObject::VertexArrayObject() {
-//        glGenVertexArrays(1, &_glId);
+    VertexArrayObject::VertexArrayObject(bool initGL) : _isInGPU(initGL){
+        if(_isInGPU)
+            glGenVertexArrays(1, &_glId);
     }
 
     VertexArrayObject::VertexArrayObject(VertexArrayObject &&other) {
         _glId = other._glId;
         other._glId = 0;
+        std::swap(_vbos, other._vbos);
+        std::swap(_isInGPU, other._isInGPU);
+    }
+
+    VertexArrayObject::VertexArrayObject(const VertexArrayObject &other) : VertexArrayObject(other._isInGPU) {
         _vbos = other._vbos;
+    }
+
+    VertexArrayObject::~VertexArrayObject() {
+        glDeleteVertexArrays(1, &_glId);
+        _glId = 0;
     }
 
     void VertexArrayObject::addVBO(VertexBufferObject *vbo) {
@@ -27,8 +38,19 @@ namespace Graphics
         glBindVertexArray(_glId);
     }
 
-    void VertexArrayObject::init() {
+    void VertexArrayObject::initGL() {
+        if(_isInGPU){
+            DLOG(WARNING) << "VAO has been already initialized, skip glGenVertexArrays call";
+            return;
+        }
         glGenVertexArrays(1, &_glId);
+        _isInGPU = true;
+    }
+
+    void VertexArrayObject::init() {
+        if(!_isInGPU)
+            initGL();
+
         bind();
         for(auto& vbo : _vbos){
             vbo->init();
@@ -43,14 +65,7 @@ namespace Graphics
         glBindVertexArray(0);
     }
 
-    VertexArrayObject::~VertexArrayObject() {
-        glDeleteVertexArrays(1, &_glId);
-        _glId = 0;
-    }
 
-    VertexArrayObject::VertexArrayObject(const VertexArrayObject &other):VertexArrayObject() {
-        _vbos = other._vbos;
-    }
 
     const std::vector<VertexBufferObject *> &VertexArrayObject::vbos() const {
         return _vbos;
@@ -59,4 +74,5 @@ namespace Graphics
     void VertexArrayObject::clearVBOs() {
         _vbos.clear();
     }
+
 }

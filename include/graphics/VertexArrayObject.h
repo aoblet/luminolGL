@@ -17,14 +17,16 @@ namespace Graphics
     private:
         GLuint _glId;
         std::vector<VertexBufferObject*> _vbos;
+        bool _isInGPU;
 
     public:
-        VertexArrayObject();
+        VertexArrayObject(bool initGL = true);
         VertexArrayObject(VertexArrayObject&& other);
         VertexArrayObject(const VertexArrayObject& other);
         ~VertexArrayObject();
 
         void addVBO(VertexBufferObject* vbo);
+        void initGL();
         void init();
         void bind();
         GLuint glId();

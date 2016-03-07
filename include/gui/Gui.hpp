@@ -71,7 +71,7 @@ namespace Gui{
 		void updateMbut(bool leftButtonPress);
 		void beginScrollArea();
 
-		void init(GLFWwindow * window);;
+		void init(GLFWwindow * window);
 
 		void addSlider(const char * name, float * var, float begin, float end, float step);
 		void addSlider(Param & p);
