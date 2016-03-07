@@ -218,9 +218,8 @@ int main( int argc, char **argv ) {
 
     // Create Plane -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(1,1,1,0), glm::vec3(500,1,500));
+    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(0,0,0,0), glm::vec3(500,1,500));
 
-    std::vector<glm::mat4> planeTransform = {planeInstances.getTransformationMatrix(0)};
     checkErrorGL("VAO/VBO");
 
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
@@ -258,6 +257,7 @@ int main( int argc, char **argv ) {
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
+//    sceneMeshes.push_back(std::move(sphereInstances));
 //    sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
@@ -677,7 +677,7 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
 
-        picker.drawPickedObject(debugShapesShader);
+//        picker.drawPickedObject(debugShapesShader);
 
         int screenNumber = 6;
         glDisable(GL_DEPTH_TEST);
@@ -745,12 +745,12 @@ int main( int argc, char **argv ) {
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
-        if(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS){
-            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, true);
-        }
-        else{
-            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, false);
-        }
+//        if(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS){
+//            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, true);
+//        }
+//        else{
+//            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, false);
+//        }
 
         if(glfwGetKey(window, GLFW_KEY_T)) picker.switchMode(Gui::PickerMode::TRANSLATION);
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);

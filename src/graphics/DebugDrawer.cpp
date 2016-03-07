@@ -86,6 +86,8 @@ namespace Graphics
     }
 
     void DebugDrawer::drawPyramid(const glm::mat4 &trans, ShaderProgram &program, float scale, const glm::vec3 &color) {
+        if(!_isInit) init();
+
         glm::vec3 xAxis = glm::vec3(trans * glm::vec4(1,0,0,0));
         glm::vec3 yAxis = glm::vec3(trans * glm::vec4(0,1,0,0));
         glm::vec3 zAxis = glm::vec3(trans * glm::vec4(0,0,1,0));
@@ -122,6 +124,8 @@ namespace Graphics
 
 
     void DebugDrawer::drawCube(const glm::mat4 &trans, ShaderProgram &program, float scale, const glm::vec3 &color) {
+        if(!_isInit) init();
+
         std::vector<glm::vec3> cube;
 
         glm::vec3 origin = glm::vec3(trans *  glm::vec4(0,0,0,1));
@@ -154,6 +158,8 @@ namespace Graphics
     }
 
     void DebugDrawer::drawAxis(const glm::mat4 &trans, ShaderProgram &program, float scale, float lineWidth) {
+        if(!_isInit) init();
+
         glLineWidth(lineWidth);
 
         glm::vec3 xAxis = glm::vec3(trans * glm::vec4(1,0,0,0));
@@ -168,6 +174,8 @@ namespace Graphics
     }
 
     void DebugDrawer::drawTranslateAxis(const glm::mat4 &trans, ShaderProgram &program, float scale, float lineWidth) {
+        if(!_isInit) init();
+
         drawAxis(trans, program, scale, lineWidth);
 
         drawPyramid(trans * glm::rotate(glm::radians(-90.f), glm::vec3(0, 0, 1)), program, scale, glm::vec3(1,0,0));
@@ -184,10 +192,14 @@ namespace Graphics
     }
 
     void DebugDrawer::drawRotationAxis(const glm::mat4 &trans, ShaderProgram &program, float scale, float lineWidth) {
+        if(!_isInit) init();
+
         drawAxis(trans, program, scale, lineWidth);
     }
 
     void DebugDrawer::drawBoundingBox(const Geometry::BoundingBox &box, const glm::mat4 &trans, ShaderProgram &program, const glm::vec3 &color) {
+
+        if(!_isInit) init();
 
         auto boxCopy = trans * box;
 
