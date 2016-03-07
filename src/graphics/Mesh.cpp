@@ -190,30 +190,33 @@ namespace Graphics
     }
 
 
-    Mesh Mesh::genGrid(int width, int height, const Texture& heightmap, glm::vec3 scale, float intensity) {
+    Mesh Mesh::genGrid(int width, int height, const Texture* heightmap, glm::vec3 scale, float intensity) {
         Mesh mesh;
 
         mesh._vertexCount = 0;
         mesh._triangleCount = 0;
 
-        unsigned char* texData = heightmap.data();
+        unsigned char* texData = heightmap ? heightmap->data() : nullptr;
 
         std::vector<Graphics::VertexDescriptor> gridVertices;
 
         glm::vec3 offset(0.5f, 0, 0.5f);
         offset *= scale;
 
+        // Vertices construction
         for (int i = 0; i < height; ++i)
         {
             for (int j = 0; j < width; ++j)
             {
-                int texI = int((i / float(height)) * float(heightmap.height()));
-                int texJ = int((j / float(width)) * float(heightmap.width()));
+                float zValue = 0;
+                if(heightmap){
+                    int texI = int((i / float(height)) * float(heightmap->height()));
+                    int texJ = int((j / float(width)) * float(heightmap->width()));
+                    zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
+                }
 
-                float value = texData[(texJ + texI * heightmap.height()) * 3] / (255.f);
-                value *= intensity;
-
-                glm::vec3 pos(j/float(width-1), value, i/float(height-1));
+                zValue *= intensity;
+                glm::vec3 pos(j/float(width-1), zValue, i / float(height - 1));
                 pos *= scale;
                 pos -= offset;
 
