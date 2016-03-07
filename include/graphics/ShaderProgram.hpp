@@ -41,6 +41,7 @@ namespace Graphics{
         void updateUniform(const std::string& uniformName, const glm::ivec2 & v);
         void updateUniform(const std::string& uniformName, const glm::vec2 & v);
         void updateUniform(const std::string& uniformName, const glm::vec3 & v);
+        void updateUniform(const std::string& uniformName, const glm::mat3 & v);
         void updateUniform(const std::string& uniformName, const glm::mat4 & v);
         void updateBindingPointUBO(const std::string &uniformName, GLuint uboBindingPoint);
         void useProgram() const;

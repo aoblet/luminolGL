@@ -20,12 +20,11 @@ ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
 
     // VertexArrayObject _VAO handles pointers so we need to properly update these values.
     if(_VAO.vbos().size()){
+        assert(_scenePositionsVBO != nullptr);
         _VAO.clearVBOs();
         _VAO.addVBO(&_verticesVBO);
         _VAO.addVBO(&_indexesVBO);
-
-        if(_scenePositionsVBO)
-            _VAO.addVBO(_scenePositionsVBO);
+        _VAO.addVBO(_scenePositionsVBO);
     }
 }
 
@@ -84,9 +83,8 @@ Geometry::BoundingBox ModelMeshInstanced::getBoundingBox(int index) const {
     return _transformations.at(index).getTRSMatrix() * _modelMeshGroup.getBoundingBox();
 }
 
-void ModelMeshInstanced::initGLBuffers(VertexBufferObject &scenePositionsVBO) {
+void ModelMeshInstanced::initGLBuffers(VertexBufferObject& scenePositionsVBO) {
     _scenePositionsVBO = &scenePositionsVBO;
-
     _VAO.addVBO(&_verticesVBO);
     _VAO.addVBO(&_indexesVBO);
     _VAO.addVBO(&scenePositionsVBO);

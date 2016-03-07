@@ -19,22 +19,19 @@ namespace Graphics{
 
         const std::string MVP              = "MVP";
         const std::string MV               = "MV";
+        const std::string MV_NORMAL        = "MVNormal";
         const std::string MV_INVERSE       = "MVInverse";
         const std::string TIME             = "Time";
-        const std::string SLIDER           = "Slider";
-        const std::string SLIDER_MULT      = "SliderMult";
         const std::string SPECULAR_POWER   = "SpecularPower";
-        const std::string INSTANCE_NUMBER  = "InstanceNumber";
 
         // Shadow
-        const std::string SHADOW_MVP       = "ShadowMVP";
-        const std::string SHADOW_POISSON_SAMPLE_COUNT  = "SampleCountPoisson";
-        const std::string SHADOW_POISSON_SPREAD  = "SpreadPoisson";
-        const std::string SHADOW_MV        = "ShadowMV";
-        const std::string SHADOW_BIAS      = "ShadowBias";
-
-        const std::string WORLD_TO_LIGHT_SCREEN = "WorldToLightScreen";
-        const std::string SCREEN_TO_VIEW  = "ScreenToView";
+        const std::string SHADOW_MVP                    = "ShadowMVP";
+        const std::string SHADOW_MV                     = "ShadowMV";
+        const std::string SHADOW_BIAS                   = "ShadowBias";
+        const std::string SHADOW_POISSON_SAMPLE_COUNT   = "SampleCountPoisson";
+        const std::string SHADOW_POISSON_SPREAD         = "SpreadPoisson";
+        const std::string WORLD_TO_LIGHT_SCREEN         = "WorldToLightScreen";
+        const std::string SCREEN_TO_VIEW                = "ScreenToView";
 
         // Camera Motion Blur
         const std::string PREVIOUS_MVP  = "PreviousMVP";
@@ -52,17 +49,22 @@ namespace Graphics{
         const std::string DOF_COC          = "CoC";
         const std::string DOF_BLUR         = "Blur";
 
-        const std::string MOTION_BLUR_COLOR        = "LastPass";
-        const std::string MOTION_BLUR_DEPTH        = "Depth";
-        const std::string MOTION_BLUR_SAMPLE_COUNT = "SampleCount";
+        const std::string MOTION_BLUR_COLOR             = "LastPass";
+        const std::string MOTION_BLUR_DEPTH             = "Depth";
+        const std::string MOTION_BLUR_SAMPLE_COUNT      = "SampleCount";
 
         // DEBUG
-        const std::string DEBUG_COLOR        = "debugColor";
+        const std::string DEBUG_COLOR                   = "debugColor";
 
 
         // UBO STRUCTS BINDING POINTS
-        const std::string STRUCT_BINDING_POINT_CAMERA = "Camera";
-        const std::string STRUCT_BINDING_POINT_LIGHT = "Light";
+        const std::string STRUCT_BINDING_POINT_CAMERA   = "Camera";
+        const std::string STRUCT_BINDING_POINT_LIGHT    = "Light";
 
+        // Skybox
+        const std::string SKYBOX_CUBE_MAP       = "Skybox";
+        const std::string SKYBOX_BEAUTY         = "Beauty";
+        const std::string SKYBOX_DEPTH_BUFFER   = "Depth";
+        const std::string SKYBOX_SCREEN_TO_WORLD_NO_TRANSLATE = "ScreenToWorldNoTranslate";
     }
 }

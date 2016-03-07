@@ -65,7 +65,7 @@ void initContextWindowGL(const std::string& windowTitle, GLFWwindow*& window, in
 # endif
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow(viewport.x/DPI, viewport.y/DPI, "aogl", 0, 0);
+    window = glfwCreateWindow(viewport.x/DPI, viewport.y/DPI, windowTitle.c_str(), 0, 0);
     if(!window){
         glfwTerminate();
         throw std::runtime_error("Failed to open GLFW window");

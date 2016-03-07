@@ -19,6 +19,7 @@ uniform float SpecularPower;
 uniform vec3 CamPos;
 
 uniform mat4 MV;
+uniform mat4 MVNormal;
 
 layout(location = 0) out vec4 Color;
 layout(location = 1) out vec4 Normal;
@@ -84,7 +85,7 @@ void main()
     if(IsNormalMapActive == 1)
         normal = perturb_normal(normal, v, In.TexCoord);
 
-	vec4 normalFinal = MV * vec4(normal, 0);
+	vec4 normalFinal = MVNormal * vec4(normal, 0);
 	Normal = vec4(encodeNormal(normalFinal), SpecularPower/100);
     Color = vec4(diffuse, specular.x);
 //    Color = vec4(SpecularPower/100);

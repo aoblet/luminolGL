@@ -35,6 +35,7 @@
 #include "graphics/Scene.h"
 #include "graphics/DebugBoundingBoxes.hpp"
 #include "graphics/DebugDrawer.h"
+#include "graphics/CubeMapTexture.hpp"
 
 #include "gui/Gui.hpp"
 #include "gui/ObjectPicker.h"
@@ -53,6 +54,7 @@
 
 #include <glog/logging.h>
 #include <glm/ext.hpp>
+#include <graphics/Skybox.hpp>
 
 #define IMGUI_DRAW 1
 
@@ -149,6 +151,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skybox", {}, ".jpg"));
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
     sceneMeshes.push_back(std::move(planeInstances));
@@ -156,11 +159,10 @@ int main( int argc, char **argv ) {
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
-
     checkErrorGL("Scene");
 
-    // My Lights -------------------------------------------------------------------------------------------------------------------------------
 
+    // My Lights -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
     lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
 
@@ -196,7 +198,7 @@ int main( int argc, char **argv ) {
     float gamma                 = 1.22;
     float sobelIntensity        = 0.15;
     float sampleCount           = 1; // blur
-    float motionBlurSampleCount = 64; // motion blur
+    float motionBlurSampleCount = 8; // motion blur
     float dirLightOrthoProjectionDim = 100;
     glm::vec3 focus(0, 1, 100);
 
@@ -228,7 +230,7 @@ int main( int argc, char **argv ) {
     Graphics::GeometricFBO gBufferFBO(dimViewport);
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
     Graphics::BeautyFBO beautyFBO(dimViewport);
-    Graphics::PostFxFBO fxFBO(dimViewport, 4);
+    Graphics::PostFxFBO fxFBO(dimViewport, 5);
     float shadowPoissonSampleCount = 1, shadowPoissonSpread = 1;
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
@@ -253,8 +255,10 @@ int main( int argc, char **argv ) {
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
 
+
     // Identity matrix
     glm::mat4 objectToWorld;
+
     do {
         glm::mat4 previousMVP = camera.getProjectionMatrix() * camera.getViewMatrix();
 
@@ -273,10 +277,14 @@ int main( int argc, char **argv ) {
         glm::mat4 mvp = projection * mv;
         glm::mat4 vp  = projection * worldToView;
         glm::mat4 mvInverse     = glm::inverse(mv);
+        glm::mat4 mvNormal      = glm::transpose(mvInverse);
         glm::mat4 screenToView  = glm::inverse(projection);
 
-        // Light space matrices
+        // For skybox
+        glm::mat4 unTranslatedMV = glm::mat4(glm::mat3(worldToView));
+        glm::mat4 screenToWorldUnTranslated = glm::inverse(unTranslatedMV) * screenToView;
 
+        // Light space matrices
         // Directional light
         // Orthogonal projection matrix: parallel rays
         glm::mat4 projDirLight = glm::ortho<float>(-dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
@@ -297,6 +305,7 @@ int main( int argc, char **argv ) {
         //-------------------------------------Upload Uniforms
         mainShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         mainShader.updateUniform(Graphics::UBO_keys::MV, mv);
+        mainShader.updateUniform(Graphics::UBO_keys::MV_NORMAL, mvNormal);
         mainShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
         debugShapesShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         debugShapesShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
@@ -340,6 +349,7 @@ int main( int argc, char **argv ) {
         mainShader.useProgram();
 
         // Render scene into Geometric buffer
+        mainShader.useProgram();
         gBufferFBO.bind();
         gBufferFBO.clear();
         scene.draw(vp);
@@ -477,16 +487,32 @@ int main( int argc, char **argv ) {
         // Disable depth test
         glDisable(GL_DEPTH_TEST);
 
-        // ------- SOBEL ------
+
+        // Set quad as vao: deferred
         fxFBO.bind();
+        quadVAO.bind();
+
+        // ------- SKYBOX ------
+        // Render skybox texture combined with beauty: mask with depth buffer
+        // All in one pass
+        fxFBO.changeCurrentTexture(4);
+        fxFBO.clearColor();
+        skybox.updateUniforms(screenToWorldUnTranslated, 0, 1, 2);
+        skybox.useProgramShader();
+
+        skybox.bindTexture(GL_TEXTURE0); // cubeMap
+        gBufferFBO.depth().bind(GL_TEXTURE1);
+        beautyFBO.beauty().bind(GL_TEXTURE2);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        // ------- SOBEL ------
         fxFBO.changeCurrentTexture(0);
         fxFBO.clearColor();
 
-        // Set quad as vao: deferred
-        quadVAO.bind();
         sobelShader.useProgram();
-        beautyFBO.beauty().bind(GL_TEXTURE0);
+        fxFBO.texture(4).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
 
         // ------- BLUR ------
         if(sampleCount > 0){
@@ -544,6 +570,7 @@ int main( int argc, char **argv ) {
         fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
         gBufferFBO.depth().bind(GL_TEXTURE1); // depth
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        quadVAO.bind();
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -554,13 +581,13 @@ int main( int argc, char **argv ) {
 
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
-
         picker.drawPickedObject(debugShapesShader);
 
-        int screenNumber = 6;
-        glDisable(GL_DEPTH_TEST);
 
         if(drawFBOTextures){
+            int screenNumber = 6;
+            glDisable(GL_DEPTH_TEST);
+
             // Select shader
             blitShader.useProgram();
 
@@ -603,7 +630,7 @@ int main( int argc, char **argv ) {
             glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            fxFBO.texture(2).bind(GL_TEXTURE0);
+            fxFBO.texture(4).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
