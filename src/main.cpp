@@ -151,7 +151,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skybox", {}, ".jpg"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
     sceneMeshes.push_back(std::move(planeInstances));
