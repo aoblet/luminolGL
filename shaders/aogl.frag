@@ -22,6 +22,7 @@ uniform mat4 MV;
 
 layout(location = 0) out vec4 Color;
 layout(location = 1) out vec4 Normal;
+layout(location = 2) out vec4 Position;
 
 in block
 {
@@ -65,14 +66,12 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
     // V, le vecteur vue (vertex dirigé vers l'œil)
     vec3 map = texture(NormalMap, texcoord ).xyz;
     map = map * 255./127. - 128./127.;
-//    map = map * 0.5f - 1;
     mat3 TBN = cotangent_frame(N, -V, texcoord);
     return normalize(TBN * map);
 }
 
 void main()
 {
-
 	vec3 diffuse = texture(Diffuse, In.TexCoord).rgb;
 	vec3 specular = texture(Specular, In.TexCoord).rgb;
 
@@ -84,8 +83,8 @@ void main()
     if(IsNormalMapActive == 1)
         normal = perturb_normal(normal, v, In.TexCoord);
 
-	vec4 normalFinal = MV * vec4(normal, 0);
+	vec4 normalFinal = transpose(inverse(MV)) * vec4(normal, 0);
 	Normal = vec4(encodeNormal(normalFinal), SpecularPower/100);
     Color = vec4(diffuse, specular.x);
-//    Color = vec4(SpecularPower/100);
+    Position = MV * vec4(In.Position, 1);
 }

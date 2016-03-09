@@ -36,6 +36,11 @@ namespace Graphics{
         const std::string WORLD_TO_LIGHT_SCREEN = "WorldToLightScreen";
         const std::string SCREEN_TO_VIEW  = "ScreenToView";
 
+        // Ambient
+        const std::string AMBIENT_INTENSITY  = "Ambient";
+        const std::string BEAUTY_BUFFER  = "Beauty";
+        const std::string SSAO_BUFFER  = "SSAO";
+
         // Camera Motion Blur
         const std::string PREVIOUS_MVP  = "PreviousMVP";
 
@@ -55,6 +60,17 @@ namespace Graphics{
         const std::string MOTION_BLUR_COLOR        = "LastPass";
         const std::string MOTION_BLUR_DEPTH        = "Depth";
         const std::string MOTION_BLUR_SAMPLE_COUNT = "SampleCount";
+
+        const std::string SSAO_POSITION_DEPTH = "PositionDepth";
+        const std::string SSAO_BEAUTY = "Beauty";
+        const std::string SSAO_DEPTH = "Depth";
+        const std::string SSAO_NORMAL = "Normal";
+        const std::string SSAO_NOISE = "Noise";
+        const std::string SSAO_SCREEN_DIM = "ScreenDim";
+        const std::string SSAO_SAMPLES = "Samples";
+        const std::string SSAO_PROJECTION = "Projection";
+        const std::string SSAO_OCCLUSION_INTENSITY = "OcclusionIntensity";
+        const std::string SSAO_OCCLUSION_RADIUS = "OcclusionRadius";
 
         // DEBUG
         const std::string DEBUG_COLOR        = "debugColor";

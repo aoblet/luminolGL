@@ -95,6 +95,10 @@ void ShaderProgram::updateBindingPointUBO(const std::string &uniformName, GLuint
     glUniformBlockBinding(_programId, glGetUniformBlockIndex(_programId, uniformName.c_str()), uboBindingPoint);
 }
 
+void ShaderProgram::updateUniform(const std::string& uniformName, const std::vector<glm::vec3> & v){
+    glProgramUniform3fv(_programId, glGetUniformLocation(_programId, uniformName.c_str()), v.size(), (float*)v.data());
+}
+
 ShaderProgram::~ShaderProgram() {
     glDeleteProgram(_programId);
     _programId = 0;
