@@ -8,13 +8,12 @@ const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/text
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default_normal.png";
 
 
-ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
-{
+ModelMeshGroup::ModelMeshGroup(const std::string &modelPath) {
 
     DLOG(INFO) << "Loading model with assimp: " << modelPath;
 
     Assimp::Importer aImporter;
-    const aiScene* scene = aImporter.ReadFile(modelPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs );
+    const aiScene* scene = aImporter.ReadFile(modelPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_GenSmoothNormals | aiProcess_FlipUVs );
 
     if(!scene)
         throw std::runtime_error("ModelMeshGroup::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
@@ -63,7 +62,7 @@ void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
     std::vector<int> elementIndexes;
     for (unsigned int j = 0; j < aiMesh->mNumFaces; ++j) {
         const aiFace &face = aiMesh->mFaces[j];
-        for(int k = 0; k < face.mNumIndices; ++k){
+        for(unsigned int k = 0; k < face.mNumIndices; ++k){
             assert(face.mNumIndices == 3);
             elementIndexes.push_back(face.mIndices[k]);
         }
