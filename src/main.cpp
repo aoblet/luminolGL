@@ -1,19 +1,20 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
 #include <string>
 #include <map>
 #include <iostream>
 #include <vector>
-#include <cmath>
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include "imgui/imguiRenderGL3.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/random.hpp>
-#include <libgen.h>
+#include <glm/ext.hpp>
+
+#include <glog/logging.h>
+
 
 #include "geometry/Spline3D.h"
 
@@ -36,25 +37,24 @@
 #include "graphics/DebugBoundingBoxes.hpp"
 #include "graphics/DebugDrawer.h"
 #include "graphics/CubeMapTexture.hpp"
+#include "graphics/Skybox.hpp"
 
 #include "gui/Gui.hpp"
 #include "gui/ObjectPicker.h"
+
 #include "lights/Light.hpp"
 
 #include "view/CameraFreefly.hpp"
 #include "view/CameraController.hpp"
 
 #include "gui/UserInput.hpp"
-
 #include "utils/utils.h"
 
 #include "data/SceneIOJson.hpp"
 #include "data/UniformCamera.hpp"
 
 
-#include <glog/logging.h>
-#include <glm/ext.hpp>
-#include <graphics/Skybox.hpp>
+
 
 #define IMGUI_DRAW 1
 
@@ -151,7 +151,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skybox", {}, ".jpg"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
     sceneMeshes.push_back(std::move(planeInstances));
@@ -164,7 +164,7 @@ int main( int argc, char **argv ) {
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
+    lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(1), 1);
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
@@ -193,13 +193,13 @@ int main( int argc, char **argv ) {
 
     // ---------------------- FX Variables
     float shadowBias            = 0.00019;
-    float shadowBiasDirLight    = 0.001;
+    float shadowBiasDirLight    = 0.001571;
 
     float gamma                 = 1.22;
-    float sobelIntensity        = 0.15;
+    float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 100;
+    float dirLightOrthoProjectionDim = 200;
     glm::vec3 focus(0, 1, 100);
 
     // ---------------------- FX uniform update
@@ -319,7 +319,7 @@ int main( int argc, char **argv ) {
         spotLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
 
         directionalLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToDirLightScreen);
-        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBias);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBiasDirLight);
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
 
