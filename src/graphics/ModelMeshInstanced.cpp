@@ -92,6 +92,7 @@ void ModelMeshInstanced::initGLBuffers(VertexBufferObject& scenePositionsVBO) {
 
     _verticesVBO.updateData(_modelMeshGroup.allVertices());
     _indexesVBO.updateData(_modelMeshGroup.allIndexes());
+    _VAO.unbindAll();
 }
 
 void ModelMeshInstanced::draw(int nbInstanceToDraw) {
