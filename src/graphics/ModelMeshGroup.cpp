@@ -8,13 +8,12 @@ const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/text
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default_normal.png";
 
 
-ModelMeshGroup::ModelMeshGroup(const std::string &modelPath)
-{
+ModelMeshGroup::ModelMeshGroup(const std::string &modelPath) {
 
     DLOG(INFO) << "Loading model with assimp: " << modelPath;
 
     Assimp::Importer aImporter;
-    const aiScene* scene = aImporter.ReadFile(modelPath,  aiProcess_Triangulate | aiProcess_GenSmoothNormals  | aiProcess_FlipUVs);
+    const aiScene* scene = aImporter.ReadFile(modelPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_GenSmoothNormals | aiProcess_FlipUVs );
 
     if(!scene)
         throw std::runtime_error("ModelMeshGroup::loadMesh with assimp - fail while importing " + modelPath + "\n" + aImporter.GetErrorString());
@@ -42,7 +41,6 @@ ModelMeshGroup::ModelMeshGroup(ModelMeshGroup &&other):
         _allIds(std::move(other._allIds)){}
 
 
-
 void ModelMeshGroup::loadMeshes(const aiScene* scene) {
     for(unsigned int i=0; i<scene->mNumMeshes; ++i){
         aiMeshToMesh(scene->mMeshes[i], scene);
@@ -64,30 +62,32 @@ void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
     std::vector<int> elementIndexes;
     for (unsigned int j = 0; j < aiMesh->mNumFaces; ++j) {
         const aiFace &face = aiMesh->mFaces[j];
-        elementIndexes.push_back(face.mIndices[0]);
-        elementIndexes.push_back(face.mIndices[1]);
-        elementIndexes.push_back(face.mIndices[2]);
+        for(unsigned int k = 0; k < face.mNumIndices; ++k){
+            assert(face.mNumIndices == 3);
+            elementIndexes.push_back(face.mIndices[k]);
+        }
     }
     _allIds.insert(_allIds.end(), elementIndexes.begin(), elementIndexes.end());
-
-    mesh.addElementIndexes(std::move(elementIndexes));
+    mesh.addElementIndexes(elementIndexes);
     mesh.setTriangleCount(aiMesh->mNumFaces);
 
     // positions, normals and uv
     std::vector<VertexDescriptor> vds;
     for (unsigned int i = 0; i < aiMesh->mNumVertices; ++i) {
         VertexDescriptor vd;
+
         const aiVector3D &vPos = aiMesh->mVertices[i];
         const aiVector3D &vNormal = aiMesh->mNormals[i];
         const aiVector3D *uv = aiMesh->mTextureCoords[0];
+
         vd.position = glm::vec3((_modelMatrix * glm::vec4(vPos.x, vPos.y, vPos.z, 1)));
-        vd.normal = glm::vec3(vNormal.x, vNormal.y, vNormal.z);
+        vd.normal = aiMesh->HasNormals() ? glm::vec3(vNormal.x, vNormal.y, vNormal.z) : glm::vec3(1,1,1);
         vd.texcoord = aiMesh->HasTextureCoords(0) ? glm::vec2(uv[i].x, uv[i].y) : glm::vec2(0, 0);
         vds.push_back(vd);
 
         _allVertices.push_back(vd);
     }
-    mesh.addVertices(std::move(vds));
+    mesh.addVertices((vds));
     mesh.computeBoundingBox();
 
     if(aiMesh->mMaterialIndex >= 0){
@@ -151,11 +151,14 @@ void ModelMeshGroup::draw(int nbInstancesToDraw){
      * Here we need to offset by 6 when pull from Mesh2 ids to get Mesh2 vertices
      */
 
-    int offsetIds = 0;
+    int offsetIndexes(0), offsetsVertices(0);
     for(auto& mesh : _meshes){
         mesh.bindTextures();
-        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, (void*)(offsetIds*sizeof(unsigned int)), nbInstancesToDraw, offsetIds);
-        offsetIds += mesh.getVertexCount();
+        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT,
+                                          (void*)(offsetIndexes*sizeof(unsigned int)), nbInstancesToDraw, offsetsVertices);
+
+        offsetIndexes   += mesh.getElementIndex().size();
+        offsetsVertices += mesh.getVertices().size();
     }
 }
 

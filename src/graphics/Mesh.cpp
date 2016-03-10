@@ -16,15 +16,14 @@ namespace Graphics
 {
 
     Mesh::Mesh() : _vertexCount(0), _triangleCount(0) { }
-
     Mesh::Mesh(Mesh &&mesh) :
             _vertexCount(mesh._vertexCount),
             _triangleCount(mesh._triangleCount),
             _vertices(std::move(mesh._vertices)),
             _elementIndex(std::move(mesh._elementIndex)),
+            _boundaries(mesh._boundaries),
             _textures(std::move(mesh._textures))
-    {
-    }
+    {}
 
     void Mesh::attachTexture(Graphics::Texture* tex, GLenum textureNumber) {
         _textures.insert({textureNumber, tex});
@@ -284,11 +283,11 @@ namespace Graphics
     }
 
     void Mesh::addVertices(const std::vector<VertexDescriptor> &vertices) {
-        _vertices.insert(_vertices.begin(), vertices.begin(), vertices.end());
+        _vertices.insert(_vertices.end(), vertices.begin(), vertices.end());
     }
 
     void Mesh::addVertices(std::vector<VertexDescriptor> &&vertices) {
-        _vertices.insert(_vertices.begin(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.end()));
+        _vertices.insert(_vertices.end(), std::make_move_iterator(vertices.begin()), std::make_move_iterator(vertices.end()));
     }
 
     void Mesh::addElementIndexes(const std::vector<int> &index) {
