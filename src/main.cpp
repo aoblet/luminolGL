@@ -308,8 +308,8 @@ int main( int argc, char **argv ) {
 
     ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_SAMPLES, ssaoKernel);
 
-    float occlusionIntensity = 1.0;
-    float occlusionRadius = 1.0;
+    float occlusionIntensity = 2.0;
+    float occlusionRadius = 3.0;
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -699,11 +699,8 @@ int main( int argc, char **argv ) {
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
 
-        int screenNumber = 7;
-        glDisable(GL_DEPTH_TEST);
-
         if(drawFBOTextures){
-            int screenNumber = 6;
+            int screenNumber = 7;
             glDisable(GL_DEPTH_TEST);
 
             // Select shader
