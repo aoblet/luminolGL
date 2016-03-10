@@ -10,11 +10,13 @@ namespace Graphics{
         Texture _color;
         Texture _normal;
         Texture _depth;
+        Texture _position;
     public:
         GeometricFBO(const glm::ivec2& resolutionTexture);
         virtual void build() override;
         Texture& color();
         Texture& normal();
         Texture& depth();
+        Texture& position();
     };
 }

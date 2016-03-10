@@ -69,7 +69,7 @@ int main( int argc, char **argv ) {
 
     int DPI;
     GLFWwindow * window = nullptr;
-    glm::ivec2 dimViewport(1300, 700);
+    glm::ivec2 dimViewport(1280, 720);
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
@@ -87,7 +87,7 @@ int main( int argc, char **argv ) {
     Gui::ObjectPicker picker;
     Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
 
-    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01f, 1000.f));
+    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
     camera.setEye(glm::vec3(10,10,-10));
     View::CameraController cameraController(camera, userInput, 0.05);
 
@@ -101,6 +101,7 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
     Graphics::ShaderProgram pointLightShader(blitShader.vShader(), "../shaders/pointLight.frag");
+    Graphics::ShaderProgram indirectLightShader(blitShader.vShader(), "../shaders/indirectLight.frag");
     Graphics::ShaderProgram directionalLightShader(blitShader.vShader(), "../shaders/directionnalLight.frag");
     Graphics::ShaderProgram spotLightShader(blitShader.vShader(), "../shaders/spotLight.frag");
     Graphics::ShaderProgram debugShapesShader("../shaders/debug.vert", "", "../shaders/debug.frag");
@@ -111,6 +112,7 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram circleConfusionShader(blitShader.vShader(), "../shaders/coc.frag");
     Graphics::ShaderProgram depthOfFieldShader(blitShader.vShader(), "../shaders/dof.frag");
     Graphics::ShaderProgram cameraMotionBlurShader(blitShader.vShader(), "../shaders/cameraMotionBlur.frag");
+    Graphics::ShaderProgram ssaoShader(blitShader.vShader(), "../shaders/ssao.frag");
 
 
     // Create Objects -------------------------------------------------------------------------------------------------------------------------------
@@ -166,6 +168,9 @@ int main( int argc, char **argv ) {
     Light::LightHandler lightHandler;
     lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(0.6, 0.9, 1), 1);
 
+    glm::vec3 ambient(1);
+    float ambientIntensity = 0.2;
+
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
     bool drawFBOTextures    = true;
@@ -189,6 +194,11 @@ int main( int argc, char **argv ) {
     pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
     pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+
+    indirectLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    indirectLightShader.updateUniform(Graphics::UBO_keys::BEAUTY_BUFFER, 1);
+    indirectLightShader.updateUniform(Graphics::UBO_keys::SSAO_BUFFER, 2);
+
     checkErrorGL("Uniforms");
 
     // ---------------------- FX Variables
@@ -224,6 +234,14 @@ int main( int argc, char **argv ) {
     cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_COLOR, 0);
     cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_DEPTH, 1);
 
+    // ---------------------- For ssao
+
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_POSITION_DEPTH, 0);
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_DEPTH, 1);
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_NORMAL, 2);
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_NOISE, 3);
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_SCREEN_DIM, glm::vec2(width, height));
+
     checkErrorGL("Uniforms - post_fx Uniforms");
 
     // My FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -233,8 +251,7 @@ int main( int argc, char **argv ) {
     Graphics::PostFxFBO fxFBO(dimViewport, 5);
     float shadowPoissonSampleCount = 1, shadowPoissonSpread = 1;
 
-    // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
-    // Create two ubo for light and camera
+    // Create UBOs For Light & Cam -------------------------------------------------------------------------------------------------------------------------------
     const GLuint LightBindingPoint = 0;
     const GLuint CameraBindingPoint = 1;
 
@@ -250,6 +267,49 @@ int main( int argc, char **argv ) {
     pointLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     directionalLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     spotLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
+
+    // Samples for SSAO -------------------------------------------------------------------------------------------------------------------------------
+
+    std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0); // random floats between 0.0 - 1.0
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (int i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(
+                randomFloats(generator) * 2.0f - 1.0f,
+                randomFloats(generator) * 2.0f - 1.0f,
+                randomFloats(generator)
+        );
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.f;
+        scale = glm::lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+
+    int noiseSizeX = 4;
+    int noiseSizeY = 4;
+
+    std::vector<glm::vec3> ssaoNoise;
+    for (GLuint i = 0; i < noiseSizeX * noiseSizeY; i++)
+    {
+        glm::vec3 noise(
+                randomFloats(generator) * 2.0 - 1.0,
+                randomFloats(generator) * 2.0 - 1.0,
+                0.0f);
+        ssaoNoise.push_back(noise);
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, noiseSizeX, noiseSizeY, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+
+    Graphics::Texture ssaoNoiseTex(4, 4, Graphics::TexParams(GL_RGB16F, GL_RGB, GL_FLOAT, GL_REPEAT, GL_NEAREST));
+    ssaoNoiseTex.sendGL(ssaoNoise.data());
+
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_SAMPLES, ssaoKernel);
+
+    float occlusionIntensity = 1.0;
+    float occlusionRadius = 1.0;
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -323,6 +383,8 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
 
+        indirectLightShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
+
         // FX
         gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
         sobelShader.updateUniform(Graphics::UBO_keys::SOBEL_INTENSITY, sobelIntensity);
@@ -334,6 +396,10 @@ int main( int argc, char **argv ) {
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::SCREEN_TO_VIEW, screenToView);
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_SAMPLE_COUNT, (int) motionBlurSampleCount);
+
+        ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_PROJECTION, projection);
+        ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_OCCLUSION_INTENSITY, occlusionIntensity);
+        ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_OCCLUSION_RADIUS, occlusionRadius);
 
         //****************************************** RENDER *******************************************
 
@@ -505,12 +571,63 @@ int main( int argc, char **argv ) {
         beautyFBO.beauty().bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
+        // ------- SSAO ------
+
+        fxFBO.changeCurrentTexture(0);
+        ssaoShader.useProgram();
+        gBufferFBO.position().bind(GL_TEXTURE0); // position
+        gBufferFBO.depth().bind(GL_TEXTURE1); // depth
+        gBufferFBO.normal().bind(GL_TEXTURE2); // normal
+        ssaoNoiseTex.bind(GL_TEXTURE3); // noise
+//        beautyFBO.beauty().bind(GL_TEXTURE4); // beauty
+//        beautyFBO.beauty().bind(GL_TEXTURE4); // beauty
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        //blur on ssao texture
+        if(sampleCount > 0){
+            // Use blur program shader
+            blurShader.useProgram();
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, 3);
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
+
+            // Write into Vertical Blur Texture
+            fxFBO.changeCurrentTexture(1);
+            // Clear the content of texture
+            fxFBO.clearColor();
+            // Read the texture processed by the Sobel operator
+            fxFBO.texture(0).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+            // Write into Horizontal Blur Texture
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
+            fxFBO.changeCurrentTexture(0);
+            // Clear the content of texture
+            fxFBO.clearColor();
+            // Read the texture processed by the Vertical Blur
+            fxFBO.texture(1).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        }
+
+        // ------- INDIRECT LIGHT ------
+        indirectLightShader.useProgram();
+
+        fxFBO.changeCurrentTexture(1);
+        fxFBO.clearColor();
+
+        gBufferFBO.color().bind(GL_TEXTURE0); // color
+//        beautyFBO.beauty().bind(GL_TEXTURE1); // beauty
+        fxFBO.texture(4).bind(GL_TEXTURE1); // beauty
+        fxFBO.texture(0).bind(GL_TEXTURE2); // ssao
+
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+
         // ------- SOBEL ------
         fxFBO.changeCurrentTexture(0);
         fxFBO.clearColor();
 
         sobelShader.useProgram();
-        fxFBO.texture(4).bind(GL_TEXTURE0);
+        fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
@@ -564,25 +681,29 @@ int main( int argc, char **argv ) {
         fxFBO.texture(2).bind(GL_TEXTURE2); // Blur
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
+
         // ------- CAMERA MOTION BLUR ------
-        fxFBO.changeCurrentTexture(0);
+        fxFBO.changeCurrentTexture(1);
         cameraMotionBlurShader.useProgram();
         fxFBO.texture(3).bind(GL_TEXTURE0); // last pass
         gBufferFBO.depth().bind(GL_TEXTURE1); // depth
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         quadVAO.bind();
 
+
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gammaShader.useProgram();
-        fxFBO.texture(0).bind(GL_TEXTURE0);
+        fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
 
+        int screenNumber = 7;
+        glDisable(GL_DEPTH_TEST);
 
         if(drawFBOTextures){
             int screenNumber = 6;
@@ -612,22 +733,29 @@ int main( int argc, char **argv ) {
             gBufferFBO.depth().bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-            // --------------- Beauty Buffer
+            // --------------- Position Buffer
             glViewport( 3*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+
+            quadVAO.bind();
+            gBufferFBO.position().bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+            // --------------- Beauty Buffer
+            glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
             beautyFBO.beauty().bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
             // --------------- Circle of confusion Buffer
-            glViewport( 4*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
             fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
             // --------------- Blur Buffer
-            glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
+            glViewport( 6*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
             fxFBO.texture(4).bind(GL_TEXTURE0);
@@ -686,6 +814,8 @@ int main( int argc, char **argv ) {
                 gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
                 gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
                 gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+                gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
+                gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
                 gui.addSeparatorLine();
             }
 
@@ -694,6 +824,12 @@ int main( int argc, char **argv ) {
                 gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
                 gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
                 gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+
+                gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
+
+                gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
+                gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
+                gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);
                 gui.addSeparatorLine();
             }
 

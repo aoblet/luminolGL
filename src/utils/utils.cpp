@@ -83,6 +83,6 @@ void initContextWindowGL(const std::string& windowTitle, GLFWwindow*& window, in
     glfwSetInputMode( window, GLFW_STICKY_KEYS, GL_TRUE );
 
     // Enable vertical sync limit fps when > vSync(on cards that support it)
-    glfwSwapInterval( 1 );
+//    glfwSwapInterval( 1 );
     glGetError(); // must be called at init: reset error to GL_NO_ERROR
 }
