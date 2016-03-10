@@ -579,8 +579,6 @@ int main( int argc, char **argv ) {
         gBufferFBO.depth().bind(GL_TEXTURE1); // depth
         gBufferFBO.normal().bind(GL_TEXTURE2); // normal
         ssaoNoiseTex.bind(GL_TEXTURE3); // noise
-//        beautyFBO.beauty().bind(GL_TEXTURE4); // beauty
-//        beautyFBO.beauty().bind(GL_TEXTURE4); // beauty
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         //blur on ssao texture
@@ -615,7 +613,6 @@ int main( int argc, char **argv ) {
         fxFBO.clearColor();
 
         gBufferFBO.color().bind(GL_TEXTURE0); // color
-//        beautyFBO.beauty().bind(GL_TEXTURE1); // beauty
         fxFBO.texture(4).bind(GL_TEXTURE1); // beauty
         fxFBO.texture(0).bind(GL_TEXTURE2); // ssao
 
