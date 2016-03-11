@@ -47,6 +47,7 @@ namespace Graphics{
         void draw(int nbInstancesToDraw);
         void computeBoundingBox();
         const Geometry::BoundingBox& getBoundingBox() const;
+        Geometry::BoundingBox getBoundingBox();
         Geometry::BoundingBox* getBoundingBoxPtr();
 
         const std::vector<Mesh>& meshes() const;

@@ -4,6 +4,7 @@
 
 #include <glog/logging.h>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/transform.hpp>
 #include "gui/ObjectPicker.h"
 #include "graphics/DebugDrawer.h"
 
@@ -17,8 +18,6 @@ namespace Gui
         trans.push_back(Geometry::BoundingBox(glm::vec3(-s,-s,-s), glm::vec3(markerScale,s,s)));
         trans.push_back(Geometry::BoundingBox(glm::vec3(-s,-s,-s), glm::vec3(s,markerScale,s)));
         trans.push_back(Geometry::BoundingBox(glm::vec3(-s,-s,-s), glm::vec3(s,s,markerScale)));
-
-        _axisAnchors = trans;
 
         _pickerAnchors.push_back(trans);
         _pickerAnchors.push_back(trans);
@@ -42,11 +41,17 @@ namespace Gui
         float minDist = 100000;
         float dist = 0;
 
+//
+
         if(!_longClick) _pickedAnchorAxis = -1;
 
         if(_picked && !_longClick){
+            _camDistance = glm::length(camera.getEye() - _targetTransformation->position);
+
             for(size_t i = 0; i < _pickerAnchors[int(_mode)].size(); ++i){
-                if(_pickerAnchors[int(_mode)][i].intersect(rayOrigin, rayDir, _targetTransformation->getTMatrix(), &dist)){
+                auto pickedAnchor = _pickerAnchors[int(_mode)][i];
+                pickedAnchor.transformAAB(glm::scale(glm::vec3(_axisScale)));
+                if(pickedAnchor.intersect(rayOrigin, rayDir, _targetTransformation->getTMatrix(), &dist)){
                     _pickedAnchorAxis = i;
                 }
             }
@@ -61,14 +66,17 @@ namespace Gui
 
         _picked = false;
 
+        // if no object is currently picked & user has clicked, try to find a bounding box that intersect the camera ray
         for(auto& meshInstance : scene.meshInstances()){
             for(auto& trans : meshInstance.getTransformations()){
-                auto box = meshInstance.modelMeshGroup().getBoundingBoxPtr();
-                if(box->intersect(rayOrigin, rayDir, trans.getTRSMatrix(), &dist)){
+                auto boxPtr = meshInstance.modelMeshGroup().getBoundingBoxPtr();
+                auto box = meshInstance.modelMeshGroup().getBoundingBox();
+                box.transformAAB(trans.getRMatrix()* trans.getSMatrix());
+                if(box.intersect(rayOrigin, rayDir, trans.getTMatrix(), &dist)){
                     if(dist < minDist){
                         minDist = dist;
                         _targetTransformation = &trans;
-                        _targetBoundingBox = box;
+                        _targetBoundingBox = boxPtr;
                         _picked = true;
                     }
                 }
@@ -79,30 +87,34 @@ namespace Gui
     void ObjectPicker::drawPickedObject(Graphics::ShaderProgram& program) {
         if(!_picked) return;
 
+        _axisScale = 0.05f * _camDistance;
+
+        glm::mat4 axisTransformation = _targetTransformation->getTMatrix() * glm::scale(glm::vec3(_axisScale));
+
         if(_mode == TRANSLATION)
         {
-            Graphics::DebugDrawer::drawTranslateAxis(_targetTransformation->getTMatrix(), program, _markerScale, 5);
+            Graphics::DebugDrawer::drawTranslateAxis(axisTransformation, program, _markerScale, 5);
         }
 
         if(_mode == ROTATION)
         {
-            Graphics::DebugDrawer::drawRotationAxis(_targetTransformation->getTMatrix(), program, _markerScale, 5);
+            Graphics::DebugDrawer::drawRotationAxis(axisTransformation, program, _markerScale, 5);
         }
 
         if(_mode == SCALE)
         {
-            Graphics::DebugDrawer::drawScaleAxis(_targetTransformation->getTMatrix(), program, _markerScale, 5);
+            Graphics::DebugDrawer::drawScaleAxis(axisTransformation, program, _markerScale, 5);
         }
 
         Graphics::DebugDrawer::drawBoundingBox(*_targetBoundingBox, _targetTransformation->getTRSMatrix(), program, glm::vec3(0.5,0.5,0));
 
-        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][0], _targetTransformation->getTMatrix(), program, glm::vec3(0.3,0,0));
-        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][1], _targetTransformation->getTMatrix(), program, glm::vec3(0,0.3,0));
-        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][2], _targetTransformation->getTMatrix(), program, glm::vec3(0,0,0.3));
+        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][0], axisTransformation, program, glm::vec3(0.3,0,0));
+        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][1], axisTransformation, program, glm::vec3(0,0.3,0));
+        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][2], axisTransformation, program, glm::vec3(0,0,0.3));
 
         if(_pickedAnchorAxis < 0) return;
 
-        Graphics::DebugDrawer::drawBoundingBox(_axisAnchors[_pickedAnchorAxis], _targetTransformation->getTMatrix(), program, glm::vec3(1, 1, 1));
+        Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][_pickedAnchorAxis], axisTransformation, program, glm::vec3(1, 1, 1));
     }
 
 

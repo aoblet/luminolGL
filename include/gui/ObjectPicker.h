@@ -27,10 +27,11 @@ namespace Gui
         int _pickedAnchorAxis;
         float _markerScale;
         bool _longClick;
+        float _axisScale;
+        float _camDistance;
 
         PickerMode _mode;
 
-        std::vector<Geometry::BoundingBox> _axisAnchors; /** Theses bounding boxes are used to grab the axis and transform */
         std::vector<std::vector<Geometry::BoundingBox>> _pickerAnchors; /** Theses bounding boxes are used to grab the axis and transform */
 
     public:

@@ -79,6 +79,11 @@ namespace Geometry
     }
 
 
+    void BoundingBox::transformAAB(const glm::mat4 &trans) {
+        _AABBmax = glm::vec3(trans * glm::vec4(_AABBmax, 1));
+        _AABBmin = glm::vec3(trans * glm::vec4(_AABBmin, 1));
+    }
+
     bool BoundingBox::intersect(const glm::vec3 &rayOrigin, const glm::vec3 &rayDirection, const glm::mat4 &transformation, float *intersectionDistance) const {
         // Intersection method from Real-Time Rendering and Essential Mathematics for Games
         float tMin = 0.0f;

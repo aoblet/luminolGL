@@ -37,6 +37,8 @@ namespace Geometry
 
         const std::vector<glm::vec3>& getVector() const; /** Returns the 8 points composing the BoundingBox */
 
+        void transformAAB(const glm::mat4& trans);
+
 
         friend BoundingBox operator*(const glm::mat4 &trans, const BoundingBox& box1); /** This operator makes things easier :
                                                                                         * You can directly multiply a BoundingBox
