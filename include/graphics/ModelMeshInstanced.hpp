@@ -62,5 +62,6 @@ namespace Graphics {
          */
         int getInstanceNumber() const;
         std::string modelPath() const;
+        VertexArrayObject& vao();
     };
 }

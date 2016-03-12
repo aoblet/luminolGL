@@ -14,7 +14,7 @@ namespace Graphics{
 
     /**
      * Shader Program wrapper.
-     * Each shader is a shared_ptr in order to prevent delete side effects of shared shader between ShaderProgram.
+     * In order to prevent delete side effects of shared shader between ShaderProgram, each shader is a shared_ptr.
      */
 
     class ShaderProgram {

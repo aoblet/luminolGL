@@ -154,8 +154,12 @@ void ModelMeshGroup::draw(int nbInstancesToDraw){
     int offsetIndexes(0), offsetsVertices(0);
     for(auto& mesh : _meshes){
         mesh.bindTextures();
-        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT,
-                                          (void*)(offsetIndexes*sizeof(unsigned int)), nbInstancesToDraw, offsetsVertices);
+        glDrawElementsInstancedBaseVertex(GL_TRIANGLES,
+                                          mesh.getVertexCount(),
+                                          GL_UNSIGNED_INT,
+                                          (void*)(offsetIndexes*sizeof(unsigned int)),
+                                          nbInstancesToDraw,
+                                          offsetsVertices);
 
         offsetIndexes   += mesh.getElementIndex().size();
         offsetsVertices += mesh.getVertices().size();

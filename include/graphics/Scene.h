@@ -23,6 +23,8 @@ namespace Graphics {
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
         Data::SceneIO* _ioHandler;
+        ModelMeshInstanced* _water;
+
 
         /**
          * Must be called after all MeshInstances has been attached
@@ -32,6 +34,7 @@ namespace Graphics {
         void initGL();
 
     public:
+
         /**
          * Build a scene from optional parameters
          * @param scene scene path
@@ -45,6 +48,8 @@ namespace Graphics {
          * Only visible instances of VP Matrix are sent to the GPU
          */
         void draw(const glm::mat4 &VP);
+        void drawWater();
+        void initWaterGL(ModelMeshInstanced *_water);
 
         /**
          * Compute frustum culling on current instance.

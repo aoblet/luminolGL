@@ -120,6 +120,7 @@ namespace Gui{
 		bool displayCameraSplineParameters = false;
 		bool displayPostFxParameters = false;
 		bool displayMenu = true;
+		bool displayWaterParams = false;
 	};
 }
 

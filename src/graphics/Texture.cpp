@@ -129,7 +129,7 @@ namespace Graphics
         return _data;
     }
 
-    void Texture::sendGL(void *data) {
+    void Texture::updateData(void *data) {
         bind();
         glTexImage2D(GL_TEXTURE_2D, 0, _texParams.internalFormat, _width, _height, 0, _texParams.format, _texParams.type, data);
     }

@@ -16,7 +16,8 @@ ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
         _verticesVBO(std::move(other._verticesVBO)),
         _indexesVBO(std::move(other._indexesVBO)),
         _transformations(std::move(other._transformations)),
-        _modelPath(std::move(other._modelPath)){
+        _modelPath(std::move(other._modelPath)),
+        _scenePositionsVBO(std::move(other._scenePositionsVBO)){
 
     // VertexArrayObject _VAO handles pointers so we need to properly update these values.
     if(_VAO.vbos().size()){
@@ -122,4 +123,8 @@ const ModelMeshGroup &ModelMeshInstanced::modelMeshGroup() const {
 
 ModelMeshGroup &ModelMeshInstanced::modelMeshGroup(){
     return _modelMeshGroup;
+}
+
+VertexArrayObject &ModelMeshInstanced::vao() {
+    return _VAO;
 }

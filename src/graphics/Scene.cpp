@@ -34,6 +34,20 @@ namespace Graphics {
         }
     }
 
+    void Scene::drawWater(){
+        _visibleTransformations.clear();
+        _visibleTransformations.push_back(_water->getTransformationMatrix(0));
+        _visibleTransformationsVBO.updateData(_visibleTransformations);
+        _water->vao().bind();
+        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, _water->modelMeshGroup().allIndexes().size()*3, GL_UNSIGNED_INT, 0, 1, 0);
+    }
+
+    void Scene::initWaterGL(ModelMeshInstanced *water){
+        _water = water;
+        _water->initGLBuffers(_visibleTransformationsVBO);
+    }
+
+
     void Scene::computeVisibleTransformations(const glm::mat4 &VP, const ModelMeshInstanced& mesh) {
         _visibleTransformations.clear();
         for(int i = 0; i < mesh.getInstanceNumber(); ++i){

@@ -38,5 +38,5 @@ vec3 mean(int N){
 }
 
 void main(void){
-	Color = vec4(gaussian(8, SampleCount), 1.0);
+	Color = vec4(gaussian(1, SampleCount), 1.0);
 }

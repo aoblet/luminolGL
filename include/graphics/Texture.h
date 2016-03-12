@@ -100,7 +100,7 @@ namespace Graphics
         void unbind();
 
 
-        void sendGL(void* data);
+        void updateData(void *data);
 
         GLuint& glId();
         GLuint glId() const;
