@@ -15,10 +15,15 @@ namespace Graphics
     }
 
     VertexArrayObject::VertexArrayObject(VertexArrayObject &&other) {
+        *this = std::move(other);
+    }
+
+    VertexArrayObject& VertexArrayObject::operator=(VertexArrayObject &&other) {
         _glId = other._glId;
         other._glId = 0;
         std::swap(_vbos, other._vbos);
         std::swap(_isInGPU, other._isInGPU);
+        return *this;
     }
 
     VertexArrayObject::VertexArrayObject(const VertexArrayObject &other) : VertexArrayObject(other._isInGPU) {
@@ -74,5 +79,4 @@ namespace Graphics
     void VertexArrayObject::clearVBOs() {
         _vbos.clear();
     }
-
 }

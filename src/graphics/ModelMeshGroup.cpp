@@ -34,12 +34,20 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath) {
     DLOG(INFO) << "Loading model " << modelPath << " DONE" << std::endl << std::endl;
 }
 
-ModelMeshGroup::ModelMeshGroup(ModelMeshGroup &&other):
-        _textures(std::move(other._textures)), _meshes(std::move(other._meshes)),
-        _directoryPath(std::move(other._directoryPath)), _modelMatrix(std::move(other._modelMatrix)),
-        _boundingBox(std::move(other._boundingBox)), _allVertices(std::move(other._allVertices)),
-        _allIds(std::move(other._allIds)){}
+ModelMeshGroup::ModelMeshGroup(ModelMeshGroup &&other){
+    *this = std::move(other);
+}
 
+ModelMeshGroup &ModelMeshGroup::operator=(ModelMeshGroup &&other) {
+    std::swap(_textures, other._textures);
+    std::swap(_meshes, other._meshes);
+    std::swap(_directoryPath, other._directoryPath);
+    std::swap(_modelMatrix, other._modelMatrix);
+    std::swap(_boundingBox, other._boundingBox);
+    std::swap(_allVertices, other._allVertices);
+    std::swap(_allIds, other._allIds);
+    return *this;
+}
 
 void ModelMeshGroup::loadMeshes(const aiScene* scene) {
     for(unsigned int i=0; i<scene->mNumMeshes; ++i){

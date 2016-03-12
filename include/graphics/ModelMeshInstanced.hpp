@@ -22,12 +22,15 @@ namespace Graphics {
         ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations = {});
         ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
+        ModelMeshInstanced& operator=(ModelMeshInstanced&& other);
+
+        void resetVAO();
 
         void initGLBuffers(VertexBufferObject& scenePositionsVBO);
         void draw(int nbInstanceToDraw);
 
         /** Several ways to add an instance to _transformations vector */
-        void addInstance(const Geometry::Transformation &trans);
+        Geometry::Transformation& addInstance(const Geometry::Transformation &trans);
         void addInstance(const std::vector<Geometry::Transformation>& transformations);
         void addInstance(const std::vector<glm::vec3> &positions, const std::vector<glm::vec4> &rotations);
         void addInstance(const std::vector<glm::vec3> &positions);

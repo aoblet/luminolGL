@@ -25,6 +25,8 @@ namespace Graphics
         VertexArrayObject(const VertexArrayObject& other);
         ~VertexArrayObject();
 
+        VertexArrayObject& operator=(VertexArrayObject && other);
+
         void addVBO(VertexBufferObject* vbo);
         void initGL();
         void init();

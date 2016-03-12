@@ -39,6 +39,7 @@ namespace Graphics{
         ModelMeshGroup(const std::string& modelPath);
         ModelMeshGroup(ModelMeshGroup && other);
         ModelMeshGroup(const ModelMeshGroup & other) = delete;
+        ModelMeshGroup& operator=(ModelMeshGroup&& other);
 
         /**
          * Draw each mesh with its textures.

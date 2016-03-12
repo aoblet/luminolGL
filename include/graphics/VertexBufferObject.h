@@ -43,6 +43,8 @@ namespace Graphics
         VertexBufferObject(const VertexBufferObject& other);
         ~VertexBufferObject();
 
+        VertexBufferObject& operator=(VertexBufferObject&& other);
+
         GLuint glId();
 
         /** Should not be used directly but inside VAO.init() */

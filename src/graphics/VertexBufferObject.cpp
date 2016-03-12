@@ -16,12 +16,18 @@ namespace Graphics
     }
 
     VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
+        *this = std::move(other);
+    }
+
+    VertexBufferObject &VertexBufferObject::operator=(VertexBufferObject &&other) {
         std::swap(_glId, other._glId);
         std::swap(_dataType, other._dataType);
         std::swap(_target, other._target);
         std::swap(_attribArray, other._attribArray);
         std::swap(_isInGPU, other._isInGPU);
         other._glId = 0;
+
+        return *this;
     }
 
     VertexBufferObject::VertexBufferObject(const VertexBufferObject &other): VertexBufferObject(other._dataType, other._attribArray, other._isInGPU) {}
@@ -183,5 +189,4 @@ namespace Graphics
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
-
 }

@@ -19,6 +19,11 @@ ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
         _modelPath(std::move(other._modelPath)),
         _scenePositionsVBO(std::move(other._scenePositionsVBO)){
 
+    resetVAO();
+}
+
+void ModelMeshInstanced::resetVAO(){
+
     // VertexArrayObject _VAO handles pointers so we need to properly update these values.
     if(_VAO.vbos().size()){
         assert(_scenePositionsVBO != nullptr);
@@ -29,8 +34,23 @@ ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
     }
 }
 
-void ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
+ModelMeshInstanced &ModelMeshInstanced::operator=(ModelMeshInstanced &&other) {
+    std::swap(_modelMeshGroup, other._modelMeshGroup);
+    std::swap(_VAO, other._VAO);
+    std::swap(_verticesVBO, other._verticesVBO);
+    std::swap(_indexesVBO, other._indexesVBO);
+    std::swap(_transformations,other._transformations);
+    std::swap(_modelPath, other._modelPath);
+    std::swap(_scenePositionsVBO, other._scenePositionsVBO);
+    resetVAO();
+
+    return *this;
+}
+
+
+Geometry::Transformation& ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
     _transformations.push_back(trans);
+    return _transformations[_transformations.size()-1];
 }
 
 void ModelMeshInstanced::addInstance(const std::vector<Geometry::Transformation> &transformations) {
