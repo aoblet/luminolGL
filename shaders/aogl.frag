@@ -66,7 +66,6 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
     // V, le vecteur vue (vertex dirigé vers l'œil)
     vec3 map = texture(NormalMap, texcoord ).xyz;
     map = map * 255./127. - 128./127.;
-//    map = map * 0.5f - 1;
     mat3 TBN = cotangent_frame(N, -V, texcoord);
     return normalize(TBN * map);
 }
@@ -88,5 +87,4 @@ void main()
 	vec4 normalFinal = MVNormal * vec4(normal, 0);
 	Normal = vec4(encodeNormal(normalFinal), SpecularPower/100);
     Color = vec4(diffuse, specular.x);
-//    Color = vec4(SpecularPower/100);
 }

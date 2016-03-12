@@ -9,9 +9,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/random.hpp>
-#include <glm/ext.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <glog/logging.h>
 
@@ -52,7 +50,6 @@
 
 #include "data/SceneIOJson.hpp"
 #include "data/UniformCamera.hpp"
-
 
 
 
@@ -111,17 +108,28 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram circleConfusionShader(blitShader.vShader(), "../shaders/coc.frag");
     Graphics::ShaderProgram depthOfFieldShader(blitShader.vShader(), "../shaders/dof.frag");
     Graphics::ShaderProgram cameraMotionBlurShader(blitShader.vShader(), "../shaders/cameraMotionBlur.frag");
+    Graphics::ShaderProgram waterReflectionShader("../shaders/waterReflectionRefraction.vert", mainShader.fShader());
+    Graphics::ShaderProgram waterRenderShader(mainShader.vShader(), "../shaders/water.frag");
 
 
     // Create Objects -------------------------------------------------------------------------------------------------------------------------------
     Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,0,0), glm::vec4(0,0,0,0), glm::vec3(500,1,500));
+    planeInstances.addInstance(glm::vec3(0,-100,0), glm::vec4(0,0,0,0), glm::vec3(500,1,500));
 
     checkErrorGL("VAO/VBO");
 
     Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
     crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
     crysisModel.addInstance(glm::vec3(-5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
+
+
+    Graphics::ModelMeshInstanced castle("../assets/models/tests/castle/castle.obj");
+    castle.addInstance(glm::vec3(-10, 35, -20), glm::vec4(0), glm::vec3(0.5));
+
+    Graphics::ModelMeshInstanced waterPlane("../assets/models/primitives/plane.obj");
+    waterPlane.addInstance(glm::vec3(0,1,0), glm::vec4(0), glm::vec3(10000,1,10000));
+    const float& waterHeight = waterPlane.getTransformation(0).position.y;
+
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -154,10 +162,14 @@ int main( int argc, char **argv ) {
     Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
     std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
     sceneMeshes.push_back(std::move(crysisModel));
+    sceneMeshes.push_back(std::move(castle));
     sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
+
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
+    scene.initWaterGL(&waterPlane);
+
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
     checkErrorGL("Scene");
 
@@ -231,6 +243,7 @@ int main( int argc, char **argv ) {
     Graphics::ShadowMapFBO shadowMapFBO(glm::ivec2(2048));
     Graphics::BeautyFBO beautyFBO(dimViewport);
     Graphics::PostFxFBO fxFBO(dimViewport, 5);
+
     float shadowPoissonSampleCount = 1, shadowPoissonSpread = 1;
 
     // Create UBO For Light Structures -------------------------------------------------------------------------------------------------------------------------------
@@ -251,10 +264,19 @@ int main( int argc, char **argv ) {
     directionalLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     spotLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
 
+
+    //Water
+    Graphics::GeometricFBO waterReflectionFBO(dimViewport);
+    Graphics::PostFxFBO waterTextures(dimViewport, 2);
+    Graphics::Texture waterNormals("../assets/textures/water/normals.jpg");
+    float noiseAmplitudeWaves = 0.001f;
+    float specularAmplitudeWaves = 0.001f;
+    float fresnelBias = 0.001f;
+    float fresnelAmplitude = 3;
+
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
-
 
     // Identity matrix
     glm::mat4 objectToWorld;
@@ -273,9 +295,9 @@ int main( int argc, char **argv ) {
         // Get camera matrices
         const glm::mat4& projection = camera.getProjectionMatrix();
         const glm::mat4& worldToView = camera.getViewMatrix();
-        glm::mat4 mv  = worldToView * objectToWorld;
-        glm::mat4 mvp = projection * mv;
-        glm::mat4 vp  = projection * worldToView;
+        glm::mat4 mv            = worldToView * objectToWorld;
+        glm::mat4 mvp           = projection * mv;
+        glm::mat4 vp            = projection * worldToView;
         glm::mat4 mvInverse     = glm::inverse(mv);
         glm::mat4 mvNormal      = glm::transpose(mvInverse);
         glm::mat4 screenToView  = glm::inverse(projection);
@@ -283,6 +305,17 @@ int main( int argc, char **argv ) {
         // For skybox
         glm::mat4 unTranslatedMV = glm::mat4(glm::mat3(worldToView));
         glm::mat4 screenToWorldUnTranslated = glm::inverse(unTranslatedMV) * screenToView;
+
+        // For water
+        glm::vec3 reflectedCamPos       = camera.getEye() * glm::vec3(1,-1,1) ;
+        glm::vec3 reflectedFrontCam     = camera.getFront() * glm::vec3(1,-1,1);
+        glm::mat4 reflectionViewMatrix  = glm::lookAt(reflectedCamPos, reflectedCamPos + reflectedFrontCam, glm::vec3(0,1,0));
+        glm::mat4 reflectedVP           = projection * reflectionViewMatrix;
+        glm::mat4 mvNormalReflected     = glm::transpose(glm::inverse(reflectionViewMatrix));
+
+        glm::mat4 unTranslatedMV_reflected              = glm::mat4(glm::mat3(reflectionViewMatrix));
+        glm::mat4 screenToWorldUnTranslated_reflected   = glm::inverse(unTranslatedMV_reflected) * screenToView;
+
 
         // Light space matrices
         // Directional light
@@ -335,8 +368,30 @@ int main( int argc, char **argv ) {
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MV_INVERSE, mvInverse);
         cameraMotionBlurShader.updateUniform(Graphics::UBO_keys::MOTION_BLUR_SAMPLE_COUNT, (int) motionBlurSampleCount);
 
-        //****************************************** RENDER *******************************************
 
+        // WATER
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::WATER_Y_POS, waterHeight);
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::MVP, reflectedVP);
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::MV, reflectionViewMatrix);
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::MV_NORMAL, mvNormalReflected);
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, reflectedCamPos);
+        waterReflectionShader.updateUniform(Graphics::UBO_keys::WATER_IS_REFLECTION, 1);
+
+        waterRenderShader.updateUniform(Graphics::UBO_keys::SPECULAR_POWER, lightHandler._specularPower);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::MV, mv);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::MV_NORMAL, mvNormal);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::CAMERA_POSITION, camera.getEye());
+        waterRenderShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_NOISE_AMPLITUDE, noiseAmplitudeWaves);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_SPECULAR_AMPLITUDE, specularAmplitudeWaves);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, isNormalMapActive);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_LIGHT_RAY, lightHandler._directionalLight._pos);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_FRESNEL_AMPLITUDE, fresnelAmplitude);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_FRESNEL_BIAS, fresnelBias);
+
+
+        //****************************************** RENDER *******************************************
 
         //******************************************************* FIRST PASS (Geometric pass)
 
@@ -345,14 +400,57 @@ int main( int argc, char **argv ) {
         // Clear the front buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Select shader
-        mainShader.useProgram();
 
+        //----------------------- MAIN SCENE (Used also for water refraction) -------------
         // Render scene into Geometric buffer
         mainShader.useProgram();
         gBufferFBO.bind();
         gBufferFBO.clear();
         scene.draw(vp);
+        gBufferFBO.unbind();
+
+
+        //----------------------- WATER -------------
+        //----------------------- REFLECTION SCENE -------------
+        // Render scene for water (flipped Camera)
+        waterReflectionShader.useProgram();
+        glEnable(GL_CLIP_DISTANCE0);
+        waterReflectionFBO.bind();
+        waterReflectionFBO.clear();
+        scene.draw(reflectedVP);
+        waterReflectionFBO.unbind();
+        glDisable(GL_CLIP_DISTANCE0);
+
+
+        //----------------------- REFLECTION SCENE + SKYBOX -------------
+        // Render skybox texture combined with reflection: mask with depth buffer
+        waterTextures.bind();
+        waterTextures.changeCurrentTexture(0);
+        waterTextures.clearColor();
+        skybox.updateUniforms(screenToWorldUnTranslated_reflected, 0, 1, 2);
+        skybox.useProgramShader();
+
+        skybox.bindTexture(GL_TEXTURE0); // cubeMap
+        waterReflectionFBO.depth().bind(GL_TEXTURE1);
+        waterReflectionFBO.color().bind(GL_TEXTURE2);
+
+        quadVAO.bind();
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        waterTextures.unbind();
+
+
+        //----------------------- REFLECTION - REFRACTION - Wave Animation into main scene (gbuffer) -------------
+        mainShader.useProgram();
+        waterRenderShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_REFRACTION_TEXTURE, 2);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP, 1);
+
+        gBufferFBO.bind();
+        waterRenderShader.useProgram();
+        waterTextures.texture(0).bind(GL_TEXTURE0);
+        gBufferFBO.color().bind(GL_TEXTURE2);
+        waterNormals.bind(GL_TEXTURE1);
+        scene.drawWater();
         gBufferFBO.unbind();
 
         //******************************************************* SECOND PASS (Shadow Pass)
@@ -495,7 +593,7 @@ int main( int argc, char **argv ) {
         // ------- SKYBOX ------
         // Render skybox texture combined with beauty: mask with depth buffer
         // All in one pass
-        fxFBO.changeCurrentTexture(4);
+        fxFBO.changeCurrentTexture(1);
         fxFBO.clearColor();
         skybox.updateUniforms(screenToWorldUnTranslated, 0, 1, 2);
         skybox.useProgramShader();
@@ -510,7 +608,7 @@ int main( int argc, char **argv ) {
         fxFBO.clearColor();
 
         sobelShader.useProgram();
-        fxFBO.texture(4).bind(GL_TEXTURE0);
+        fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
@@ -630,7 +728,7 @@ int main( int argc, char **argv ) {
             glViewport( 5*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            fxFBO.texture(4).bind(GL_TEXTURE0);
+            waterTextures.texture(0).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -717,6 +815,13 @@ int main( int argc, char **argv ) {
                 gui.addSliderSpline(cameraController.viewTargets());
                 if(gui.addButton("Add Spline"))
                     cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
+            }
+
+            if(gui.addButton("Water", gui.displayWaterParams)) {
+                gui.addSlider("Waves", &noiseAmplitudeWaves, 0.0, 1, 0.00000001);
+                gui.addSlider("Waves specular", &specularAmplitudeWaves, 0.0, 1, 0.00000001);
+                gui.addSlider("Fresnel Amplitude", &fresnelAmplitude, 0.0, 20, 0.00000001);
+                gui.addSlider("Fresnel Bias", &fresnelBias, 0.0, 1, 0.00000001);
             }
 
             if(gui.addButton("Bounding Box"))
