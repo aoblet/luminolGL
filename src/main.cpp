@@ -307,8 +307,7 @@ int main( int argc, char **argv ) {
     int noiseSizeY = 4;
 
     std::vector<glm::vec3> ssaoNoise;
-    for (GLuint i = 0; i < noiseSizeX * noiseSizeY; i++)
-    {
+    for (int i = 0; i < noiseSizeX * noiseSizeY; i++){
         glm::vec3 noise(
                 randomFloats(generator) * 2.0 - 1.0,
                 randomFloats(generator) * 2.0 - 1.0,
