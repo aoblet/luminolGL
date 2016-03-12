@@ -3,17 +3,24 @@
 //
 
 #include <glog/logging.h>
+#include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/compatibility.hpp>
 #include "gui/ObjectPicker.h"
 #include "graphics/DebugDrawer.h"
 
 namespace Gui
 {
 
-    ObjectPicker::ObjectPicker(float markerScale) : _picked(false), _pickedAnchorAxis(-1), _markerScale(markerScale), _longClick(false), _mode(TRANSLATION){
-        float s = 0.1f * _markerScale; // axis anchor scale
+    ObjectPicker::ObjectPicker(float markerScale, Graphics::Scene* scene) :
+            _picked(false), _pickedAnchorAxis(-1), _markerScale(markerScale), _longClick(false),
+            _currentMeshPicked(nullptr), _scene(scene), _mode(TRANSLATION){
 
+        // axis anchor scale
+        float s = 0.1f * _markerScale;
+
+        // Create bounding boxes for axis
         std::vector<Geometry::BoundingBox> trans;
         trans.push_back(Geometry::BoundingBox(glm::vec3(-s,-s,-s), glm::vec3(markerScale,s,s)));
         trans.push_back(Geometry::BoundingBox(glm::vec3(-s,-s,-s), glm::vec3(s,markerScale,s)));
@@ -24,7 +31,7 @@ namespace Gui
         _pickerAnchors.push_back(trans);
     }
 
-    void ObjectPicker::pickObject(const glm::vec2 &cursorPosition, const glm::vec2 &cursorSpeed, Graphics::Scene &scene, const View::CameraFreefly &camera, bool click) {
+    void ObjectPicker::pickObject(const glm::vec2 &cursorPosition, const glm::vec2 &cursorSpeed, const View::CameraFreefly &camera, bool click) {
 
         if(!click && _longClick) _longClick = false;
         if(click && _picked) _longClick = true;
@@ -40,8 +47,6 @@ namespace Gui
 
         float minDist = 100000;
         float dist = 0;
-
-//
 
         if(!_longClick) _pickedAnchorAxis = -1;
 
@@ -67,16 +72,18 @@ namespace Gui
         _picked = false;
 
         // if no object is currently picked & user has clicked, try to find a bounding box that intersect the camera ray
-        for(auto& meshInstance : scene.meshInstances()){
+        for(auto& meshInstance : _scene->meshInstances()){
             for(auto& trans : meshInstance.getTransformations()){
                 auto boxPtr = meshInstance.modelMeshGroup().getBoundingBoxPtr();
                 auto box = meshInstance.modelMeshGroup().getBoundingBox();
                 box.transformAAB(trans.getRMatrix()* trans.getSMatrix());
+
                 if(box.intersect(rayOrigin, rayDir, trans.getTMatrix(), &dist)){
                     if(dist < minDist){
                         minDist = dist;
-                        _targetTransformation = &trans;
-                        _targetBoundingBox = boxPtr;
+                        _currentMeshPicked      = &meshInstance;
+                        _targetTransformation   = &trans;
+                        _targetBoundingBox      = boxPtr;
                         _picked = true;
                     }
                 }
@@ -106,8 +113,10 @@ namespace Gui
             Graphics::DebugDrawer::drawScaleAxis(axisTransformation, program, _markerScale, 5);
         }
 
+        // Draw Bounding box
         Graphics::DebugDrawer::drawBoundingBox(*_targetBoundingBox, _targetTransformation->getTRSMatrix(), program, glm::vec3(0.5,0.5,0));
 
+        // Draw axis
         Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][0], axisTransformation, program, glm::vec3(0.3,0,0));
         Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][1], axisTransformation, program, glm::vec3(0,0.3,0));
         Graphics::DebugDrawer::drawBoundingBox(_pickerAnchors[int(_mode)][2], axisTransformation, program, glm::vec3(0,0,0.3));
@@ -167,16 +176,39 @@ namespace Gui
         ax = glm::normalize(ax);
 
         glm::vec2 speed(-cursorSpeed.x, cursorSpeed.y);
-
         float trans = glm::dot(speed, glm::vec2(ax));
-
         trans *= 10.f;
-
         _targetTransformation->rotation[axis] += trans;
     }
 
 
     void ObjectPicker::switchMode(PickerMode mode) {
         _mode = mode;
+    }
+
+    void ObjectPicker::deletePickedObject() {
+        assert(_scene != nullptr);
+
+        if(!_picked || !_currentMeshPicked || !_targetTransformation)
+            return;
+
+        _scene->deleteMeshByPtr(_currentMeshPicked, _targetTransformation);
+        _currentMeshPicked      = nullptr;
+        _targetBoundingBox      = nullptr;
+        _targetTransformation   = nullptr;
+        _picked = false;
+    }
+
+    void ObjectPicker::attachToScene(Graphics::Scene *scene) {
+        _scene = scene;
+    }
+
+    void ObjectPicker::duplicatePickedObject() {
+        assert(_scene != nullptr);
+
+        if(!_picked || !_currentMeshPicked || !_targetTransformation)
+            return;
+
+        _targetTransformation = &_scene->duplicateMesh(*_currentMeshPicked, *_targetTransformation);
     }
 }

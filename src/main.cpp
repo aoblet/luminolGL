@@ -13,6 +13,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <glog/logging.h>
+#include <callbacks/CallbacksManager.hpp>
 
 
 #include "geometry/Spline3D.h"
@@ -51,6 +52,8 @@
 
 #include "data/SceneIOJson.hpp"
 #include "data/UniformCamera.hpp"
+
+#include "callbacks/CallbacksManager.hpp"
 
 
 
@@ -169,9 +172,11 @@ int main( int argc, char **argv ) {
     sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
-
     Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
     scene.initWaterGL(&waterPlane);
+
+    Callbacks::CallbacksManager::init(window, &scene, &picker);
+    picker.attachToScene(&scene);
 
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
     checkErrorGL("Scene");
@@ -866,7 +871,7 @@ int main( int argc, char **argv ) {
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
-        picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), scene, camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
         if(glfwGetKey(window, GLFW_KEY_T)) picker.switchMode(Gui::PickerMode::TRANSLATION);
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);

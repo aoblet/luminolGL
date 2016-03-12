@@ -76,5 +76,7 @@ namespace Graphics {
         const std::vector<ModelMeshInstanced>& meshInstances() const;
 
         void addModelMeshInstanced(const std::string& modelPath, const Geometry::Transformation& transformation={});
+        void deleteMeshByPtr(ModelMeshInstanced * meshInstanced, Geometry::Transformation * transformation);
+        Geometry::Transformation& duplicateMesh(ModelMeshInstanced& meshInstanced, Geometry::Transformation& transformation);
     };
 }

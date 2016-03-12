@@ -85,7 +85,7 @@ namespace Graphics {
         auto foundMesh = std::find_if(_meshInstances.begin(), _meshInstances.end(), [&modelPath](const ModelMeshInstanced& m) { return m.modelPath() == modelPath;});
 
         if(foundMesh == _meshInstances.end()){
-            DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh not found " << modelPath;
+            DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh not found " << modelPath << ". Create it.";
             try{
                 ModelMeshInstanced m(modelPath, {transformation});
                 m.initGLBuffers(_visibleTransformationsVBO);
@@ -99,5 +99,32 @@ namespace Graphics {
             DLOG(INFO) << "Scene::addModelMeshInstanced: Mesh found " << modelPath;
             foundMesh->addInstance(transformation);
         }
+    }
+
+    void Scene::deleteMeshByPtr(ModelMeshInstanced* meshInstanced, Geometry::Transformation* transformation) {
+        // Find index
+        auto& tr = meshInstanced->getTransformations();
+        size_t indexRemove = transformation - &(tr[0]);
+
+        if(indexRemove > tr.size()){
+            DLOG(ERROR) << "Scene::deleteMeshByPtr : You are trying to remove a transform which is not inside Scene";
+            return;
+        }
+        tr.erase(tr.begin() + indexRemove);
+
+        // Remove meshInstanced if no more transformations are present
+        if(!tr.empty())
+            return;
+
+        indexRemove = meshInstanced - &(_meshInstances[0]);
+        if(indexRemove > _meshInstances.size() || indexRemove < 0){
+            DLOG(ERROR) << "Scene::deleteMeshByPtr : You are trying to remove a mesh which is not inside Scene";
+            return;
+        }
+        _meshInstances.erase(_meshInstances.begin() + indexRemove);
+    }
+
+    Geometry::Transformation& Scene::duplicateMesh(ModelMeshInstanced &meshInstanced, Geometry::Transformation &transformation) {
+        return meshInstanced.addInstance(transformation);
     }
 }

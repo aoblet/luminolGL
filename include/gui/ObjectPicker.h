@@ -29,21 +29,25 @@ namespace Gui
         bool _longClick;
         float _axisScale;
         float _camDistance;
+        Graphics::ModelMeshInstanced* _currentMeshPicked;
+        Graphics::Scene* _scene;
 
         PickerMode _mode;
 
         std::vector<std::vector<Geometry::BoundingBox>> _pickerAnchors; /** Theses bounding boxes are used to grab the axis and transform */
 
     public:
-        ObjectPicker(float markerScale = 5);
-        void pickObject(const glm::vec2 & cursorPosition, const glm::vec2 & cursorSpeed, Graphics::Scene& scene, const View::CameraFreefly& camera, bool click);
+        ObjectPicker(float markerScale = 5, Graphics::Scene* scene = nullptr);
+        void pickObject(const glm::vec2 & cursorPosition, const glm::vec2 & cursorSpeed, const View::CameraFreefly& camera, bool click);
         void transformPickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void translatePickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void scalePickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void rotatePickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void drawPickedObject(Graphics::ShaderProgram& program);
         void switchMode(PickerMode mode);
-
+        void deletePickedObject();
+        void duplicatePickedObject();
+        void attachToScene(Graphics::Scene * scene);
     };
 }
 
