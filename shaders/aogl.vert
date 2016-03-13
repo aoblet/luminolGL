@@ -28,7 +28,7 @@ uniform mat4 MV;
 void main()
 {	
 	Out.TexCoord = TexCoord;
-	Out.Normal = Normal;
+	Out.Normal = (InstanceTransform * vec4(Normal, 0)).xyz;
 	Out.Position = (InstanceTransform * vec4(Position,1)).xyz;
 	// If there is geometry shader, comment this
 	gl_Position = MVP*vec4(Out.Position, 1);

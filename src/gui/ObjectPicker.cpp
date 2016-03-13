@@ -150,7 +150,7 @@ namespace Gui
         glm::vec2 speed(-cursorSpeed.x, cursorSpeed.y);
 
         float trans = glm::dot(speed, glm::vec2(ax));
-        trans *= 20.f;
+        trans *= 20.f * _axisScale;
 
         _targetTransformation->position[axis] += trans;
     }
@@ -173,7 +173,7 @@ namespace Gui
         glm::vec2 speed(-cursorSpeed.x, cursorSpeed.y);
 
         float trans = glm::dot(speed, glm::vec2(ax));
-        trans *= 10.f;
+        trans *= 10.f * _axisScale;
 
         _targetTransformation->scale[axis] += trans;
     }
