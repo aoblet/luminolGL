@@ -53,7 +53,7 @@ namespace Graphics {
 
         /**
          * Compute frustum culling on current instance.
-         * @VP matrix used to perform culling
+         * @param VP matrix used to perform culling
          */
 
         void computeVisibleTransformations(const glm::mat4 & VP, const ModelMeshInstanced& mesh);

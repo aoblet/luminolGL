@@ -193,10 +193,7 @@ namespace Gui
             return;
 
         _scene->deleteMeshByPtr(_currentMeshPicked, _targetTransformation);
-        _currentMeshPicked      = nullptr;
-        _targetBoundingBox      = nullptr;
-        _targetTransformation   = nullptr;
-        _picked = false;
+        reset();
     }
 
     void ObjectPicker::attachToScene(Graphics::Scene *scene) {
@@ -210,5 +207,12 @@ namespace Gui
             return;
 
         _targetTransformation = &_scene->duplicateMesh(*_currentMeshPicked, *_targetTransformation);
+    }
+
+    void ObjectPicker::reset(){
+        _currentMeshPicked      = nullptr;
+        _targetBoundingBox      = nullptr;
+        _targetTransformation   = nullptr;
+        _picked = false;
     }
 }

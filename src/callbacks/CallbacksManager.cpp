@@ -1,5 +1,7 @@
 #include "callbacks/CallbacksManager.hpp"
 #include <glog/logging.h>
+#include <ctime>
+#include <sys/stat.h>
 
 using namespace Callbacks;
 
@@ -19,6 +21,26 @@ void CallbacksManager::init(GLFWwindow *window, Graphics::Scene *scene, Gui::Obj
 
 void CallbacksManager::dropCallback(GLFWwindow *window, int nbPaths, const char **paths) {
     DLOG(INFO) << "DropCallback triggered";
+
+
+    // Try to load json scene
+    if(nbPaths == 1){
+        std::string extSave = ".json";
+        std::string path(paths[0]);
+        size_t jsonPos = path.find(extSave);
+
+        if(jsonPos + extSave.size() == path.size()){
+            std::string backupFile("/tmp/luminolGL." + std::to_string(std::time(nullptr)) + ".json");
+            DLOG(INFO) << "Save backup scene at " << backupFile;
+            _scene->save(backupFile);
+
+            // Reset picker state: avoid wrong pointer address target
+            _objectPicker->reset();
+            _scene->load(path);
+
+            return;
+        }
+    }
 
     for(int i=0; i<nbPaths; ++i){
         std::string path(paths[i]);

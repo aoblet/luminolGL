@@ -48,6 +48,7 @@ namespace Gui
         void deletePickedObject();
         void duplicatePickedObject();
         void attachToScene(Graphics::Scene * scene);
+        void reset();
     };
 }
 
