@@ -39,6 +39,7 @@ namespace Gui
     public:
         ObjectPicker(float markerScale = 5, Graphics::Scene* scene = nullptr);
         void pickObject(const glm::vec2 & cursorPosition, const glm::vec2 & cursorSpeed, const View::CameraFreefly& camera, bool click);
+        void transformPickedObject(const glm::vec3& translate, const glm::vec3& scale, const glm::vec4& rot = glm::vec4(0));
         void transformPickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void translatePickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
         void scalePickedObject(const glm::vec2 & cursorSpeed, int axis, const glm::mat4& MVP);
@@ -49,6 +50,8 @@ namespace Gui
         void duplicatePickedObject();
         void attachToScene(Graphics::Scene * scene);
         void reset();
+        bool isPicked();
+        Geometry::Transformation* currentTransformation();
     };
 }
 

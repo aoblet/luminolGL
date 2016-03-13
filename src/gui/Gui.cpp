@@ -242,4 +242,8 @@ namespace Gui{
     glm::vec2 Gui::getCursorSpeed() {
         return glm::vec2(_mouseRelX, _mouseRelY);
     }
+
+    bool Gui::isCursorInPanelIMGUI() {
+        return _mouseX > _screenWidth - _windowWidth && _mouseY > _screenHeight - _windowHeight && _mouseY < _screenHeight;
+    }
 }

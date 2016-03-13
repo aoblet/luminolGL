@@ -111,6 +111,7 @@ namespace Gui{
 
 		glm::vec2 getCursorPosition();
 		glm::vec2 getCursorSpeed();
+		bool isCursorInPanelIMGUI();
 
 		bool displayGeneralParameters = false;
 		bool displayGeneralLightParameters = false;
@@ -121,6 +122,7 @@ namespace Gui{
 		bool displayPostFxParameters = false;
 		bool displayMenu = true;
 		bool displayWaterParams = false;
+		bool displayMeshTransform = false;
 	};
 }
 

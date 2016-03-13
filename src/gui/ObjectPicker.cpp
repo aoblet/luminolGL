@@ -155,6 +155,15 @@ namespace Gui
         _targetTransformation->position[axis] += trans;
     }
 
+    void ObjectPicker::transformPickedObject(const glm::vec3& translate, const glm::vec3& scale, const glm::vec4& rot) {
+        if(!_targetTransformation)
+            return;
+
+        _targetTransformation->position += translate;
+        _targetTransformation->scale    *= scale;
+        _targetTransformation->rotation = rot;
+    }
+
     void ObjectPicker::scalePickedObject(const glm::vec2 &cursorSpeed, int axis, const glm::mat4 &MVP) {
         glm::vec4 ax = axis == 0 ? glm::vec4(1,0,0,0) : axis == 1 ? glm::vec4(0,1,0,0) : glm::vec4(0,0,1,0);
         ax = MVP * ax;
@@ -214,5 +223,13 @@ namespace Gui
         _targetBoundingBox      = nullptr;
         _targetTransformation   = nullptr;
         _picked = false;
+    }
+
+    bool ObjectPicker::isPicked() {
+        return _picked;
+    }
+
+    Geometry::Transformation *ObjectPicker::currentTransformation() {
+        return _targetTransformation;
     }
 }

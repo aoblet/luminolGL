@@ -119,19 +119,6 @@ int main( int argc, char **argv ) {
 
 
     // Create Objects -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::ModelMeshInstanced planeInstances("../assets/models/primitives/plane.obj");
-    planeInstances.addInstance(glm::vec3(0,-100,0), glm::vec4(0,0,0,0), glm::vec3(500,1,500));
-
-    checkErrorGL("VAO/VBO");
-
-    Graphics::ModelMeshInstanced crysisModel("../assets/models/crysis/nanosuit.obj");
-    crysisModel.addInstance(glm::vec3(5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
-    crysisModel.addInstance(glm::vec3(-5,0,2), glm::vec4(0,0,0,0), glm::vec3(1,1,1));
-
-
-    Graphics::ModelMeshInstanced castle("../assets/models/tests/castle/castle.obj");
-    castle.addInstance(glm::vec3(-10, 35, -20), glm::vec4(0), glm::vec3(0.5));
-
     Graphics::ModelMeshInstanced waterPlane("../assets/models/primitives/plane.obj");
     waterPlane.addInstance(glm::vec3(0,1,0), glm::vec4(0), glm::vec3(10000,1,10000));
     const float& waterHeight = waterPlane.getTransformation(0).position.y;
@@ -166,13 +153,9 @@ int main( int argc, char **argv ) {
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
-    std::vector<Graphics::ModelMeshInstanced> sceneMeshes;
-    sceneMeshes.push_back(std::move(crysisModel));
-    sceneMeshes.push_back(std::move(castle));
-    sceneMeshes.push_back(std::move(planeInstances));
 
     Data::SceneIOJson sceneIOJson;
-    Graphics::Scene scene(&sceneIOJson, "", std::move(sceneMeshes));
+    Graphics::Scene scene(&sceneIOJson, "../assets/luminolGL.json");
     scene.initWaterGL(&waterPlane);
 
     Callbacks::CallbacksManager::init(window, &scene, &picker);
@@ -337,6 +320,10 @@ int main( int argc, char **argv ) {
     float specularAmplitudeWaves = 0.001f;
     float fresnelBias = 0.001f;
     float fresnelAmplitude = 3;
+
+
+    float scaleMeshTransform(1);
+    glm::vec3 translateMeshTransform(0);
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -871,7 +858,12 @@ int main( int argc, char **argv ) {
         gui.init(window);
         gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
 
-        picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        if(!gui.isCursorInPanelIMGUI())
+            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+
+        gui.displayMeshTransform = picker.isPicked();
+        if(!picker.isPicked())
+            translateMeshTransform = glm::vec3(0);
 
         if(glfwGetKey(window, GLFW_KEY_T)) picker.switchMode(Gui::PickerMode::TRANSLATION);
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);
@@ -961,6 +953,27 @@ int main( int argc, char **argv ) {
 
             if(gui.addButton("Bounding Box"))
                 debugScene.toggle();
+
+            if(gui.addButton("Mesh Transform", gui.displayMeshTransform)){
+                gui.addSlider("Scale", &scaleMeshTransform, 0, 50, 0.1);
+                gui.addSeparatorLine();
+
+                gui.addLabel("Translation");
+                imgui3Slider("X", &translateMeshTransform.x, -10, 10, 0.1, 1);
+                imgui3Slider("Y", &translateMeshTransform.y, -10, 10, 0.1, 2);
+                imgui3Slider("Z", &translateMeshTransform.z, -10, 10, 0.1, 3);
+
+                if(gui.addButton("Apply transform"))
+                    picker.transformPickedObject(translateMeshTransform, glm::vec3(scaleMeshTransform));
+
+                if(gui.addButton("Reset")){
+                    translateMeshTransform = glm::vec3(0);
+                    scaleMeshTransform = 1;
+                }
+            }
+
+            if(gui.addButton("Save to assets/luminolGL.json"))
+                scene.save("../assets/luminolGL.json");
 
             gui.addUnindent();
 
