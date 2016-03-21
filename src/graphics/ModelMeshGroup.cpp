@@ -6,6 +6,7 @@ using namespace Graphics;
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_DIFFUSE     = "../assets/textures/default.png";
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_SPECULAR    = "../assets/textures/default.png";
 const std::string ModelMeshGroup::PATH_DEFAULT_TEX_NORMAL      = "../assets/textures/default_normal.png";
+const std::string ModelMeshGroup::PATH_PLANE                   = "../assets/models/primitives/plane.obj";
 
 
 ModelMeshGroup::ModelMeshGroup(const std::string &modelPath) {
@@ -59,7 +60,8 @@ const std::vector<Mesh>&ModelMeshGroup::meshes() const {
     return _meshes;
 }
 
-const std::map<std::string, Texture>&ModelMeshGroup::textures() const {
+
+std::map<std::string, Texture>&ModelMeshGroup::textures() {
     return _textures;
 }
 
@@ -197,4 +199,10 @@ Geometry::BoundingBox ModelMeshGroup::getBoundingBox(){
 
 Geometry::BoundingBox* ModelMeshGroup::getBoundingBoxPtr(){
     return &_boundingBox;
+}
+
+void ModelMeshGroup::removeTextures() {
+    for(auto& m: _meshes)
+        m.textures().clear();
+    _textures.clear();
 }

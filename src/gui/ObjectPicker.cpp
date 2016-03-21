@@ -71,24 +71,31 @@ namespace Gui
 
         _picked = false;
 
+
+        // Pick test onto water and scene meshes
+        auto meshInstance = &_scene->water();
+        int i = -1;
+
         // if no object is currently picked & user has clicked, try to find a bounding box that intersect the camera ray
-        for(auto& meshInstance : _scene->meshInstances()){
-            for(auto& trans : meshInstance.getTransformations()){
-                auto boxPtr = meshInstance.modelMeshGroup().getBoundingBoxPtr();
-                auto box = meshInstance.modelMeshGroup().getBoundingBox();
+        do{
+            for(auto& trans : meshInstance->getTransformations()){
+                auto boxPtr = meshInstance->modelMeshGroup().getBoundingBoxPtr();
+                auto box = meshInstance->modelMeshGroup().getBoundingBox();
                 box.transformAAB(trans.getRMatrix()* trans.getSMatrix());
 
                 if(box.intersect(rayOrigin, rayDir, trans.getTMatrix(), &dist)){
                     if(dist < minDist){
                         minDist = dist;
-                        _currentMeshPicked      = &meshInstance;
+                        _currentMeshPicked      = meshInstance;
                         _targetTransformation   = &trans;
                         _targetBoundingBox      = boxPtr;
                         _picked = true;
                     }
                 }
             }
+            meshInstance = &_scene->meshInstances()[++i];
         }
+        while(i < (int)_scene->meshInstances().size());
     }
 
     void ObjectPicker::drawPickedObject(Graphics::ShaderProgram& program) {

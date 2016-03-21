@@ -72,4 +72,9 @@ void CallbacksManager::keysCallback(GLFWwindow *window, int key, int scanCode, i
         DLOG(INFO) << "keysCallback duplicate pressed";
         _objectPicker->duplicatePickedObject();
     }
+
+    if(key == GLFW_KEY_0){
+        DLOG(INFO) << "keysCallback add water (0) pressed";
+        _scene->addWater(Geometry::Transformation(glm::vec3(0), glm::vec4(0), glm::vec3(20, 1, 20)));
+    }
 }

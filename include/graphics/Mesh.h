@@ -50,7 +50,7 @@ namespace Graphics
 
 
         void bindTextures(); /** Bind all Textures stored in _textures on their binding point */
-
+        std::map<GLenum, Texture*>& textures();
 
         const std::vector<VertexDescriptor>& getVertices() const;
         const std::vector<int>& getElementIndex() const;

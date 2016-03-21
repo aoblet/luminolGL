@@ -4,6 +4,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <rapidjson/document.h>
+#include <graphics/ModelMeshInstanced.hpp>
 
 namespace Data{
 
@@ -33,6 +34,10 @@ namespace Data{
      *          {
      *              other_mesh
      *          }
+     *      ],
+     *
+     *      "water":[
+     *          "mesh_transformations": {}
      *      ]
      *
      *  }
@@ -46,6 +51,7 @@ namespace Data{
         const char positions[] = "positions";
         const char rotations[] = "rotations";
         const char scales[] = "scales";
+        const char water[] = "water";
     }
 
     class SceneIOJson: public SceneIO{
@@ -55,9 +61,14 @@ namespace Data{
         void addVec4ToJson(const glm::vec4& vec, rapidjson::Value& value, rapidjson::Document::AllocatorType& allocator);
         glm::vec3 jsonArrayToVec3(const rapidjson::Value& value);
         glm::vec4 jsonArrayToVec4(const rapidjson::Value& value);
+
+        void writeTransformations(const Graphics::ModelMeshInstanced& mesh, rapidjson::Value& to, rapidjson::Document::AllocatorType& allocator);
+        std::vector<Geometry::Transformation> readTransformationsFromJS(rapidjson::Value& transformationsJS);
+
     public:
         SceneIOJson(bool isPrettyOutput=true);
         void load(Graphics::Scene &scene, const std::string& inPath) override ;
         void save(const Graphics::Scene &scene, const std::string& outPath) override ;
+
     };
 }

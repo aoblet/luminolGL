@@ -120,10 +120,6 @@ int main( int argc, char **argv ) {
 
 
     // Create Objects -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::ModelMeshInstanced waterPlane("../assets/models/primitives/plane.obj");
-    waterPlane.addInstance(glm::vec3(0,1,0), glm::vec4(0), glm::vec3(10000,1,10000));
-    const float& waterHeight = waterPlane.getTransformation(0).position.y;
-
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -157,7 +153,6 @@ int main( int argc, char **argv ) {
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "../assets/luminolGL.json");
-    scene.initWaterGL(&waterPlane);
 
     Callbacks::CallbacksManager::init(window, &scene, &picker);
     picker.attachToScene(&scene);
@@ -431,7 +426,6 @@ int main( int argc, char **argv ) {
         //****************************************** RENDER *******************************************
 
         // WATER
-        waterReflectionShader.updateUniform(Graphics::UBO_keys::WATER_Y_POS, waterHeight);
         waterReflectionShader.updateUniform(Graphics::UBO_keys::MVP, reflectedVP);
         waterReflectionShader.updateUniform(Graphics::UBO_keys::MV, reflectionViewMatrix);
         waterReflectionShader.updateUniform(Graphics::UBO_keys::MV_NORMAL, mvNormalReflected);
@@ -574,7 +568,7 @@ int main( int argc, char **argv ) {
         waterTextures.texture(0).bind(GL_TEXTURE0);
         waterNormals.bind(GL_TEXTURE1);
         gBufferFBO.color().bind(GL_TEXTURE2);
-        scene.drawWater();
+        scene.drawWater(reflectedVP);
         gBufferFBO.unbind();
 
         //******************************************************* SECOND PASS (Shadow Pass)
@@ -872,7 +866,7 @@ int main( int argc, char **argv ) {
             glViewport( 6*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            waterTextures.texture(0).bind(GL_TEXTURE0);
+            waterReflectionFBO.color().bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 

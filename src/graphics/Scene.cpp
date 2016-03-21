@@ -9,14 +9,14 @@
 #include <iomanip>
 
 namespace Graphics {
-    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes, bool debugBoundingBoxes):
+    Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes):
             _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3),
-            _ioHandler(ioHandler){
+            _ioHandler(ioHandler), _water(ModelMeshGroup::PATH_PLANE){
 
-        if(!scenePath.empty())
-            load(scenePath);
-        else
-            initGL();
+        scenePath.empty() ? initGL() : load(scenePath);
+
+        _water.initGLBuffers(_visibleTransformationsVBO);
+        _water.modelMeshGroup().removeTextures();
     }
 
     void Scene::initGL() {
@@ -34,17 +34,11 @@ namespace Graphics {
         }
     }
 
-    void Scene::drawWater(){
+    void Scene::drawWater(const glm::mat4 &VP){
         _visibleTransformations.clear();
-        _visibleTransformations.push_back(_water->getTransformationMatrix(0));
+        std::for_each(water().getTransformations().begin(), water().getTransformations().end(), [this](Geometry::Transformation& t){_visibleTransformations.push_back(t.getTRSMatrix());});
         _visibleTransformationsVBO.updateData(_visibleTransformations);
-        _water->vao().bind();
-        glDrawElementsInstancedBaseVertex(GL_TRIANGLES, _water->modelMeshGroup().allIndexes().size()*3, GL_UNSIGNED_INT, 0, 1, 0);
-    }
-
-    void Scene::initWaterGL(ModelMeshInstanced *water){
-        _water = water;
-        _water->initGLBuffers(_visibleTransformationsVBO);
+        _water.draw((int)_visibleTransformations.size());
     }
 
 
@@ -126,5 +120,17 @@ namespace Graphics {
 
     Geometry::Transformation& Scene::duplicateMesh(ModelMeshInstanced &meshInstanced, Geometry::Transformation &transformation) {
         return meshInstanced.addInstance(transformation);
+    }
+
+    ModelMeshInstanced &Scene::water() {
+        return _water;
+    }
+
+    const ModelMeshInstanced& Scene::water() const {
+        return _water;
+    }
+
+    void Scene::addWater(const Geometry::Transformation& trans) {
+        _water.addInstance(trans);
     }
 }

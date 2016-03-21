@@ -24,17 +24,17 @@ out block{
 
 uniform mat4 MVP;
 uniform mat4 MV;
-uniform float WaterYPos;
 
 void main(){
 	Out.TexCoord = TexCoord;
 	Out.Normal = Normal;
 	Out.Position = (InstanceTransform * vec4(Position,1)).xyz;
 
+    float waterYPos = InstanceTransform[1][3];
     if(IsReflection == 1)
-        gl_ClipDistance[0] = Out.Position.y < WaterYPos ? -1 : 1;
+        gl_ClipDistance[0] = Out.Position.y < waterYPos ? -1 : 1;
     else
-        gl_ClipDistance[0] = Out.Position.y > WaterYPos ? -1 : 1;
+        gl_ClipDistance[0] = Out.Position.y > waterYPos ? -1 : 1;
 
 	gl_Position = MVP*vec4(Out.Position, 1);
 }
