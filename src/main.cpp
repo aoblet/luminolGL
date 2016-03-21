@@ -102,7 +102,7 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
     Graphics::ShaderProgram pointLightShader(blitShader.vShader(), "../shaders/pointLight.frag");
-    Graphics::ShaderProgram indirectLightShader(blitShader.vShader(), "../shaders/indirectLight.frag");
+    Graphics::ShaderProgram ssaoMixBeautyShader(blitShader.vShader(), "../shaders/ssaoMixBeauty.frag");
     Graphics::ShaderProgram directionalLightShader(blitShader.vShader(), "../shaders/directionnalLight.frag");
     Graphics::ShaderProgram spotLightShader(blitShader.vShader(), "../shaders/spotLight.frag");
     Graphics::ShaderProgram debugShapesShader("../shaders/debug.vert", "", "../shaders/debug.frag");
@@ -116,6 +116,7 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram ssaoShader(blitShader.vShader(), "../shaders/ssao.frag");
     Graphics::ShaderProgram waterReflectionShader("../shaders/waterReflectionRefraction.vert", mainShader.fShader());
     Graphics::ShaderProgram waterRenderShader(mainShader.vShader(), "../shaders/water.frag");
+    Graphics::ShaderProgram ambientShader(blitShader.vShader(), "../shaders/ambient.frag");
 
 
     // Create Objects -------------------------------------------------------------------------------------------------------------------------------
@@ -196,9 +197,11 @@ int main( int argc, char **argv ) {
     pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
     pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
-    indirectLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
-    indirectLightShader.updateUniform(Graphics::UBO_keys::BEAUTY_BUFFER, 1);
-    indirectLightShader.updateUniform(Graphics::UBO_keys::SSAO_BUFFER, 2);
+    ssaoMixBeautyShader.updateUniform(Graphics::UBO_keys::BEAUTY_BUFFER, 0);
+    ssaoMixBeautyShader.updateUniform(Graphics::UBO_keys::SSAO_BUFFER, 1);
+
+    ambientShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
+    ambientShader.updateUniform(Graphics::UBO_keys::BEAUTY_BUFFER, 1);
 
     checkErrorGL("Uniforms");
 
@@ -407,7 +410,7 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
 
-        indirectLightShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
+        ambientShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
 
         // FX
         gammaShader.updateUniform(Graphics::UBO_keys::GAMMA, gamma);
@@ -467,6 +470,68 @@ int main( int argc, char **argv ) {
         scene.draw(vp);
         gBufferFBO.unbind();
 
+        // ------- SSAO ------
+        // Compute ssao from geometric buffer
+        fxFBO.bind();
+        fxFBO.changeCurrentTexture(0);
+        fxFBO.clearColor();
+
+        ssaoShader.useProgram();
+        gBufferFBO.position().bind(GL_TEXTURE0);    // position
+        gBufferFBO.depth().bind(GL_TEXTURE1);       // depth
+        gBufferFBO.normal().bind(GL_TEXTURE2);      // normal
+        ssaoNoiseTex.bind(GL_TEXTURE3);             // noise
+
+        quadVAO.bind();
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        //blur on ssao texture
+        if(sampleCount > 0){
+            // Use blur program shader
+            blurShader.useProgram();
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, 3);
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
+
+            // Write into Vertical Blur Texture
+            fxFBO.changeCurrentTexture(1);
+            // Clear the content of texture
+            fxFBO.clearColor();
+            // Read the texture processed by the Sobel operator
+            fxFBO.texture(0).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+            fxFBO.changeCurrentTexture(0);
+            // Clear the content of texture
+            fxFBO.clearColor();
+            // Write into Horizontal Blur Texture
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
+
+            // Read the texture processed by the Vertical Blur
+            fxFBO.texture(1).bind(GL_TEXTURE0);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        }
+
+        // We mix SSAO and diffuse color into gbuffer
+        gBufferFBO.bind();
+        quadVAO.bind();
+        ssaoMixBeautyShader.useProgram();
+        gBufferFBO.color().bind(GL_TEXTURE0);
+        fxFBO.texture(0).bind(GL_TEXTURE1);
+
+        // We need to disable depth writing
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+
+        // We change the gBuffer FBO attachments to avoid color attachments overwriting
+        gBufferFBO.setColorWritingOnly();
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        // Fall back on default behavior
+        gBufferFBO.setDefaultWriting();
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+        gBufferFBO.unbind();
+
 
         //----------------------- WATER -------------
         //----------------------- REFLECTION SCENE -------------
@@ -500,14 +565,15 @@ int main( int argc, char **argv ) {
         //----------------------- REFLECTION - REFRACTION - Wave Animation into main scene (gbuffer) -------------
         mainShader.useProgram();
         waterRenderShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
-        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_REFRACTION_TEXTURE, 2);
         waterRenderShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP, 1);
+        waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_REFRACTION_TEXTURE, 2);
+
 
         gBufferFBO.bind();
         waterRenderShader.useProgram();
         waterTextures.texture(0).bind(GL_TEXTURE0);
-        gBufferFBO.color().bind(GL_TEXTURE2);
         waterNormals.bind(GL_TEXTURE1);
+        gBufferFBO.color().bind(GL_TEXTURE2);
         scene.drawWater();
         gBufferFBO.unbind();
 
@@ -561,7 +627,7 @@ int main( int argc, char **argv ) {
             spotLightShader.updateUniform(Graphics::UBO_keys::WORLD_TO_LIGHT_SCREEN, worldToLightScreen);
             quadVAO.bind();
 
-            gBufferFBO.color().bind(GL_TEXTURE0);
+            fxFBO.texture(4).bind(GL_TEXTURE0);
             gBufferFBO.normal().bind(GL_TEXTURE1);
             gBufferFBO.depth().bind(GL_TEXTURE2);
             shadowMapFBO.shadowTexture().bind(GL_TEXTURE3);
@@ -612,7 +678,7 @@ int main( int argc, char **argv ) {
         pointLightShader.useProgram(); // point light shaders
         quadVAO.bind(); // Bind quad vao
 
-        gBufferFBO.color().bind(GL_TEXTURE0);
+        fxFBO.texture(4).bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
         gBufferFBO.depth().bind(GL_TEXTURE2);
         // gBufferFBO.shadow().bind(GL_TEXTURE3);
@@ -651,7 +717,7 @@ int main( int argc, char **argv ) {
         // ------- SKYBOX ------
         // Render skybox texture combined with beauty: mask with depth buffer
         // All in one pass
-        fxFBO.changeCurrentTexture(2);
+        fxFBO.changeCurrentTexture(3);
         fxFBO.clearColor();
         skybox.updateUniforms(screenToWorldUnTranslated, 0, 1, 2);
         skybox.useProgramShader();
@@ -661,50 +727,14 @@ int main( int argc, char **argv ) {
         beautyFBO.beauty().bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // ------- SSAO ------
-
-        fxFBO.changeCurrentTexture(0);
-        ssaoShader.useProgram();
-        gBufferFBO.position().bind(GL_TEXTURE0); // position
-        gBufferFBO.depth().bind(GL_TEXTURE1); // depth
-        gBufferFBO.normal().bind(GL_TEXTURE2); // normal
-        ssaoNoiseTex.bind(GL_TEXTURE3); // noise
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-        //blur on ssao texture
-        if(sampleCount > 0){
-            // Use blur program shader
-            blurShader.useProgram();
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, 3);
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
-
-            // Write into Vertical Blur Texture
-            fxFBO.changeCurrentTexture(1);
-            // Clear the content of texture
-            fxFBO.clearColor();
-            // Read the texture processed by the Sobel operator
-            fxFBO.texture(0).bind(GL_TEXTURE0);
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-            // Write into Horizontal Blur Texture
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
-            fxFBO.changeCurrentTexture(0);
-            // Clear the content of texture
-            fxFBO.clearColor();
-            // Read the texture processed by the Vertical Blur
-            fxFBO.texture(1).bind(GL_TEXTURE0);
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
-
         // ------- INDIRECT LIGHT ------
-        indirectLightShader.useProgram();
+        ambientShader.useProgram();
 
         fxFBO.changeCurrentTexture(1);
         fxFBO.clearColor();
 
         gBufferFBO.color().bind(GL_TEXTURE0); // color
-        fxFBO.texture(2).bind(GL_TEXTURE1); // beauty
-        fxFBO.texture(0).bind(GL_TEXTURE2); // ssao
+        fxFBO.texture(3).bind(GL_TEXTURE1); // beauty
 
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
@@ -780,7 +810,7 @@ int main( int argc, char **argv ) {
 
         // ------- GAMMA ------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+        quadVAO.bind();
         gammaShader.useProgram();
         fxFBO.texture(1).bind(GL_TEXTURE0);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);

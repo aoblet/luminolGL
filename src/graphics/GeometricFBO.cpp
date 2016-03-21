@@ -6,10 +6,7 @@ void GeometricFBO::build(){
     bind();
     _drawBuffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
     glDrawBuffers((GLsizei) _drawBuffers.size(), &_drawBuffers[0]);
-    attachTexture(_drawBuffers[0], _color.glId());
-    attachTexture(_drawBuffers[1], _normal.glId());
-    attachTexture(_drawBuffers[2], _position.glId());
-    attachTexture(GL_DEPTH_ATTACHMENT, _depth.glId());
+    setDefaultWriting();
     FrameBufferObject::checkStatus();
     unbind();
 }
@@ -38,4 +35,18 @@ Texture& GeometricFBO::depth(){
 
 Texture &GeometricFBO::position() {
     return _position;
+}
+
+
+void GeometricFBO::setColorWritingOnly() {
+    attachTexture(_drawBuffers[1], 0);      // normal
+    attachTexture(_drawBuffers[2], 0);      // positions
+    attachTexture(GL_DEPTH_ATTACHMENT, 0);  // depth
+}
+
+void GeometricFBO::setDefaultWriting() {
+    attachTexture(_drawBuffers[0], _color.glId());
+    attachTexture(_drawBuffers[1], _normal.glId());    // normal
+    attachTexture(_drawBuffers[2], _position.glId());   // positions
+    attachTexture(GL_DEPTH_ATTACHMENT, _depth.glId());  // depth
 }
