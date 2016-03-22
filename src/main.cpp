@@ -65,6 +65,7 @@ extern const unsigned int DroidSans_ttf_len;
 
 int main( int argc, char **argv ) {
 
+
     // GLOG debug level, 0 == all
     FLAGS_minloglevel = 0;
 
@@ -123,7 +124,6 @@ int main( int argc, char **argv ) {
     waterPlane.addInstance(glm::vec3(0,1,0), glm::vec4(0), glm::vec3(10000,1,10000));
     const float& waterHeight = waterPlane.getTransformation(0).position.y;
 
-
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
 
@@ -153,6 +153,9 @@ int main( int argc, char **argv ) {
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
     Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
+
+
+
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, "../assets/luminolGL.json");
@@ -328,6 +331,13 @@ int main( int argc, char **argv ) {
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
+
+//    DLOG(INFO) << "creating meshgrid...";
+//    Graphics::Texture gridTex("../assets/textures/mountains/03.png");
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 30);
+//    grid.saveOBJ("../assets/models/mountains/", "mountain_test");
+//    DLOG(INFO) << "meshgrid created !";
+//    return 0;
 
     // Identity matrix
     glm::mat4 objectToWorld;

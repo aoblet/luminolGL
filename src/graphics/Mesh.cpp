@@ -189,7 +189,7 @@ namespace Graphics
     }
 
 
-    Mesh Mesh::genGrid(int width, int height, const Texture* heightmap, glm::vec3 scale, float intensity) {
+    Mesh Mesh::genGrid(int width, int height, const Texture* heightmap, glm::vec3 scale, float intensity, int smooth) {
         Mesh mesh;
 
         mesh._vertexCount = 0;
@@ -208,10 +208,51 @@ namespace Graphics
             for (int j = 0; j < width; ++j)
             {
                 float zValue = 0;
+
                 if(heightmap){
+                    float top = 0;
+                    float bottom = 0;
+                    float left = 0;
+                    float right = 0;
+                    float center = 0;
+
                     int texI = int((i / float(height)) * float(heightmap->height()));
                     int texJ = int((j / float(width)) * float(heightmap->width()));
-                    zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
+
+                    int padding = smooth;
+
+//                    if(i <= padding - 1 || j <= padding - 1|| i >= height - padding || j >= width - padding){
+//                        zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
+//                    }
+//                    else{
+                        float count = 0;
+                        float mean = 0;
+                        for(int x = -padding; x < padding; ++x){
+                            for(int y = -padding; y < padding; ++y){
+                                if( i - glm::abs(y) < 0 || j - glm::abs(x) < 0 ||  i + y > height || j + x > width){
+                                    if(i - glm::abs(y) < 0 ||  i + y > height){
+                                        mean += texData[(texJ + (texI - y) * heightmap->height() + x)  * 3] / (255.f);
+                                    }
+                                    else{
+                                        mean += texData[(texJ + (texI + y) * heightmap->height() - x)  * 3] / (255.f);
+                                    }
+                                }
+                                else{
+                                    mean += texData[(texJ + (texI + y) * heightmap->height() + x) * 3] / (255.f);
+                                }
+                                count += 1.f;
+                            }
+                        }
+
+                        mean /= count;
+                        zValue = mean;
+//                    }
+
+
+
+//                    zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
+
+
                 }
 
                 zValue *= intensity;
@@ -307,45 +348,59 @@ namespace Graphics
 
     void Mesh::saveOBJ(const std::string &filePath, const std::string& filename) {
 
-        std::ofstream file (filePath + filename + ".obj");
+        // Write .obj
+        std::ofstream objFile(filePath + filename + ".obj");
 
-        if (!file.is_open())
-            throw std::runtime_error("Unable to save mesh at \"" + filePath + "\"");
+        if (!objFile.is_open())
+            throw std::runtime_error("Unable to save mesh obj at \"" + filePath + "\"");
 
-        file << "# " + filename + ".obj" << std::endl;
-        file << "mtllib " + filename + ".mtl" << std::endl;
+        objFile << "# " + filename + ".obj" << std::endl;
+        objFile << "mtllib " + filename + ".mtl" << std::endl;
 
         // write positions
         for(unsigned int i = 0; i < _vertices.size(); ++i){
-            file << "v ";
-            file << _vertices[i].position.x << " ";
-            file << _vertices[i].position.y << " ";
-            file << _vertices[i].position.z << std::endl;
+            objFile << "v ";
+            objFile << _vertices[i].position.x << " ";
+            objFile << _vertices[i].position.y << " ";
+            objFile << _vertices[i].position.z << std::endl;
         }
 
         // write texcoords
         for(unsigned int i = 0; i < _vertices.size(); ++i){
-            file << "vt ";
-            file << _vertices[i].texcoord.x << " ";
-            file << _vertices[i].texcoord.y << std::endl;
+            objFile << "vt ";
+            objFile << _vertices[i].texcoord.x << " ";
+            objFile << _vertices[i].texcoord.y << std::endl;
         }
 
         // write normals
         for(unsigned int i = 0; i < _vertices.size(); ++i){
-            file << "vn ";
-            file << _vertices[i].normal.x << " ";
-            file << _vertices[i].normal.y << " ";
-            file << _vertices[i].normal.z << std::endl;
+            objFile << "vn ";
+            objFile << _vertices[i].normal.x << " ";
+            objFile << _vertices[i].normal.y << " ";
+            objFile << _vertices[i].normal.z << std::endl;
         }
 
-        file << "usemtl " + filename << std::endl;
+        objFile << "usemtl " + filename << std::endl;
         //write indexes
         for(unsigned int i = 0; i < _elementIndex.size(); i+=3){
-            file << "f ";
-            file << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << " ";
-            file << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << "/" << _elementIndex[i+1] + 1 << " ";
-            file << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << "/" << _elementIndex[i+2] + 1 << std::endl;
+            objFile << "f ";
+            objFile << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << "/" << _elementIndex[i] + 1 << " ";
+            objFile << _elementIndex[i + 1] + 1 << "/" << _elementIndex[i + 1] + 1 << "/" << _elementIndex[i + 1] + 1 << " ";
+            objFile << _elementIndex[i + 2] + 1 << "/" << _elementIndex[i + 2] + 1 << "/" << _elementIndex[i + 2] + 1 << std::endl;
         }
 
+        // Write .mtl
+        std::ofstream mtlFile(filePath + filename + ".mtl");
+
+        if (!mtlFile.is_open())
+            throw std::runtime_error("Unable to save mesh mtl at \"" + filePath + "\"");
+
+
+        mtlFile << "#replace ext by your image extension " << std::endl;
+        mtlFile << "newmtl " << filename << std::endl;
+        mtlFile << "illum 2" << std::endl;
+        mtlFile << "map_Kd " << filename << "_diff.ext" << std::endl;
+        mtlFile << "map_Bump " << filename << "_normal.ext" << std::endl;
+        mtlFile << "map_Ks " << filename << "_spec.ext" << std::endl;
     }
 }

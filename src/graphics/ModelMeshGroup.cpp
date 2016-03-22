@@ -29,6 +29,7 @@ ModelMeshGroup::ModelMeshGroup(const std::string &modelPath) {
     loadMeshes(scene);
     computeBoundingBox();
 
+
     DLOG(INFO) << "Vertices count " << _allVertices.size();
     DLOG(INFO) << "Textures count " << _textures.size();
     DLOG(INFO) << "Loading model " << modelPath << " DONE" << std::endl << std::endl;
