@@ -69,6 +69,7 @@ int main( int argc, char **argv ) {
 
     int DPI;
     GLFWwindow * window = nullptr;
+    // glm::ivec2 dimViewport(1280, 720);
     glm::ivec2 dimViewport(1280, 720);
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
@@ -166,10 +167,25 @@ int main( int argc, char **argv ) {
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(-1, -1, -1), glm::vec3(1), 1);
+    lightHandler.setDirectionalLight(glm::vec3(0.818, -0.862, -1), glm::vec3(1), 1);
 
     glm::vec3 ambient(1);
     float ambientIntensity = 0.2;
+
+    ////////////// Sun ---- Point Light 
+    lightHandler.addPointLight(glm::vec3(-15000, 12000, 15000), glm::vec3(24.5, 18.5, 0.05), 0.8, 2.0, Light::SUN);
+
+    ////////////// Firefly fixe---- Point Lights
+    lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
+    
+    ////////////// Tornado Fireflies ---- Point Light  // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
+    // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
+
+    ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height 
+    lightHandler.createRisingFireflies(500, 200, 200, 80); 
+    
+    ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
+    lightHandler.createRandomFireflies(500, 200, 200, 70);
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
@@ -382,6 +398,13 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BIAS, shadowBiasDirLight);
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+
+        pointLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        float windowratio = (float)width / (float)height;
+        pointLightShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
+        pointLightShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
+
 
         indirectLightShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
 
@@ -420,6 +443,8 @@ int main( int argc, char **argv ) {
         gBufferFBO.clear();
         scene.draw(vp);
         gBufferFBO.unbind();
+
+
 
         //******************************************************* SECOND PASS (Shadow Pass)
         // Update Camera pos and screenToWorld matrix to all light shaders
@@ -518,27 +543,7 @@ int main( int argc, char **argv ) {
         uboLight.updateBuffer(&lightHandler._directionalLight, sizeof(Light::DirectionalLight));
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        // ------------------------------------ Point Lights
-        pointLightShader.useProgram(); // point light shaders
-        quadVAO.bind(); // Bind quad vao
 
-        gBufferFBO.color().bind(GL_TEXTURE0);
-        gBufferFBO.normal().bind(GL_TEXTURE1);
-        gBufferFBO.depth().bind(GL_TEXTURE2);
-        // gBufferFBO.shadow().bind(GL_TEXTURE3);
-
-        for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
-            std::vector<glm::vec2> littleQuadVertices;
-            if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation)){
-                //quad size reduction and frustum according to the light position, intensity, color and attenuation
-                quadVerticesVbo.updateData(littleQuadVertices);
-                quadIdsVbo.updateData(quadIds);
-                uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-            }
-        }
-        quadVerticesVbo.updateData(quadVertices);
-        quadIdsVbo.updateData(quadIds);
 
         //------------------------------------- Post FX Draw
 
@@ -570,6 +575,45 @@ int main( int argc, char **argv ) {
         gBufferFBO.depth().bind(GL_TEXTURE1);
         beautyFBO.beauty().bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+
+        // ------------------------------------ Point Lights
+        pointLightShader.useProgram(); // point light shaders
+        quadVAO.bind(); // Bind quad vao
+        glEnable(GL_BLEND);
+
+        gBufferFBO.color().bind(GL_TEXTURE0);
+        gBufferFBO.normal().bind(GL_TEXTURE1);
+        gBufferFBO.depth().bind(GL_TEXTURE2);
+        // gBufferFBO.shadow().bind(GL_TEXTURE3);
+
+        // Sun
+        uboLight.updateBuffer(&lightHandler._pointLights[0], sizeof(Light::PointLight));
+        pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, true);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, false);
+
+        for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
+            std::vector<glm::vec2> littleQuadVertices;
+            if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation, lightHandler._pointLights[i]._type, timeGLFW)){
+                
+                if(lightHandler._pointLights[i]._type == 5 ) lightHandler._pointLights[i].computeRisingFireflies(timeGLFW);
+                if(lightHandler._pointLights[i]._type == 2 ) lightHandler._pointLights[i].computeRandomFireflies(timeGLFW);
+                
+                //quad size reduction and frustum according to the light position, intensity, color and attenuation
+                quadVerticesVbo.updateData(littleQuadVertices);
+                quadIdsVbo.updateData(quadIds);
+                
+                uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
+                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+            }
+        }
+        quadVerticesVbo.updateData(quadVertices);
+        quadIdsVbo.updateData(quadIds);
+
+        glDisable(GL_BLEND);
+        
+        // std::cout << timeGLFW << std::endl;
 
         // ------- SSAO ------
 
@@ -605,6 +649,8 @@ int main( int argc, char **argv ) {
             fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
+
+
 
         // ------- INDIRECT LIGHT ------
         indirectLightShader.useProgram();
@@ -651,6 +697,8 @@ int main( int argc, char **argv ) {
             fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
+
+
 
         // ------- COC ------
         // Use circle of confusion program shader

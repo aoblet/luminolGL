@@ -12,6 +12,7 @@ uniform sampler2D NormalBuffer;
 uniform sampler2D DepthBuffer;
 
 uniform mat4 WorldToLightScreen;
+uniform mat4 MVP;
 uniform sampler2DShadow ShadowBuffer;
 uniform float ShadowBias;
 
@@ -156,6 +157,8 @@ void main(void){
 
 	vec3 color = computeFragmentColor(  DirectionnalLight.Color, DirectionnalLight.Intensity,
 	                                    computeIlluminationParams(DirectionnalLight.Direction));
+
+
 
     // Shadow processing
     // World to light screen point (projected)

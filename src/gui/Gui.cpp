@@ -108,6 +108,9 @@ namespace Gui{
         imgui3Slider("Red", &lightHandler._directionalLight._color.r, 0, 1, 0.01, 1);
         imgui3Slider("Green", &lightHandler._directionalLight._color.g, 0, 1, 0.01, 2);
         imgui3Slider("Blue", &lightHandler._directionalLight._color.b, 0, 1, 0.01, 3);
+        imgui3Slider("Red", &lightHandler._directionalLight._color.r, 0, 300, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._directionalLight._color.g, 0, 300, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._directionalLight._color.b, 0, 300, 0.01, 3);
         imguiSlider("DL: intensity", &lightHandler._directionalLight._intensity, attBegin, attEnd, attStep);
         imguiSlider("DL: attenuation", &lightHandler._directionalLight._attenuation, attBegin, attEnd, attStep);
         addUnindent();
@@ -143,18 +146,39 @@ namespace Gui{
 
     void Gui::addSliderPointLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
 
-        for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
+        float size = 15000.0;
+        addIndent();
+        addLabel("SUN: ");
+        addIndent();
+        imguiSlider("PL: position.x", &lightHandler._pointLights[0]._pos.x, -size, size, posStep);
+        imguiSlider("PL: position.y", &lightHandler._pointLights[0]._pos.y, -3.0, size, posStep);
+        imguiSlider("PL: position.z", &lightHandler._pointLights[0]._pos.z, -size, size, posStep);
+        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 100, 0.001);
+        imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 4, attStep);
+        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 2, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 2, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 2, 0.01, 3);
+        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 300, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 300, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 300, 0.01, 3);
+        addUnindent();
+        addUnindent();
+
+        for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
             addIndent();
             addLabel("Point Light: ", (int)i);
             addIndent();
             imguiSlider("PL: position.x", &lightHandler._pointLights[i]._pos.x, posBegin, posEnd, posStep);
-            imguiSlider("PL: position.y", &lightHandler._pointLights[i]._pos.y, -3.0, 12.0, posStep);
+            imguiSlider("PL: position.y", &lightHandler._pointLights[i]._pos.y, -3.0, 200.0, posStep);
             imguiSlider("PL: position.z", &lightHandler._pointLights[i]._pos.z, posBegin, posEnd, posStep);
-            imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 1, 0.001);
+            imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 5, 0.001);
             imguiSlider("PL: attenuation", &lightHandler._pointLights[i]._attenuation, attBegin, attEnd, attStep);
-            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 1, 0.01, 1);
-            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 1, 0.01, 2);
-            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 1, 0.01, 3);
+            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 2, 0.01, 1);
+            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 2, 0.01, 2);
+            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 2, 0.01, 3);
+            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 100, 0.01, 1);
+            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 100, 0.01, 2);
+            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 100, 0.01, 3);
             addUnindent();
         }
         addSeparatorLine();

@@ -24,6 +24,10 @@ namespace Graphics{
         const std::string TIME             = "Time";
         const std::string SPECULAR_POWER   = "SpecularPower";
 
+        // Fireflies
+        const std::string WINDOW_RATIO     = "WindowRatio";
+        const std::string IS_SUN           = "IsSun";
+
         // Shadow
         const std::string SHADOW_MVP                    = "ShadowMVP";
         const std::string SHADOW_MV                     = "ShadowMV";

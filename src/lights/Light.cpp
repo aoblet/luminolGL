@@ -11,12 +11,12 @@ namespace Light{
 
 	}
 
-	void LightHandler::addPointLight(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
-		_pointLights.push_back(PointLight(pos,color,intensity,attenuation));
+	void LightHandler::addPointLight(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation, PointLightBehavior type, int lastChangeDir, float multVelocity){
+		_pointLights.push_back(PointLight(pos,color,intensity,attenuation, type, lastChangeDir, multVelocity));
 	}
 
 	void LightHandler::addPointLight(PointLight pl){
-		_pointLights.push_back(PointLight(pl._pos, pl._color, pl._intensity, pl._attenuation));
+		_pointLights.push_back(PointLight(pl._pos, pl._color, pl._intensity, pl._attenuation, pl._type));
 	}
 
 	void LightHandler::setDirectionalLight(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation){
@@ -35,48 +35,34 @@ namespace Light{
 		_spotLights.push_back(sl);
 	}
 
-	// bool LightHandler::isVisible(const glm::mat4 &MVP)  const {
-	//         glm::vec4 projInitPoint = MVP * glm::vec4(_points[0], 1.0);
+	glm::mat4 LightHandler::rotationMatrix(glm::vec3 axis, float angle)
+	{
+	    axis = normalize(axis);
+	    float s = sin(angle);
+	    float c = cos(angle);
+	    float oc = 1.0 - c;
 
-	//         if(projInitPoint.z < 0) return false;
+	    return glm::mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+	                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+	                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+	                0.0,                                0.0,                                0.0,                                1.0);
+	}
 
-	//         projInitPoint /= projInitPoint.w;
-
-	//         float xmin = projInitPoint.x;
-	//         float xmax = projInitPoint.x;
-	//         float ymin = projInitPoint.y;
-	//         float ymax = projInitPoint.y;
-
-	//         for(auto& point : _points){
-	//             glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
-	//             projPoint /= projPoint.w;
-	//             if( projPoint.x < xmin) xmin = projPoint.x;
-	//             if( projPoint.y > ymax) ymax = projPoint.y;
-	//             if( projPoint.x > xmax) xmax = projPoint.x;
-	//             if( projPoint.y < ymin) ymin = projPoint.y;
-	//         }
-
-	//         float limit = 1;
-	//         return !(
-	//                     (xmax<-limit) ||
-	//                     (ymax<-limit) ||
-	//                     (xmin>limit)  ||
-	//                     (ymin>limit)
-	//                 );
-	//     }
-
-
-	bool LightHandler::isOnScreen(const glm::mat4 & MVP, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 &pos, const glm::vec3 & color, const float & intensity, const float & attenuation){
+	bool LightHandler::isOnScreen(const glm::mat4 & MVP, std::vector<glm::vec2> & littleQuadVertices, const glm::vec3 &pos, const glm::vec3 & color, const float & intensity, const float & attenuation, const PointLightBehavior & type, float & t){
 
 		float linear = 1.7;
         float maxBrightness = std::max(std::max(color.r, color.g), color.b);
 		float radius = 1.0;
 	  	radius = ( (-linear + std::sqrt(linear * linear - 4 * attenuation * (1.0 - (256.0 / 5.0) 
-	        	* maxBrightness))) / (2 * attenuation) ) /2;
+	        	* maxBrightness))) / (2 * attenuation) ) /4 ;
 
+
+		// radius =  intensity / attenuation * 50;
+		
 		float dx = radius;
 
-        if(DEBUG) std::cout << "radius: " << dx << " && attenuation: " << attenuation << std::endl;
+
+        if(DEBUG) std::cout << "radius: " << dx << " && attenuation: " << attenuation << " && maxBrightness: " << maxBrightness << std::endl;
 
         // création d'un cube d'influence autour de la point light
         std::vector<glm::vec3> cube;
@@ -90,7 +76,15 @@ namespace Light{
         cube.push_back(glm::vec3(px-dx,py+dx,pz+dx)); // left top front
         cube.push_back(glm::vec3(px+dx,py+dx,pz+dx)); // right top front
 
-		glm::vec4 projInitPoint = MVP * glm::vec4(cube[0], 1.0);
+        glm::vec3 axis = glm::vec3(0.0,1.0,0.0);
+        float w = 0;
+        if(type == TORNADO){
+        	axis = glm::vec3(0.0,-1.0,0.0);	
+        	w = t;
+        }
+
+        glm::mat4 rotateMatrix = rotationMatrix(axis , w);
+		glm::vec4 projInitPoint = MVP * rotateMatrix * glm::vec4(cube[0], 1.0);
 
 	    // if(projInitPoint.z < 0) return false;
 
@@ -102,7 +96,7 @@ namespace Light{
         float ymax = projInitPoint.y;
 
         for(auto& point : cube){
-            glm::vec4 projPoint = MVP * glm::vec4(point, 1.0);
+            glm::vec4 projPoint = MVP * rotateMatrix * glm::vec4(point, 1.0);
             projPoint /= projPoint.w;
             if( projPoint.x < xmin) xmin = projPoint.x;
             if( projPoint.y > ymax) ymax = projPoint.y;
@@ -112,10 +106,11 @@ namespace Light{
 
         if(DEBUG) std::cout << "Left: " << xmin << " Right: " << xmax << " Top: " << ymax << " Bottom: " << ymin << std::endl; 
 
-        littleQuadVertices.push_back(glm::vec2(xmin, ymin));
-        littleQuadVertices.push_back(glm::vec2(xmax, ymin));
-        littleQuadVertices.push_back(glm::vec2(xmin, ymax));
-        littleQuadVertices.push_back(glm::vec2(xmax, ymax));
+        float m = 0.02f; // mult
+        littleQuadVertices.push_back(glm::vec2(xmin-m, ymin-m));
+        littleQuadVertices.push_back(glm::vec2(xmax+m, ymin-m));
+        littleQuadVertices.push_back(glm::vec2(xmin-m, ymax+m));
+        littleQuadVertices.push_back(glm::vec2(xmax+m, ymax+m));
 
         float limit = 1.1;
 		// if( ( (xmin > -limit && xmin < limit) || (xmax > -limit && xmax < limit) ) && ( (ymax > -limit && ymax < limit) || (ymin > -limit && ymin < limit) )  )
@@ -130,73 +125,104 @@ namespace Light{
 	}	
 
 
+	void LightHandler::createFirefliesTornado(int fd, int rayon, int step, const int & nbFireflies, const int & multCounterCircle, float w, float yFirstHeight){
+		srand (time(NULL));
+
+	    int counterCircle = 0; 
+	    for(int i = 0; i < nbFireflies; ++i){
+
+	        if( i == counterCircle*multCounterCircle ){ 
+	          counterCircle++;
+	          rayon += step; 
+	        } 
+
+	        glm::vec3 fireflyPosition = glm::vec3( 
+	            fd + 3 * cos(i+w*2* M_PI /nbFireflies)  
+	            ,yFirstHeight + rayon
+	            ,fd + 3 * sin(i+w*2* M_PI /nbFireflies) 
+	        );
+
+	        glm::vec3 fireflyColor = getRandomColors(counterCircle);
+	        fireflyColor = glm::vec3(0.8,0.2,0.8);
+	        float intensity = 0.1;
+
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::TORNADO);
+		}	
+
+	}
+
+	void LightHandler::createRisingFireflies(const int & nbFireflies, const int & x, const int & z, const int & y){
+		srand (time(NULL));
+
+		for(int i = 0; i < nbFireflies; ++i){
+			
+			glm::vec3 fireflyPosition = glm::vec3( 
+	            rand() % (2*x) + 1 - x
+	            , - rand() % y
+	            , rand() % (2*z) + 1 - z
+	        );
+
+	        glm::vec3 fireflyColor = getRandomColors(i);
+	        float multVelocity = ( rand() % 30 + 10 ) / 10;
+	        float intensity = 0.1;
+
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::RISING, 5, multVelocity);
+	    }
+
+	}
 
 
+
+	void LightHandler::createRandomFireflies(const int & nbFireflies, const int & x, const int & z, const int & y){
+		
+		srand (time(NULL));
+
+		for(int i = 0; i < nbFireflies; ++i){
+			
+			glm::vec3 fireflyPosition = glm::vec3( 
+	            rand() % (2*x) + 1 - x
+	            , rand() % 10 + 5
+	            , rand() % (2*z) + 1 - z
+	        );
+
+	        glm::vec3 fireflyColor = getRandomColors(i);
+
+	        int lastChangeDir = rand() % 15 + 4;
+	        float multVelocity = ( rand() % 30 + 10 ) / 10;
+	        float intensity = 0.1;
+
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::RANDOM_DISPLACEMENT, lastChangeDir, multVelocity);
+	    }
+
+	}
+
+	glm::vec3 LightHandler::getRandomColors(int i){
+		
+		// float red = fmaxf(sin(i)+cos(i), 0.1);
+	 	//	float green = fmaxf(cos(i), 0.1);
+	 	//	float blue = fmaxf(sin(i)+cos(i), 0.1);
+
+	    float red = ( rand() % 10 ) / 10.f;
+	    float green = ( rand() % 10 ) / 10.f;
+	    float blue = ( rand() % 10 ) / 10.f;
+
+		// si la lumière n'est pas assez puissante on va booster un channel au hasard
+	    if(red<0.4 && green <0.4 && blue < 0.4){
+	        int r = rand() % 3 + 1;
+	        if(r==1) blue +=0.5; else if(r==2) green +=0.5; else red +=0.5; 
+	    } 
+	    else if(red > 0.8 && green > 0.8 && blue > 0.8){
+	    	int r = rand() % 3 + 1;
+	        if(r==1) blue -=0.6; else if(r==2) green -=0.6; else red -=0.6; 
+	    }
+	    else if(red > 0.8 && blue > 0.8){
+	    	int r = rand() % 2 + 1;
+	        if(r==1) blue -=0.3; else red -=0.3; 
+	    }
+
+	    // std::cout << red << " " << green << " " << blue << std::endl;
+	    return glm::vec3( red , green , blue);
+	}
 
 
 }
-
-
-
-//         //------------------------------------ Point Lights
-//        // point light shaders
-//        pointLightShader.useProgram();
-
-//        // Bind quad vao
-//        glBindVertexArray(vao[2]);
-
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-//        glActiveTexture(GL_TEXTURE2);
-//        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
-
-//        unsigned int nbLightsByCircle[] = {6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78};
-//        int counterCircle = 0;
-//        unsigned int nbPointLights = 30;
-//        float xOffset = glm::sqrt(float(instanceNumber))/2;
-//        float zOffset = glm::sqrt(float(instanceNumber))/2;
-
-//        float rayon = sqrt(xOffset*2 + zOffset*2);
-
-
-//        int cptVisiblePointLight = 0;
-
-//        std::vector<Light> lights;
-
-//        for(size_t i = 0; i < nbPointLights; ++i){
-
-//            Light light(glm::vec3(0,0,0), glm::vec3(1,1,1), lightIntensity, lightAttenuation);
-
-//            if( i == nbLightsByCircle[counterCircle] ){
-//              counterCircle++;
-//              rayon += 3;
-//            }
-
-
-//            float coeff = rayon * sin(t);
-//            float w = t + t;
-
-// //            coeff = 20;
-// //            w = 0;
-
-//            light._pos = glm::vec3(
-//                coeff * cos(i+ M_PI /nbPointLights) + xOffset,
-//                pointLightsYOffset,
-//                coeff * sin(i+ M_PI /nbPointLights) + zOffset);
-
-//            light._color.x = cos(i);
-//            light._color.y = sin(3*i);
-//            light._color.y = cos(i*2);
-
-
-//            glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-//            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Light), &light);
-//            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-// //            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-//            lights.push_back(light);
-
-//        }
