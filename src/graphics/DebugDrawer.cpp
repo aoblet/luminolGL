@@ -6,6 +6,7 @@
 #include <glog/logging.h>
 #include <graphics/UBO_keys.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 namespace Graphics
 {
@@ -52,6 +53,20 @@ namespace Graphics
 
         _drawer._VAO.bind();
         glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, (void*)0);
+    }
+
+
+    void DebugDrawer::drawSpline(const Geometry::Spline3D &spline, int subdivisions, ShaderProgram &program, const glm::vec3 &color, float lineWidth) {
+        for(int t = 0; t <= subdivisions; ++t){
+            float interpolation1 = t / float(subdivisions);
+            float interpolation2 = (t+1) / float(subdivisions);
+
+            drawRay(spline.cubicInterpolation(interpolation1), spline.cubicInterpolation(interpolation2), program, color, lineWidth);
+        }
+
+        for(size_t i = 0; i < spline.size(); ++i){
+            drawPoint(spline[i], program, color, 10);
+        }
     }
 
     void DebugDrawer::drawTriangle(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, ShaderProgram &program, const glm::vec3 &color) {

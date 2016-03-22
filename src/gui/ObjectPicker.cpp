@@ -36,12 +36,12 @@ namespace Gui
         if(!click && _longClick) _longClick = false;
         if(click && _picked) _longClick = true;
 
-        glm::vec3 front = camera.getFocal() * camera.getFront();
+        glm::vec3 front = camera.getFront();
         float mouseNormX = ((cursorPosition.x / camera.getViewPort().x) * 2 * camera.getNormalizedViewPort().x - 1 * camera.getNormalizedViewPort().x);
         float mouseNormY = ((cursorPosition.y / camera.getViewPort().y) * 2 * camera.getNormalizedViewPort().y - 1 * camera.getNormalizedViewPort().y);
 
-        glm::vec3 left = - camera.getLeft() * camera.getFocal() * mouseNormX;
-        glm::vec3 up = camera.getUp() * camera.getFocal() * mouseNormY;
+        glm::vec3 left = - camera.getLeft() * mouseNormX;
+        glm::vec3 up = camera.getUp() * mouseNormY;
         glm::vec3 rayDir = glm::normalize(front + left + up);
         glm::vec3 rayOrigin = camera.getEye();
 
@@ -84,7 +84,7 @@ namespace Gui
                 box.transformAAB(trans.getRMatrix()* trans.getSMatrix());
 
                 if(box.intersect(rayOrigin, rayDir, trans.getTMatrix(), &dist)){
-                    if(dist < minDist){
+                    if(dist < minDist && dist > 0){
                         minDist = dist;
                         _currentMeshPicked      = meshInstance;
                         _targetTransformation   = &trans;

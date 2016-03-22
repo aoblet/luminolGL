@@ -15,11 +15,11 @@ namespace Geometry
     private:
         std::vector<glm::vec3> _points;
 
-        int findIndex(float t);
+        int findIndex(float t) const;
 
-        float findInterval(float t);
+        float findInterval(float t) const;
 
-        int at(int index);
+        int at(int index) const;
 
     public:
         void add(const glm::vec3 &point);
@@ -30,13 +30,13 @@ namespace Geometry
 
         glm::vec3& operator[](int index);
 
-        size_t size();
+        size_t size() const;
 
         void clear();
 
-        glm::vec3 linearInterpolation(float t);
+        glm::vec3 linearInterpolation(float t) const;
 
-        glm::vec3 cubicInterpolation(float t);
+        glm::vec3 cubicInterpolation(float t) const;
 
         void load(const std::string & filePath);
         void save(const std::string & filePath) const;

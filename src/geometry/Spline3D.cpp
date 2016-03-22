@@ -11,15 +11,15 @@
 
 namespace Geometry
 {
-    int Spline3D::findIndex(float t){
+    int Spline3D::findIndex(float t) const{
         return int( t * ( _points.size() - 1 ) );
     }
 
-    float Spline3D::findInterval(float t){
+    float Spline3D::findInterval(float t) const{
         return glm::mod(t * ( _points.size() - 1 ), 1.f);
     }
 
-    int Spline3D::at(int index){
+    int Spline3D::at(int index) const{
         return glm::clamp(index, 0, int(_points.size() - 1));
     }
 
@@ -39,7 +39,7 @@ namespace Geometry
         return _points.at(index);
     }
 
-    size_t Spline3D::size(){
+    size_t Spline3D::size() const{
         return _points.size();
     }
 
@@ -47,12 +47,12 @@ namespace Geometry
         _points.clear();
     }
 
-    glm::vec3 Spline3D::linearInterpolation(float t){
+    glm::vec3 Spline3D::linearInterpolation(float t) const{
         int index = findIndex(t);
         return Geometry::linearInterpolation(_points[at(index)], _points[at(index+1)], findInterval(t));
     }
 
-    glm::vec3 Spline3D::cubicInterpolation(float t){
+    glm::vec3 Spline3D::cubicInterpolation(float t) const{
         int index = findIndex(t);
         return Geometry::cubicInterpolation(_points[at(index-1)], _points[at(index)], _points[at(index+1)], _points[at(index+2)], findInterval(t));
     }
