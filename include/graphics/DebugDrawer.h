@@ -6,8 +6,8 @@
 #define LUMINOLGL_DEBUGRAY_H
 
 #include <vector>
-#include <geometry/BoundingBox.h>
-#include <geometry/Spline3D.h>
+#include "geometry/BoundingBox.h"
+#include "geometry/Spline.h"
 #include "graphics/VertexBufferObject.h"
 #include "graphics/VertexArrayObject.h"
 #include "graphics/ShaderProgram.hpp"
@@ -33,7 +33,7 @@ namespace Graphics
         DebugDrawer();
     public:
         static void drawRay(const glm::vec3 &point1, const glm::vec3 &point2, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1), float lineWidth = 1);
-        static void drawSpline(const Geometry::Spline3D& spline, int subdivisions, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1), float lineWidth = 1);
+        static void drawSpline(const Geometry::Spline<glm::vec3> & spline, int subdivisions, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1), float lineWidth = 1);
         static void drawTriangle(const glm::vec3 &point1, const glm::vec3 &point2, const glm::vec3 &point3, ShaderProgram &program, const glm::vec3 &color = glm::vec3(1, 1, 1));
         static void drawPyramid(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, const glm::vec3 &color = glm::vec3(1, 1, 1));
         static void drawCube(const glm::mat4 &trans, ShaderProgram &program, float scale = 1, const glm::vec3 &color = glm::vec3(1, 1, 1));

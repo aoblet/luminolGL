@@ -1,7 +1,7 @@
 #pragma once
 
 #include "view/CameraFreefly.hpp"
-#include "geometry/Spline3D.h"
+#include "geometry/Spline.h"
 #include "gui/UserInput.hpp"
 
 namespace View{
@@ -9,9 +9,9 @@ namespace View{
         CameraFreefly& _camera;
         GUI::UserInput& _userInput;
 
-        Geometry::Spline3D _cameraPositions;
-        Geometry::Spline3D _cameraSpeeds;
-        Geometry::Spline3D _cameraViewTargets;
+        Geometry::Spline<glm::vec3> _cameraPositions;
+        Geometry::Spline<glm::tvec1<float>> _cameraSpeeds;
+        Geometry::Spline<glm::vec3> _cameraViewTargets;
         bool _isSpectatorMode;
         float _velocitySplines;
 
@@ -34,8 +34,8 @@ namespace View{
         CameraFreefly& camera() const;
         GUI::UserInput& userInput() const;
 
-        Geometry::Spline3D& positions();
-        Geometry::Spline3D& speeds();
-        Geometry::Spline3D& viewTargets();
+        Geometry::Spline<glm::vec3> & positions();
+        Geometry::Spline<glm::tvec1<float>> & speeds();
+        Geometry::Spline<glm::vec3> & viewTargets();
     };
 }

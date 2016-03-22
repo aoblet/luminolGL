@@ -2,24 +2,32 @@
 // Created by mehdi on 10/02/16.
 //
 
-#ifndef LUMINOLGL_INTERPOLATION_H
-#define LUMINOLGL_INTERPOLATION_H
+#pragma once
 
 #include <glm/glm.hpp>
+#include <typeinfo>
+#include "geometry/ScalarInterpolation.hpp"
 
 namespace Geometry
 {
-    float linearInterpolation(float y1, float y2, float t);
+    // For 1d use glm::tvec1
 
-    glm::vec3 linearInterpolation(glm::vec3 v1, glm::vec3 v2, float t);
+    template<class glmVector>
+    glmVector linearInterpolation(const glmVector & v1, const glmVector & v2, float t){
+        // assert(typeid(glmVector) == typeid(glm::vec2) || typeid(glmVector) == typeid(glm::vec3) || typeid(glmVector) == typeid(glm::vec4));
+        glmVector res;
+        for(int i = 0; i < v1.length(); ++i)
+            res[i] = scalarLinearInterpolation(v1[i], v2[i], t);
+        return res;
+    }
 
-    float cosineInterpolation(float y1, float y2, float t);
 
-    float cubicInterpolation(float y0,float y1, float y2,float y3, float t);
-
-    glm::vec3 cubicInterpolation(glm::vec3 v0,glm::vec3 v1, glm::vec3 v2,glm::vec3 v3, float t);
+    template<class glmVector>
+    glmVector cubicInterpolation(const glmVector & v0, const glmVector & v1, const glmVector & v2, const glmVector & v3, float t){
+        // assert(typeid(glmVector) == typeid(glm::vec2) || typeid(glmVector) == typeid(glm::vec3) || typeid(glmVector) == typeid(glm::vec4));
+        glmVector res;
+        for(int i = 0; i < v1.length(); ++i)
+            res[i] = scalarCubicInterpolation(v0[i], v1[i], v2[i], v3[i], t);
+        return res;
+    }
 }
-
-
-
-#endif //LUMINOLGL_INTERPOLATION_H

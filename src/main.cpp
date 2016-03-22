@@ -16,7 +16,7 @@
 #include <callbacks/CallbacksManager.hpp>
 
 
-#include "geometry/Spline3D.h"
+#include "geometry/Spline.h"
 
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Texture.h"
@@ -326,9 +326,9 @@ int main( int argc, char **argv ) {
     //*********************************************************************************************
 
 //    DLOG(INFO) << "creating meshgrid...";
-//    Graphics::Texture gridTex("../assets/textures/mountains/03.png");
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 30);
-//    grid.saveOBJ("../assets/models/mountains/", "mountain_test");
+//    Graphics::Texture gridTex("/home/alex/Téléchargements/m.png");
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 10);
+//    grid.saveOBJ("../assets/models/mountains/", "mountain_test3");
 //    DLOG(INFO) << "meshgrid created !";
 //    return 0;
 
@@ -817,6 +817,7 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
+        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader);
 
         if(drawFBOTextures){
             int screenNumber = 7;

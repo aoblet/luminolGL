@@ -11,7 +11,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imguiRenderGL3.h"
 #include "lights/Light.hpp"
-#include "geometry/Spline3D.h"
+#include "geometry/Spline.h"
 #include "view/CameraController.hpp"
 #include "gui/UserInput.hpp"
 #include "graphics/ShaderProgram.hpp"
@@ -36,9 +36,7 @@ namespace Gui{
 
 		Param(const char * name, float * var, float begin, float end, float step):
 				_name(name), _var(var), _begin(begin), _end(end), _step(step)
-		{
-
-		}
+		{}
 	};
 
 	class Gui {
@@ -89,7 +87,7 @@ namespace Gui{
 		void addSliderSpotLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float dirBegin=-1, float dirEnd=1, float dirStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
 		void addSliderPointLights(Light::LightHandler & lightHandler, float posBegin=-300, float posEnd=300, float posStep=0.001, float attBegin=0.01, float attEnd=4.0, float attStep=0.001);
 
-		void addSliderSpline(Geometry::Spline3D & spline, float posBegin=-300, float posEnd=300, float posStep=0.001);
+		void addSliderSpline(Geometry::Spline<glm::vec3> & spline, float posBegin=-300, float posEnd=300, float posStep=0.001);
 
 		bool addCheckBox(const char* text, bool checked, bool enabled);
 		bool addItem(const char* text, bool enabled);

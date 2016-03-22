@@ -160,7 +160,7 @@ namespace Gui{
         addSeparatorLine();
     }
 
-    void Gui::addSliderSpline(Geometry::Spline3D & spline, float posBegin, float posEnd, float posStep){
+    void Gui::addSliderSpline(Geometry::Spline<glm::vec3>& spline, float posBegin, float posEnd, float posStep){
 
         addLabel("Spline Handler");
         addSeparator();

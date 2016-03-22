@@ -15,7 +15,7 @@ namespace Gui
 
     ObjectPicker::ObjectPicker(float markerScale, Graphics::Scene* scene) :
             _picked(false), _pickedAnchorAxis(-1), _markerScale(markerScale), _longClick(false),
-            _currentMeshPicked(nullptr), _scene(scene), _mode(TRANSLATION){
+            _currentMeshPicked(nullptr), _scene(scene), _mode(PickerMode::TRANSLATION){
 
         // axis anchor scale
         float s = 0.1f * _markerScale;
@@ -105,17 +105,17 @@ namespace Gui
 
         glm::mat4 axisTransformation = _targetTransformation->getTMatrix() * glm::scale(glm::vec3(_axisScale));
 
-        if(_mode == TRANSLATION)
+        if(_mode == PickerMode::TRANSLATION)
         {
             Graphics::DebugDrawer::drawTranslateAxis(axisTransformation, program, _markerScale, 5);
         }
 
-        if(_mode == ROTATION)
+        if(_mode == PickerMode::ROTATION)
         {
             Graphics::DebugDrawer::drawRotationAxis(axisTransformation, program, _markerScale, 5);
         }
 
-        if(_mode == SCALE)
+        if(_mode == PickerMode::SCALE)
         {
             Graphics::DebugDrawer::drawScaleAxis(axisTransformation, program, _markerScale, 5);
         }
@@ -136,13 +136,13 @@ namespace Gui
 
     void ObjectPicker::transformPickedObject(const glm::vec2 &cursorSpeed, int axis, const glm::mat4 &MVP) {
         switch(_mode){
-            case TRANSLATION:
+            case PickerMode::TRANSLATION:
                 translatePickedObject(cursorSpeed, axis, MVP);
                 break;
-            case ROTATION:
+            case PickerMode::ROTATION:
                 rotatePickedObject(cursorSpeed, axis, MVP);
                 break;
-            case SCALE:
+            case PickerMode::SCALE:
                 scalePickedObject(cursorSpeed, axis, MVP);
                 break;
         }
@@ -239,4 +239,22 @@ namespace Gui
     Geometry::Transformation *ObjectPicker::currentTransformation() {
         return _targetTransformation;
     }
+
+//    void ObjectPicker::addSplinePoint(Geometry::Spline & spline, const glm::vec2 &cursorPosition, const View::CameraFreefly &camera, bool click) {
+//        if(!click)
+//            return;
+//
+//        glm::vec3 front = camera.getFront();
+//        float mouseNormX = ((cursorPosition.x / camera.getViewPort().x) * 2 * camera.getNormalizedViewPort().x - 1 * camera.getNormalizedViewPort().x);
+//        float mouseNormY = ((cursorPosition.y / camera.getViewPort().y) * 2 * camera.getNormalizedViewPort().y - 1 * camera.getNormalizedViewPort().y);
+//
+//        glm::vec3 left = - camera.getLeft() * mouseNormX;
+//        glm::vec3 up = camera.getUp() * mouseNormY;
+//        glm::vec3 rayDir = glm::normalize(front + left + up);
+//        glm::vec3 rayOrigin = camera.getEye();
+//        float yPlane = 10;
+//        glm::vec3 point = ((rayOrigin.y - yPlane) / (glm::dot(glm::vec3(0, -1, 0), rayDir))) *rayDir ;
+//        point += rayOrigin;
+//        spline.add(point);
+//    }
 }
