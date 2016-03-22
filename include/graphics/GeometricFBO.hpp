@@ -18,5 +18,8 @@ namespace Graphics{
         Texture& normal();
         Texture& depth();
         Texture& position();
+
+        void setColorWritingOnly();
+        void setDefaultWriting();
     };
 }

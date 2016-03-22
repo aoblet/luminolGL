@@ -36,6 +36,8 @@ namespace Graphics{
         Texture* saveTexture(const std::string& pathTexture);
 
     public:
+        static const std::string PATH_PLANE;
+
         ModelMeshGroup(const std::string& modelPath);
         ModelMeshGroup(ModelMeshGroup && other);
         ModelMeshGroup(const ModelMeshGroup & other) = delete;
@@ -52,8 +54,10 @@ namespace Graphics{
         Geometry::BoundingBox* getBoundingBoxPtr();
 
         const std::vector<Mesh>& meshes() const;
-        const std::map<std::string, Texture>& textures() const;
+        std::map<std::string, Texture>& textures();
         const std::vector<VertexDescriptor>& allVertices() const;
         std::vector<int>& allIndexes();
+
+        void removeTextures();
     };
 }

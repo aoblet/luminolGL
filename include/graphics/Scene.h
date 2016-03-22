@@ -23,7 +23,7 @@ namespace Graphics {
         std::vector<glm::mat4> _visibleTransformations;             /** This vector is updated with visible Transformations of the current instance */
         VertexBufferObject _visibleTransformationsVBO;              /** A VBO containing the Transformations of visible current instances */
         Data::SceneIO* _ioHandler;
-        ModelMeshInstanced* _water;
+        ModelMeshInstanced _water;
 
 
         /**
@@ -40,7 +40,7 @@ namespace Graphics {
          * @param scene scene path
          * @param meshes must be set with move semantic if given
          */
-        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={}, bool debugBoundingBoxes=false);
+        Scene(Data::SceneIO* ioHandler, const std::string& scenePath="", std::vector<ModelMeshInstanced>&& meshes={});
 
         /**
          * Call the draw() function of each MeshInstance.
@@ -48,8 +48,7 @@ namespace Graphics {
          * Only visible instances of VP Matrix are sent to the GPU
          */
         void draw(const glm::mat4 &VP);
-        void drawWater();
-        void initWaterGL(ModelMeshInstanced *_water);
+        void drawWater(const glm::mat4 &VP);
 
         /**
          * Compute frustum culling on current instance.
@@ -74,9 +73,13 @@ namespace Graphics {
         void load(const std::string& path);
         std::vector<ModelMeshInstanced>& meshInstances();
         const std::vector<ModelMeshInstanced>& meshInstances() const;
+        ModelMeshInstanced& water();
+        const ModelMeshInstanced& water() const;
 
         void addModelMeshInstanced(const std::string& modelPath, const Geometry::Transformation& transformation={});
         void deleteMeshByPtr(ModelMeshInstanced * meshInstanced, Geometry::Transformation * transformation);
         Geometry::Transformation& duplicateMesh(ModelMeshInstanced& meshInstanced, Geometry::Transformation& transformation);
+
+        void addWater(const Geometry::Transformation& trans);
     };
 }

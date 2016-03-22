@@ -37,6 +37,8 @@ namespace Graphics{
         void clear();
         void clear(GLenum what);
 
+        std::vector<GLuint>& drawBuffers();
+
         glm::ivec2& resolution();
     };
 }

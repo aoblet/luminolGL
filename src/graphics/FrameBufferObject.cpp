@@ -56,3 +56,7 @@ void FrameBufferObject::clearDepth() {
 void FrameBufferObject::clear() {
     clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
+
+std::vector<GLuint> &FrameBufferObject::drawBuffers() {
+    return _drawBuffers;
+}
