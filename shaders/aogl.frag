@@ -84,7 +84,7 @@ void main()
     if(IsNormalMapActive == 1)
         normal = perturb_normal(normal, v, In.TexCoord);
 
-	vec4 normalFinal = transpose(inverse(MV)) * vec4(normal, 0);
+	vec4 normalFinal = MVNormal * vec4(normal, 0);
 	Normal = vec4(encodeNormal(normalFinal), SpecularPower/100);
     Color = vec4(diffuse, specular.x);
     Position = MV * vec4(In.Position, 1);

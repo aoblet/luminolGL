@@ -198,6 +198,7 @@ namespace Graphics
         unsigned char* texData = heightmap ? heightmap->data() : nullptr;
 
         std::vector<Graphics::VertexDescriptor> gridVertices;
+        float heightMean = 0;
 
         glm::vec3 offset(0.5f, 0, 0.5f);
         offset *= scale;
@@ -210,48 +211,32 @@ namespace Graphics
                 float zValue = 0;
 
                 if(heightmap){
-                    float top = 0;
-                    float bottom = 0;
-                    float left = 0;
-                    float right = 0;
-                    float center = 0;
-
                     int texI = int((i / float(height)) * float(heightmap->height()));
                     int texJ = int((j / float(width)) * float(heightmap->width()));
 
                     int padding = smooth;
 
-//                    if(i <= padding - 1 || j <= padding - 1|| i >= height - padding || j >= width - padding){
-//                        zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
-//                    }
-//                    else{
-                        float count = 0;
-                        float mean = 0;
-                        for(int x = -padding; x < padding; ++x){
-                            for(int y = -padding; y < padding; ++y){
-                                if( i - glm::abs(y) < 0 || j - glm::abs(x) < 0 ||  i + y > height || j + x > width){
-                                    if(i - glm::abs(y) < 0 ||  i + y > height){
-                                        mean += texData[(texJ + (texI - y) * heightmap->height() + x)  * 3] / (255.f);
-                                    }
-                                    else{
-                                        mean += texData[(texJ + (texI + y) * heightmap->height() - x)  * 3] / (255.f);
-                                    }
+                    float count = 0;
+                    float mean = 0;
+                    for(int x = -padding; x < padding; ++x){
+                        for(int y = -padding; y < padding; ++y){
+                            if( i - glm::abs(y) < 0 || j - glm::abs(x) < 0 ||  i + y > height || j + x > width){
+                                if(i - glm::abs(y) < 0 ||  i + y > height){
+                                    mean += texData[(texJ + (texI - y) * heightmap->height() + x)  * 3] / (255.f);
                                 }
                                 else{
-                                    mean += texData[(texJ + (texI + y) * heightmap->height() + x) * 3] / (255.f);
+                                    mean += texData[(texJ + (texI + y) * heightmap->height() - x)  * 3] / (255.f);
                                 }
-                                count += 1.f;
                             }
+                            else{
+                                mean += texData[(texJ + (texI + y) * heightmap->height() + x) * 3] / (255.f);
+                            }
+                            count += 1.f;
                         }
+                    }
 
-                        mean /= count;
-                        zValue = mean;
-//                    }
-
-
-
-//                    zValue = texData[(texJ + texI * heightmap->height()) * 3] / (255.f);
-
+                    mean /= count;
+                    zValue = mean;
 
                 }
 
@@ -260,11 +245,19 @@ namespace Graphics
                 pos *= scale;
                 pos -= offset;
 
+                heightMean += pos.y;
+
                 glm::vec3 norm(0,1,0);
                 glm::vec2 uv(j/float(width-1), 1-i/float(height-1));
                 gridVertices.push_back(VertexDescriptor(pos, norm, uv));
                 ++mesh._vertexCount;
             }
+        }
+
+        heightMean /= gridVertices.size();
+
+        for(auto& vert : gridVertices){
+            vert.position.y -= heightMean;
         }
 
         std::vector<int> gridIds;
@@ -402,5 +395,9 @@ namespace Graphics
         mtlFile << "map_Kd " << filename << "_diff.ext" << std::endl;
         mtlFile << "map_Bump " << filename << "_normal.ext" << std::endl;
         mtlFile << "map_Ks " << filename << "_spec.ext" << std::endl;
+    }
+
+    std::map<GLenum, Texture *> &Mesh::textures() {
+        return _textures;
     }
 }
