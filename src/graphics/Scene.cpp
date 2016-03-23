@@ -36,16 +36,25 @@ namespace Graphics {
 
     void Scene::drawWater(const glm::mat4 &VP){
         _visibleTransformations.clear();
-        std::for_each(water().getTransformations().begin(), water().getTransformations().end(), [this](Geometry::Transformation& t){_visibleTransformations.push_back(t.getTRSMatrix());});
+        std::for_each(_water.getTransformations().begin(), _water.getTransformations().end(), [this](Geometry::Transformation& t){_visibleTransformations.push_back(t.getTRSMatrix());});
         _visibleTransformationsVBO.updateData(_visibleTransformations);
         _water.draw((int)_visibleTransformations.size());
     }
 
 
+    void Scene::setFar(float far) {
+        _far = far;
+    }
+
+    void Scene::updateCameraPosition(const glm::vec3 &camPos) {
+        _cameraPosition = camPos;
+    }
+
     void Scene::computeVisibleTransformations(const glm::mat4 &VP, const ModelMeshInstanced& mesh) {
         _visibleTransformations.clear();
         for(int i = 0; i < mesh.getInstanceNumber(); ++i){
-            if(mesh.getBoundingBox(i).isVisible(VP)){
+            float distance = glm::distance(mesh.getPosition(i), _cameraPosition);
+            if(mesh.getBoundingBox(i).isVisible(VP)/* && distance < _far*/){
                 _visibleTransformations.push_back(mesh.getTransformationMatrix(i));
             }
         }

@@ -99,6 +99,15 @@ int main( int argc, char **argv ) {
     cameraController.positions().add(glm::vec3(0,10,0));
     cameraController.viewTargets().add(glm::vec3(0, 0, 0));
 
+//    DLOG(INFO) << "creating meshgrid...";
+//    DLOG(INFO) << "creating texture...";
+//    Graphics::Texture gridTex("../assets/models/mountains/mountain_08_spec.jpg");
+//    DLOG(INFO) << "generating meshgrid...";
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 10);
+//    grid.saveOBJ("../assets/models/mountains/", "mountain_08");
+//    DLOG(INFO) << "meshgrid created !";
+//    return 0;
+
     // SHADERS
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
@@ -156,6 +165,8 @@ int main( int argc, char **argv ) {
     picker.attachToScene(&scene);
 
     Graphics::DebugBoundingBoxes debugScene(scene.meshInstances());
+    scene.setFar(camera.getNearFar().y);
+
     checkErrorGL("Scene");
 
 
@@ -325,12 +336,7 @@ int main( int argc, char **argv ) {
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
 
-//    DLOG(INFO) << "creating meshgrid...";
-//    Graphics::Texture gridTex("../assets/textures/mountains/03.png");
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 30);
-//    grid.saveOBJ("../assets/models/mountains/", "mountain_test");
-//    DLOG(INFO) << "meshgrid created !";
-//    return 0;
+
 
     // Identity matrix
     glm::mat4 objectToWorld;
@@ -466,6 +472,7 @@ int main( int argc, char **argv ) {
         mainShader.useProgram();
         gBufferFBO.bind();
         gBufferFBO.clear();
+        scene.updateCameraPosition(camera.getEye());
         scene.draw(vp);
         gBufferFBO.unbind();
 
@@ -817,6 +824,8 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
+        Graphics::DebugDrawer::drawSpline(cameraController.positions(), 50, debugShapesShader, glm::vec3(1,0,0));
+        Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), 50, debugShapesShader, glm::vec3(0,1,0));
 
         if(drawFBOTextures){
             int screenNumber = 7;

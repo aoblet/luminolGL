@@ -37,8 +37,8 @@ namespace Graphics {
         void addInstance(const glm::vec3& position, const glm::vec4& rotation = glm::vec4(0), const glm::vec3& scale = glm::vec3(1));
         void addInstance(float xpos, float ypos, float zpos, float angle = 0, float xrot = 0, float yrot = 0, float zrot = 0);
 
-        const glm::vec3& getPosition(int index);
-        const glm::vec4& getRotation(int index);
+        const glm::vec3& getPosition(int index) const;
+        const glm::vec4& getRotation(int index) const;
 
         /** Returns the Transformation property (position, rotation, scale) of a specified index */
         const Geometry::Transformation& getTransformation(int index) const;
