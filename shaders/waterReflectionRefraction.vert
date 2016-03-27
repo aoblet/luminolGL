@@ -30,9 +30,10 @@ void main(){
 	Out.Normal = Normal;
 	Out.Position = (InstanceTransform * vec4(Position,1)).xyz;
 
-    float waterYPos = InstanceTransform[1][3];
+//    float waterYPos = InstanceTransform[1][3];
+    float waterYPos = 0;
     if(IsReflection == 1)
-        gl_ClipDistance[0] = Out.Position.y < waterYPos ? -1 : 1;
+        gl_ClipDistance[0] = Out.Position.y >= waterYPos ? 1 : -1;
     else
         gl_ClipDistance[0] = Out.Position.y > waterYPos ? -1 : 1;
 

@@ -79,11 +79,11 @@ void ModelMeshInstanced::addInstance(float xpos, float ypos, float zpos, float a
 }
 
 
-const glm::vec3& ModelMeshInstanced::getPosition(int index) {
+const glm::vec3& ModelMeshInstanced::getPosition(int index) const{
     return _transformations.at(index).position;
 }
 
-const glm::vec4& ModelMeshInstanced::getRotation(int index) {
+const glm::vec4& ModelMeshInstanced::getRotation(int index) const{
     return _transformations.at(index).rotation;
 }
 

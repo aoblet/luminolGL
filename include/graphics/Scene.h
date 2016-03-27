@@ -25,6 +25,8 @@ namespace Graphics {
         Data::SceneIO* _ioHandler;
         ModelMeshInstanced _water;
 
+        glm::vec3 _cameraPosition;
+        float _far;
 
         /**
          * Must be called after all MeshInstances has been attached
@@ -50,11 +52,13 @@ namespace Graphics {
         void draw(const glm::mat4 &VP);
         void drawWater(const glm::mat4 &VP);
 
+        void setFar(float far);
+        void updateCameraPosition(const glm::vec3& camPos);
+
         /**
          * Compute frustum culling on current instance.
          * @param VP matrix used to perform culling
          */
-
         void computeVisibleTransformations(const glm::mat4 & VP, const ModelMeshInstanced& mesh);
 
         /**
