@@ -33,7 +33,12 @@ namespace View{
         CameraFreefly(const glm::vec2& viewPort, const glm::vec2& nearFar, float fov=45);
         void computeDirs();
         void update(const glm::vec2& angles, const glm::vec3& movement);
-        void updateFromTarget(const glm::vec3& target);  /** Useful for splines orientation */
+
+        /**
+         * Update oritentation from a target and viewMatrix.
+         * Useful for splines orientation.
+         */
+        void updateFromTarget(const glm::vec3& target);
         void updateProjectionProperties(const glm::vec2& viewPort, const glm::vec2& nearFar, float fov);
         void updateProjection();
         void setFront(const glm::vec3& front);

@@ -41,6 +41,7 @@
 
 #include "gui/Gui.hpp"
 #include "gui/ObjectPicker.h"
+#include "gui/SplinePicker.hpp"
 
 #include "lights/Light.hpp"
 
@@ -89,16 +90,6 @@ int main( int argc, char **argv ) {
     Gui::ObjectPicker picker;
     Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
 
-    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
-    camera.setEye(glm::vec3(10,10,-10));
-    View::CameraController cameraController(camera, userInput, 0.05);
-
-    cameraController.positions().add(glm::vec3(0,10,0));
-    cameraController.positions().add(glm::vec3(10,10,0) );
-    cameraController.positions().add(glm::vec3(10,10,10));
-    cameraController.positions().add(glm::vec3(0,10,0));
-    cameraController.viewTargets().add(glm::vec3(0, 0, 0));
-
     // SHADERS
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
@@ -118,6 +109,33 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram waterReflectionShader("../shaders/waterReflectionRefraction.vert", mainShader.fShader());
     Graphics::ShaderProgram waterRenderShader(mainShader.vShader(), "../shaders/water.frag");
     Graphics::ShaderProgram ambientShader(blitShader.vShader(), "../shaders/ambient.frag");
+
+
+    const std::string scenePath             = "../assets/luminolGL.json";
+    const std::string splineCamPositions    = "../assets/camPos.txt";
+    const std::string splineCamTargets      = "../assets/camTargets.txt";
+    const std::string splineCamSpeeds       = "../assets/camSpeeds.txt";
+
+    // Camera config
+    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
+    camera.setEye(glm::vec3(10,10,-10));
+
+    // Camera splines config
+    View::CameraController cameraController(camera, userInput, 0.05);
+    try{
+        cameraController.positions().load(splineCamPositions);
+        cameraController.viewTargets().load(splineCamTargets);
+        cameraController.speeds().load(splineCamSpeeds);
+    }
+    catch(std::exception& e){
+        DLOG(WARNING) << e.what();
+    }
+
+
+
+    // Camera link with spline picker
+    Gui::SplinePicker splinePicker(cameraController.positions(), cameraController.viewTargets(), cameraController.speeds());
+
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -150,7 +168,7 @@ int main( int argc, char **argv ) {
     Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
 
     Data::SceneIOJson sceneIOJson;
-    Graphics::Scene scene(&sceneIOJson, "../assets/luminolGL.json");
+    Graphics::Scene scene(&sceneIOJson, scenePath);
 
     Callbacks::CallbacksManager::init(window, &scene, &picker);
     picker.attachToScene(&scene);
@@ -320,6 +338,8 @@ int main( int argc, char **argv ) {
 
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
+
+    bool isSplinePickerEnabled = false;
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -884,12 +904,18 @@ int main( int argc, char **argv ) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
+        bool userClick = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS;
 
         gui.init(window);
-        gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        gui.updateMbut(userClick);
 
-        if(!gui.isCursorInPanelIMGUI())
-            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        if(!gui.isCursorInPanelIMGUI()){
+
+            if(isSplinePickerEnabled)
+                splinePicker.pick(gui.getCursorPosition(), camera, userClick);
+            else
+                picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, userClick) ;
+        }
 
         gui.displayMeshTransform = picker.isPicked();
         if(!picker.isPicked())
@@ -1002,11 +1028,49 @@ int main( int argc, char **argv ) {
                 }
             }
 
-            if(gui.addButton("Save to assets/luminolGL.json"))
-                scene.save("../assets/luminolGL.json");
+            if(gui.addButton(std::string("Save Scene to " + scenePath + " and splines").c_str())){
+                scene.save(scenePath);
+                cameraController.positions().save(splineCamPositions);
+                cameraController.viewTargets().save(splineCamTargets);
+                cameraController.speeds().save(splineCamSpeeds);
+            }
 
+            if(gui.addButton("Spline Picker", gui.displaySplinePicker)){
+                gui.addIndent();
+                std::string statePicker = "Current state: " + Gui::SplineStateString.at(splinePicker.state());
+                statePicker += isSplinePickerEnabled ? " enabled" : " disabled";
+                gui.addLabel(statePicker.c_str());
+
+                isSplinePickerEnabled = gui.addButton("Toggle Activation") == !isSplinePickerEnabled;
+
+                if(gui.addButton("Position picking"))
+                    splinePicker.setState(Gui::SplineState::position);
+                if(gui.addButton("Target picking"))
+                    splinePicker.setState(Gui::SplineState::target);
+                if(gui.addButton("Veclocity picking"))
+                    splinePicker.setState(Gui::SplineState::velocity);
+                gui.addSlider("Spline Y Plane", &splinePicker.yPlaneIntersection(), -100, 100, 1);
+
+                if(splinePicker.state() != Gui::SplineState::velocity){
+                    Geometry::Spline3D& currentSplinePicker = Gui::SplineState::position == splinePicker.state()? splinePicker.positions() : splinePicker.targets();
+
+                    gui.addLabel(std::string("Spline " + Gui::SplineStateString.at(splinePicker.state())).c_str());
+
+                    if(gui.addButton("Clear"))
+                        currentSplinePicker.clear();
+
+                    for(size_t k = 0; k < currentSplinePicker.size(); ++k){
+                        gui.addLabel(std::string("#" + std::to_string(k)).c_str());
+                        gui.addSlider("Y", &currentSplinePicker[k].y, -100, 100, 1);
+                        if(gui.addButton("Remove"))
+                            currentSplinePicker.erase(currentSplinePicker.begin()+ k);
+                        gui.addSeparatorLine();
+                    }
+                }
+                gui.addUnindent();
+
+            }
             gui.addUnindent();
-
         }
 
         gui.scrollAreaEnd();

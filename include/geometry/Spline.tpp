@@ -55,14 +55,28 @@ namespace Geometry
 
     template<class T>
     T Spline<T>::linearInterpolation(float t) const{
-        int index = findIndex(t);
-        return Geometry::linearInterpolation<T>(_points[at(index)], _points[at(index+1)], findInterval(t));
+        if(_points.size() == 0)
+            return T(0);
+
+        int lastIndex = int(_points.size()) - 1;
+        int index1 = findIndex(t);
+        int index2 = index1+1 > lastIndex ? index1: index1+1;
+
+        return Geometry::linearInterpolation<T>(_points[at(index1)], _points[at(index2)], findInterval(t));
     }
 
     template<class T>
     T Spline<T>::cubicInterpolation(float t) const{
-        int index = findIndex(t);
-        return Geometry::cubicInterpolation<T>(_points[at(index-1)], _points[at(index)], _points[at(index+1)], _points[at(index+2)], findInterval(t));
+        if(_points.size() == 0)
+            return T(0);
+
+        int lastIndex = int(_points.size()) - 1;
+        int index       = findIndex(t);
+        int indexMinus1 = index-1 < 0 ? 0 : index-1;
+        int indexPlus1  = index+1 > lastIndex ? index : index+1;
+        int indexPlus2  = index+2 > lastIndex ? index : index+2;
+
+        return Geometry::cubicInterpolation<T>(_points[at(indexMinus1)], _points[at(index)], _points[at(indexPlus1)], _points[at(indexPlus2)], findInterval(t));
     }
 
     template<class T>
@@ -108,6 +122,16 @@ namespace Geometry
             }
             file << point[vecLength-1] << std::endl;
         }
+    }
+
+    template<class T>
+    void Spline<T>::erase(typename std::vector<T>::iterator it) {
+        _points.erase(it);
+    }
+
+    template<class T>
+    typename std::vector<T>::iterator Spline<T>::begin() {
+        return _points.begin();
     }
 }
 
