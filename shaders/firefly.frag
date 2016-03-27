@@ -78,6 +78,7 @@ void main(void)
 		lightScreenPosition = MVP * rotateMatrix * vec4(PointLight.Position, 1.0) ;
 	} 
 
+	if(lightScreenPosition.z < 0) return;
 	lightScreenPosition /= lightScreenPosition.w;
  
 	// Fragment Position in Screen Coord
