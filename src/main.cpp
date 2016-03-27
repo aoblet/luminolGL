@@ -96,10 +96,10 @@ int main( int argc, char **argv ) {
 
 //    DLOG(INFO) << "creating meshgrid...";
 //    DLOG(INFO) << "creating texture...";
-//    Graphics::Texture gridTex("../assets/models/ground/ground03_height.tga");
+//    Graphics::Texture gridTex("../assets/models/mountains/mountain_03_spec.png");
 //    DLOG(INFO) << "generating meshgrid...";
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(7, 7, &gridTex, glm::vec3(1), 0.1f, 7);
-//    grid.saveOBJ("../assets/models/ground/", "ground03", false);
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(400, 400, &gridTex, glm::vec3(1), 0.1f, 15);
+//    grid.saveOBJ("../assets/models/ground/", "mountain03", false);
 //    DLOG(INFO) << "meshgrid created !";
 //    return 0;
 
@@ -180,7 +180,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/skybox_sunset", {}, ".png"));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, scenePath);
@@ -196,9 +196,9 @@ int main( int argc, char **argv ) {
 
     // My Lights -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(0.818, -0.862, -1), glm::vec3(1), 1);
+    lightHandler.setDirectionalLight(glm::vec3(0.818, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
 
-    glm::vec3 ambient(1);
+    glm::vec3 ambient(0.65, 0.65, 1);
     float ambientIntensity = 0.2;
 
     ////////////// Sun ---- Point Light 
@@ -211,7 +211,7 @@ int main( int argc, char **argv ) {
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height 
-    lightHandler.createRisingFireflies(500, 200, 200, 80);
+//    lightHandler.createRisingFireflies(50, 200, 200, 80);
     
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
 //    lightHandler.createRandomFireflies(500, 200, 200, 70);
@@ -219,7 +219,7 @@ int main( int argc, char **argv ) {
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
     bool drawFBOTextures    = true;
-    int isNormalMapActive   = 0;
+    int isNormalMapActive   = 1;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
     mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
@@ -365,10 +365,10 @@ int main( int argc, char **argv ) {
     Graphics::GeometricFBO waterReflectionFBO(dimViewport);
     Graphics::PostFxFBO waterTextures(dimViewport, 2);
     Graphics::Texture waterNormals("../assets/textures/water/normals.jpg");
-    float noiseAmplitudeWaves = 0.001f;
-    float specularAmplitudeWaves = 0.001f;
+    float noiseAmplitudeWaves = 0.02f;
+    float specularAmplitudeWaves = 1.f;
     float fresnelBias = 0.001f;
-    float fresnelAmplitude = 3;
+    float fresnelAmplitude = 1;
 
 
     float scaleMeshTransform(1);
@@ -378,8 +378,8 @@ int main( int argc, char **argv ) {
     bool drawSplines = true;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 1;
-    glm::vec3 fogColor = glm::vec3(0.99, 0.91, 0.95);
+    float fogDensity = 1.66;
+    glm::vec3 fogColor = glm::vec3(0.027, 0.028, 0.065);
 
 
     //*********************************************************************************************
