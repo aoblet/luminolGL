@@ -202,6 +202,7 @@ int main( int argc, char **argv ) {
 
     glm::vec3 ambient(1);
     float ambientIntensity = 0.2;
+    float multFireflyIntensity = 0.5;
 
     ////////////// Sun ---- Point Light 
     lightHandler.addPointLight(glm::vec3(-15000, 12000, 15000), glm::vec3(24.5, 18.5, 0.05), 0.8, 2.0, Light::SUN);
@@ -213,10 +214,10 @@ int main( int argc, char **argv ) {
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
     ////////////// Rising Fireflies ---- // NB_RISING_FIREFLIES, width, profondeur, height, center 
-    lightHandler.createRisingFireflies(50, 10, 10, 160, glm::vec3(20,0,20)); 
+    lightHandler.createRisingFireflies(200, 30, 30, 160, glm::vec3(20,0,20)); 
     
     ////////////// Random Displacement Fireflies ---- // NB_RANDOM_FIREFLIES, width, profondeur, height, center 
-    lightHandler.createRandomFireflies(50, 50, 50, 40, glm::vec3(-150,20,50));
+    lightHandler.createRandomFireflies(200, 100, 100, 40, glm::vec3(-150,20,50));
 
     
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
@@ -476,6 +477,7 @@ int main( int argc, char **argv ) {
         float windowratio = (float)width / (float)height;
         fireflyShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
         fireflyShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
+        fireflyShader.updateUniform(Graphics::UBO_keys::MULT_INTENSITY, multFireflyIntensity);
 
 
         ambientShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
@@ -1108,6 +1110,7 @@ int main( int argc, char **argv ) {
                     gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
                     gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
                     gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
+                    gui.addSlider("Firefly Intensity", &multFireflyIntensity, 0, 2, 0.0001);
                     gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
                     gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
                     gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);

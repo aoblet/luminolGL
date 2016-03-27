@@ -27,6 +27,7 @@ namespace Graphics{
         // Fireflies
         const std::string WINDOW_RATIO                  = "WindowRatio";
         const std::string IS_SUN                        = "IsSun";
+        const std::string MULT_INTENSITY                = "multIntensity";
 
         // Shadow
         const std::string SHADOW_MVP                    = "ShadowMVP";
