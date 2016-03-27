@@ -112,9 +112,10 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram waterReflectionShader("../shaders/waterReflectionRefraction.vert", mainShader.fShader());
     Graphics::ShaderProgram waterRenderShader(mainShader.vShader(), "../shaders/water.frag");
     Graphics::ShaderProgram ambientShader(blitShader.vShader(), "../shaders/ambient.frag");
+    Graphics::ShaderProgram fogShader(blitShader.vShader(), "../shaders/fog.frag");
 
 
-    const std::string scenePath             = "../assets/luminolGL.json";
+    const std::string scenePath             = "../assets/canyon.json";
     const std::string splineCamPositions    = "../assets/camPos.txt";
     const std::string splineCamTargets      = "../assets/camTargets.txt";
     const std::string splineCamSpeeds       = "../assets/camSpeeds.txt";
@@ -357,7 +358,13 @@ int main( int argc, char **argv ) {
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
 
+
+    bool drawSplines = true;
     bool isSplinePickerEnabled = false;
+
+    float fogDensity = 1;
+    glm::vec3 fogColor = glm::vec3(0.99, 0.91, 0.95);
+
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -752,6 +759,23 @@ int main( int argc, char **argv ) {
         fxFBO.bind();
         quadVAO.bind();
 
+        // ------- FOG ------
+        fogShader.useProgram();
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DENSITY, fogDensity);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_TEXTURE, 0);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_COLOR, fogColor);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_NEAR, camera.getNearFar().x);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_FAR, camera.getNearFar().y);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+
+        fxFBO.changeCurrentTexture(2);
+        fxFBO.clearColor();
+
+        beautyFBO.beauty().bind(GL_TEXTURE0);
+        gBufferFBO.depth().bind(GL_TEXTURE1);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
         // ------- SKYBOX ------
         // Render skybox texture combined with beauty: mask with depth buffer
         // All in one pass
@@ -762,7 +786,7 @@ int main( int argc, char **argv ) {
 
         skybox.bindTexture(GL_TEXTURE0); // cubeMap
         gBufferFBO.depth().bind(GL_TEXTURE1);
-        beautyFBO.beauty().bind(GL_TEXTURE2);
+        fxFBO.texture(2).bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
@@ -803,11 +827,8 @@ int main( int argc, char **argv ) {
         quadIdsVbo.updateData(quadIds);
 
         glDisable(GL_BLEND);
-        
-        // std::cout << timeGLFW << std::endl;
 
-
-        // ------- INDIRECT LIGHT ------
+        // ------- AMBIENT LIGHT ------
         ambientShader.useProgram();
 
         fxFBO.changeCurrentTexture(1);
@@ -901,8 +922,10 @@ int main( int argc, char **argv ) {
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
 
-        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(1,0,0));
-        Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(0,1,0));
+        if(drawSplines){
+            Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(1,0,0));
+            Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(0,1,0));
+        }
 
         if(drawFBOTextures){
             int screenNumber = 7;
@@ -957,7 +980,7 @@ int main( int argc, char **argv ) {
             glViewport( 6*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            waterReflectionFBO.color().bind(GL_TEXTURE0);
+            gBufferFBO.depth().bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -1014,6 +1037,8 @@ int main( int argc, char **argv ) {
                 mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
             if(gui.addButton("Draw FBO textures"))
                 drawFBOTextures = !drawFBOTextures;
+            if(gui.addButton("Draw splines"))
+                drawSplines = !drawSplines;
             
             gui.addSeparatorLine();
 
@@ -1027,6 +1052,11 @@ int main( int argc, char **argv ) {
                 gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
                 gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
                 gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
+                gui.addSlider("Fog density", &fogDensity, 0, 3, 0.00001);
+                imgui3Slider("X", &fogColor.x, 0,1, 0.001, 1);
+                imgui3Slider("Y", &fogColor.y, 0,1, 0.001, 2);
+                imgui3Slider("Z", &fogColor.z, 0,1, 0.001, 3);
+
                 gui.addSeparatorLine();
             }
 
