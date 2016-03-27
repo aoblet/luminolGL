@@ -202,6 +202,7 @@ int main( int argc, char **argv ) {
 
     glm::vec3 ambient(1);
     float ambientIntensity = 0.2;
+    float multIntensity = 0.5;
 
     ////////////// Sun ---- Point Light 
     lightHandler.addPointLight(glm::vec3(-15000, 12000, 15000), glm::vec3(24.5, 18.5, 0.05), 0.8, 2.0, Light::SUN);
@@ -476,6 +477,7 @@ int main( int argc, char **argv ) {
         float windowratio = (float)width / (float)height;
         fireflyShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
         fireflyShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
+        fireflyShader.updateUniform(Graphics::UBO_keys::MULT_INTENSITY, multIntensity);
 
 
         ambientShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
@@ -1088,6 +1090,7 @@ int main( int argc, char **argv ) {
                     gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
                     gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
                     gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
+                    gui.addSlider("Firefly Intensity", &multIntensity, 0, 2, 0.0001);
                     gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
                     gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
                     gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);
