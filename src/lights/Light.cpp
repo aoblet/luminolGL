@@ -61,7 +61,6 @@ namespace Light{
 		
 		float dx = radius;
 
-
         if(DEBUG) std::cout << "radius: " << dx << " && attenuation: " << attenuation << " && maxBrightness: " << maxBrightness << std::endl;
 
         // création d'un cube d'influence autour de la point light
@@ -86,7 +85,7 @@ namespace Light{
         glm::mat4 rotateMatrix = rotationMatrix(axis , w);
 		glm::vec4 projInitPoint = MVP * rotateMatrix * glm::vec4(cube[0], 1.0);
 
-	    // if(projInitPoint.z < 0) return false;
+	    if(projInitPoint.z < 0) return false;
 
         projInitPoint /= projInitPoint.w;
 

@@ -102,6 +102,7 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
     Graphics::ShaderProgram blitShader("../shaders/blit.vert", "", "../shaders/blit.frag");
     Graphics::ShaderProgram pointLightShader(blitShader.vShader(), "../shaders/pointLight.frag");
+    Graphics::ShaderProgram fireflyShader(blitShader.vShader(), "../shaders/firefly.frag");
     Graphics::ShaderProgram indirectLightShader(blitShader.vShader(), "../shaders/indirectLight.frag");
     Graphics::ShaderProgram directionalLightShader(blitShader.vShader(), "../shaders/directionnalLight.frag");
     Graphics::ShaderProgram spotLightShader(blitShader.vShader(), "../shaders/spotLight.frag");
@@ -207,9 +208,7 @@ int main( int argc, char **argv ) {
     spotLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
     spotLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
-    pointLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
-    pointLightShader.updateUniform(Graphics::UBO_keys::NORMAL_BUFFER, 1);
-    pointLightShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
+    fireflyShader.updateUniform(Graphics::UBO_keys::DEPTH_BUFFER, 2);
 
     indirectLightShader.updateUniform(Graphics::UBO_keys::COLOR_BUFFER, 0);
     indirectLightShader.updateUniform(Graphics::UBO_keys::BEAUTY_BUFFER, 1);
@@ -275,12 +274,12 @@ int main( int argc, char **argv ) {
     Graphics::UBO uboCamera(CameraBindingPoint, sizeof(Data::UniformCamera));
 
     // LIGHT
-    pointLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_LIGHT, uboLight.bindingPoint());
+    fireflyShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_LIGHT, uboLight.bindingPoint());
     directionalLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_LIGHT, uboLight.bindingPoint());
     spotLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_LIGHT, uboLight.bindingPoint());
 
     // CAM
-    pointLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
+    fireflyShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     directionalLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     spotLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
 
@@ -400,10 +399,10 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
         directionalLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
 
-        pointLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        fireflyShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         float windowratio = (float)width / (float)height;
-        pointLightShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
-        pointLightShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
+        fireflyShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
+        fireflyShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
 
 
         indirectLightShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
@@ -578,7 +577,7 @@ int main( int argc, char **argv ) {
 
 
         // ------------------------------------ Point Lights
-        pointLightShader.useProgram(); // point light shaders
+        fireflyShader.useProgram(); // point light shaders
         quadVAO.bind(); // Bind quad vao
         glEnable(GL_BLEND);
 
@@ -589,9 +588,9 @@ int main( int argc, char **argv ) {
 
         // Sun
         uboLight.updateBuffer(&lightHandler._pointLights[0], sizeof(Light::PointLight));
-        pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, true);
+        fireflyShader.updateUniform(Graphics::UBO_keys::IS_SUN, true);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, false);
+        fireflyShader.updateUniform(Graphics::UBO_keys::IS_SUN, false);
         int cptLights = 0;
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
             std::vector<glm::vec2> littleQuadVertices;
