@@ -437,7 +437,7 @@ int main( int argc, char **argv ) {
         // Orthogonal projection matrix: parallel rays
         glm::mat4 projDirLight = glm::ortho<float>(-dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
                                                    -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
-                                                   -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim);
+                                                   0, dirLightOrthoProjectionDim);
         // From world to light
         // The "box" fallows the camera position
         glm::mat4 worldToDirLight = glm::lookAt(camera.getEye(),
