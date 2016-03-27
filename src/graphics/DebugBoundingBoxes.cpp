@@ -3,8 +3,8 @@
 #include "graphics/UBO_keys.hpp"
 
 Graphics::DebugBoundingBoxes::DebugBoundingBoxes(const std::vector<ModelMeshInstanced>& meshes):
-        _VAO(), _verticesVBO(Graphics::VEC3), _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER),
-        _transformVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 1),
+        _VAO(), _verticesVBO(Graphics::DataType::VEC3), _indexesVBO(Graphics::DataType::ELEMENT_ARRAY_BUFFER),
+        _transformVBO(Graphics::DataType::INSTANCE_TRANSFORMATION_BUFFER, 1),
         _debugShader("../shaders/debug.vert", "", "../shaders/debug.frag"),
         _idsVertices({0,3,2,1,0,4,7,6,5,4,7,3,2,6,5,1}), _meshes(meshes), _isDrawing(false){
     _VAO.addVBO(&_verticesVBO);
