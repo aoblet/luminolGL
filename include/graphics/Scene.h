@@ -49,7 +49,7 @@ namespace Graphics {
          * Performs frustum culling to update _visibleTransformationsVBO :
          * Only visible instances of VP Matrix are sent to the GPU
          */
-        void draw(const glm::mat4 &VP);
+        void draw(const glm::mat4 &VP, bool castShadowless = true);
         void drawWater(const glm::mat4 &VP);
 
         void setFar(float far);

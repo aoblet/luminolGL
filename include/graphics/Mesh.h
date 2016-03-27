@@ -75,7 +75,7 @@ namespace Graphics
          * Save a .obj file
          * don't need to add .obj in filename
          */
-        void saveOBJ(const std::string& filePath, const std::string& filename);
+        void saveOBJ(const std::string& filePath, const std::string& filename, bool writeMTL = true);
     };
 }
 

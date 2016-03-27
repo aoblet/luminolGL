@@ -24,11 +24,13 @@ namespace Graphics {
             instance.initGLBuffers(_visibleTransformationsVBO);
     }
 
-    void Scene::draw(const glm::mat4 &VP) {
+    void Scene::draw(const glm::mat4 &VP, bool castShadowless) {
         for(auto& instance : _meshInstances){
+            if(!instance.castShadows() && !castShadowless)
+                continue;
+
             computeVisibleTransformations(VP, instance);
             _visibleTransformationsVBO.updateData(_visibleTransformations);
-
             // Draw for current instance nb transformations visible i.e total amount of instanced elements
             instance.draw((int)_visibleTransformations.size());
         }

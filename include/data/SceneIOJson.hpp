@@ -52,6 +52,7 @@ namespace Data{
         const char rotations[] = "rotations";
         const char scales[] = "scales";
         const char water[] = "water";
+        const char castingShadows[] = "casting_shadows";
     }
 
     class SceneIOJson: public SceneIO{

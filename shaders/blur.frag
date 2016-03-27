@@ -6,6 +6,7 @@ in block{
 
 uniform sampler2D Texture;
 uniform int SampleCount;
+uniform float Sigma;
 uniform ivec2 BlurDirection;
 layout(location = 0, index = 0) out vec4 Color;
 
@@ -38,5 +39,5 @@ vec3 mean(int N){
 }
 
 void main(void){
-	Color = vec4(gaussian(1, SampleCount), 1.0);
+	Color = vec4(gaussian(Sigma, SampleCount), 1.0);
 }

@@ -9,9 +9,9 @@ namespace View{
         CameraFreefly& _camera;
         GUI::UserInput& _userInput;
 
-        Geometry::Spline<glm::vec3> _cameraPositions;
-        Geometry::Spline<glm::tvec1<float>> _cameraSpeeds;
-        Geometry::Spline<glm::vec3> _cameraViewTargets;
+        Geometry::Spline3D _cameraPositions;
+        Geometry::Spline1D _cameraSpeeds;
+        Geometry::Spline3D _cameraViewTargets;
         bool _isSpectatorMode;
         float _velocitySplines;
 
@@ -34,8 +34,8 @@ namespace View{
         CameraFreefly& camera() const;
         GUI::UserInput& userInput() const;
 
-        Geometry::Spline<glm::vec3> & positions();
-        Geometry::Spline<glm::tvec1<float>> & speeds();
-        Geometry::Spline<glm::vec3> & viewTargets();
+        Geometry::Spline3D & positions();
+        Geometry::Spline1D & speeds();
+        Geometry::Spline3D & viewTargets();
     };
 }

@@ -18,8 +18,10 @@ namespace Graphics {
         std::string _modelPath;
         VertexBufferObject * _scenePositionsVBO = nullptr;
 
+        bool _castShadows;
+
     public:
-        ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations = {});
+        ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations = {}, bool castShadows = true);
         ModelMeshInstanced(ModelMeshInstanced&& other);
         ModelMeshInstanced(const ModelMeshInstanced& other) = delete;
         ModelMeshInstanced& operator=(ModelMeshInstanced&& other);
@@ -66,5 +68,7 @@ namespace Graphics {
         int getInstanceNumber() const;
         std::string modelPath() const;
         VertexArrayObject& vao();
+        bool castShadows() const;
+        void setCastShadows(bool cast);
     };
 }

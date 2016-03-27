@@ -122,6 +122,7 @@ namespace Gui{
 		bool displayMenu = true;
 		bool displayWaterParams = false;
 		bool displayMeshTransform = false;
+		bool displaySplinePicker = false;
 	};
 }
 

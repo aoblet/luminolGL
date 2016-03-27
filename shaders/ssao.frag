@@ -1,5 +1,7 @@
 #version 410 core
 
+#define KERNEL_SIZE 32
+
 in block
 {
     vec2 Texcoord;
@@ -11,10 +13,11 @@ uniform sampler2D Depth;
 uniform sampler2D Normal;
 uniform sampler2D Noise;
 
-uniform vec3 Samples[64];
+uniform vec3 Samples[KERNEL_SIZE];
 uniform mat4 Projection;
 
 uniform vec2 ScreenDim;
+uniform vec2 NoiseSize;
 
 uniform float OcclusionIntensity;
 uniform float OcclusionRadius;
@@ -37,7 +40,7 @@ void main(void)
     float noiseSize = 4;
     float kernelSize = 64;
 
-    vec2 noiseScale = vec2(ScreenDim.x/noiseSize, ScreenDim.y/noiseSize);
+    vec2 noiseScale = vec2(ScreenDim.x/NoiseSize.x, ScreenDim.y/NoiseSize.y);
     vec3 position = texture(PositionDepth, In.Texcoord).xyz;
     float depth = texture(Depth, In.Texcoord).r;
     vec3 normal = decodeNormal(texture(Normal, In.Texcoord).rgb);

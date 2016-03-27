@@ -11,6 +11,7 @@
 
 #include <stdexcept>
 #include <glm/ext.hpp>
+#include <glog/logging.h>
 
 namespace Graphics
 {
@@ -203,6 +204,8 @@ namespace Graphics
         glm::vec3 offset(0.5f, 0, 0.5f);
         offset *= scale;
 
+        DLOG(INFO) << "Vertices construction";
+
         // Vertices construction
         for (int i = 0; i < height; ++i)
         {
@@ -220,8 +223,11 @@ namespace Graphics
                     float mean = 0;
                     for(int x = -padding; x < padding; ++x){
                         for(int y = -padding; y < padding; ++y){
-                            if( i - glm::abs(y) < 0 || j - glm::abs(x) < 0 ||  i + y > height || j + x > width){
-                                if(i - glm::abs(y) < 0 ||  i + y > height){
+                            if( i + y < 0 || j + x < 0 ||  i + y > height || j + x > width){
+                                if((i + y < 0 ||  i + y > height) && (j + x < 0 ||  j + x > width)){
+                                    mean += texData[(texJ + (texI - y) * heightmap->height() - x)  * 3] / (255.f);
+                                }
+                                else if(i + y < 0 ||  i + y > height){
                                     mean += texData[(texJ + (texI - y) * heightmap->height() + x)  * 3] / (255.f);
                                 }
                                 else{
@@ -259,6 +265,8 @@ namespace Graphics
         for(auto& vert : gridVertices){
             vert.position.y -= heightMean;
         }
+
+        DLOG(INFO) << "Normal & Ids generation";
 
         std::vector<int> gridIds;
         for (int i = 0; i < height - 1; ++i)
@@ -339,7 +347,7 @@ namespace Graphics
     }
 
 
-    void Mesh::saveOBJ(const std::string &filePath, const std::string& filename) {
+    void Mesh::saveOBJ(const std::string &filePath, const std::string& filename, bool writeMTL) {
 
         // Write .obj
         std::ofstream objFile(filePath + filename + ".obj");
@@ -381,6 +389,9 @@ namespace Graphics
             objFile << _elementIndex[i + 1] + 1 << "/" << _elementIndex[i + 1] + 1 << "/" << _elementIndex[i + 1] + 1 << " ";
             objFile << _elementIndex[i + 2] + 1 << "/" << _elementIndex[i + 2] + 1 << "/" << _elementIndex[i + 2] + 1 << std::endl;
         }
+
+        if(!writeMTL)
+            return;
 
         // Write .mtl
         std::ofstream mtlFile(filePath + filename + ".mtl");
