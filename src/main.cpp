@@ -42,6 +42,7 @@
 
 #include "gui/Gui.hpp"
 #include "gui/ObjectPicker.h"
+#include "gui/SplinePicker.hpp"
 
 #include "lights/Light.hpp"
 
@@ -90,16 +91,8 @@ int main( int argc, char **argv ) {
     GUI::UserInput userInput;
     Gui::ObjectPicker picker;
     Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
+    bool castShadowKeyPressed = false;
 
-    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
-    camera.setEye(glm::vec3(10,10,-10));
-    View::CameraController cameraController(camera, userInput, 0.05);
-
-    cameraController.positions().add(glm::vec3(0,10,0));
-    cameraController.positions().add(glm::vec3(10,10,0) );
-    cameraController.positions().add(glm::vec3(10,10,10));
-    cameraController.positions().add(glm::vec3(0,10,0));
-    cameraController.viewTargets().add(glm::vec3(0, 0, 0));
 
 //    DLOG(INFO) << "creating meshgrid...";
 //    DLOG(INFO) << "creating texture...";
@@ -130,6 +123,34 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram waterReflectionShader("../shaders/waterReflectionRefraction.vert", mainShader.fShader());
     Graphics::ShaderProgram waterRenderShader(mainShader.vShader(), "../shaders/water.frag");
     Graphics::ShaderProgram ambientShader(blitShader.vShader(), "../shaders/ambient.frag");
+    Graphics::ShaderProgram fogShader(blitShader.vShader(), "../shaders/fog.frag");
+
+
+    const std::string scenePath             = "../assets/luminolGL.json";
+    const std::string splineCamPositions    = "../assets/camPos.txt";
+    const std::string splineCamTargets      = "../assets/camTargets.txt";
+    const std::string splineCamSpeeds       = "../assets/camSpeeds.txt";
+
+    // Camera config
+    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
+    camera.setEye(glm::vec3(10,10,-10));
+
+    // Camera splines config
+    View::CameraController cameraController(camera, userInput, 0.05);
+    try{
+        cameraController.positions().load(splineCamPositions);
+        cameraController.viewTargets().load(splineCamTargets);
+        cameraController.speeds().load(splineCamSpeeds);
+    }
+    catch(std::exception& e){
+        DLOG(WARNING) << e.what();
+    }
+
+
+
+    // Camera link with spline picker
+    Gui::SplinePicker splinePicker(cameraController.positions(), cameraController.viewTargets(), cameraController.speeds());
+
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -162,7 +183,7 @@ int main( int argc, char **argv ) {
     Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
 
     Data::SceneIOJson sceneIOJson;
-    Graphics::Scene scene(&sceneIOJson, "../assets/luminolGL.json");
+    Graphics::Scene scene(&sceneIOJson, scenePath);
 
     Callbacks::CallbacksManager::init(window, &scene, &picker);
     picker.attachToScene(&scene);
@@ -190,7 +211,7 @@ int main( int argc, char **argv ) {
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height 
-//    lightHandler.createRisingFireflies(500, 200, 200, 80);
+    lightHandler.createRisingFireflies(500, 200, 200, 80);
     
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
 //    lightHandler.createRandomFireflies(500, 200, 200, 70);
@@ -353,6 +374,14 @@ int main( int argc, char **argv ) {
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
 
+
+    bool drawSplines = true;
+    bool isSplinePickerEnabled = false;
+
+    float fogDensity = 1;
+    glm::vec3 fogColor = glm::vec3(0.99, 0.91, 0.95);
+
+
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
@@ -481,7 +510,6 @@ int main( int argc, char **argv ) {
         waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_LIGHT_RAY, lightHandler._directionalLight._pos);
         waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_FRESNEL_AMPLITUDE, fresnelAmplitude);
         waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_FRESNEL_BIAS, fresnelBias);
-
 
         //****************************************** RENDER *******************************************
 
@@ -682,7 +710,7 @@ int main( int argc, char **argv ) {
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToDirLightScreen);
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToDirLightScreen);
         shadowShader.useProgram();
-        scene.draw(worldToDirLightScreen);
+        scene.draw(worldToDirLightScreen, false);
         shadowMapFBO.unbind();
 
         //-------------------------------------Light Draw
@@ -724,6 +752,23 @@ int main( int argc, char **argv ) {
         fxFBO.bind();
         quadVAO.bind();
 
+        // ------- FOG ------
+        fogShader.useProgram();
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DENSITY, fogDensity);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_TEXTURE, 0);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_COLOR, fogColor);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_NEAR, camera.getNearFar().x);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_FAR, camera.getNearFar().y);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+
+        fxFBO.changeCurrentTexture(2);
+        fxFBO.clearColor();
+
+        beautyFBO.beauty().bind(GL_TEXTURE0);
+        gBufferFBO.depth().bind(GL_TEXTURE1);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
         // ------- SKYBOX ------
         // Render skybox texture combined with beauty: mask with depth buffer
         // All in one pass
@@ -734,7 +779,7 @@ int main( int argc, char **argv ) {
 
         skybox.bindTexture(GL_TEXTURE0); // cubeMap
         gBufferFBO.depth().bind(GL_TEXTURE1);
-        beautyFBO.beauty().bind(GL_TEXTURE2);
+        fxFBO.texture(2).bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
@@ -775,11 +820,8 @@ int main( int argc, char **argv ) {
         quadIdsVbo.updateData(quadIds);
 
         glDisable(GL_BLEND);
-        
-        // std::cout << timeGLFW << std::endl;
 
-
-        // ------- INDIRECT LIGHT ------
+        // ------- AMBIENT LIGHT ------
         ambientShader.useProgram();
 
         fxFBO.changeCurrentTexture(1);
@@ -874,7 +916,10 @@ int main( int argc, char **argv ) {
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
 
-        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader);
+        if(drawSplines){
+            Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(1,0,0));
+            Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(0,1,0));
+        }
 
         if(drawFBOTextures){
             int screenNumber = 7;
@@ -929,7 +974,7 @@ int main( int argc, char **argv ) {
             glViewport( 6*width/screenNumber, 0, width/screenNumber, height/screenNumber );
 
             quadVAO.bind();
-            waterReflectionFBO.color().bind(GL_TEXTURE0);
+            gBufferFBO.depth().bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
 
@@ -941,12 +986,18 @@ int main( int argc, char **argv ) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glViewport(0, 0, width, height);
+        bool userClick = glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS;
 
         gui.init(window);
-        gui.updateMbut(glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        gui.updateMbut(userClick);
 
-        if(!gui.isCursorInPanelIMGUI())
-            picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, glfwGetMouseButton( window, GLFW_MOUSE_BUTTON_LEFT ) == GLFW_PRESS);
+        if(!gui.isCursorInPanelIMGUI()){
+
+            if(isSplinePickerEnabled)
+                splinePicker.pick(gui.getCursorPosition(), camera, userClick);
+            else
+                picker.pickObject(gui.getCursorPosition(), gui.getCursorSpeed(), camera, userClick) ;
+        }
 
         gui.displayMeshTransform = picker.isPicked();
         if(!picker.isPicked())
@@ -955,6 +1006,15 @@ int main( int argc, char **argv ) {
         if(glfwGetKey(window, GLFW_KEY_T)) picker.switchMode(Gui::PickerMode::TRANSLATION);
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);
         if(glfwGetKey(window, GLFW_KEY_R)) picker.switchMode(Gui::PickerMode::ROTATION);
+
+        if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !castShadowKeyPressed){
+            picker.toggleShadow();
+            castShadowKeyPressed = true;
+        }
+        if(glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE && castShadowKeyPressed){
+            castShadowKeyPressed = false;
+        }
+
 
         gui.addLabel("FPS", &fps);
         gui.addLabel("Lights", cptLights);
@@ -980,9 +1040,9 @@ int main( int argc, char **argv ) {
                 mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
             if(gui.addButton("Draw FBO textures"))
                 drawFBOTextures = !drawFBOTextures;
-
-            gui.addSlider("BlurSSAO", &ssaoBlur, 1, 128, 1);
-
+            if(gui.addButton("Draw splines"))
+                drawSplines = !drawSplines;
+            
             gui.addSeparatorLine();
 
             if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){
@@ -995,6 +1055,11 @@ int main( int argc, char **argv ) {
                 gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
                 gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
                 gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
+                gui.addSlider("Fog density", &fogDensity, 0, 3, 0.00001);
+                imgui3Slider("X", &fogColor.x, 0,1, 0.001, 1);
+                imgui3Slider("Y", &fogColor.y, 0,1, 0.001, 2);
+                imgui3Slider("Z", &fogColor.z, 0,1, 0.001, 3);
+
                 gui.addSeparatorLine();
             }
 
@@ -1062,11 +1127,49 @@ int main( int argc, char **argv ) {
                 }
             }
 
-            if(gui.addButton("Save to assets/luminolGL.json"))
-                scene.save("../assets/luminolGL.json");
+            if(gui.addButton(std::string("Save Scene to " + scenePath + " and splines").c_str())){
+                scene.save(scenePath);
+                cameraController.positions().save(splineCamPositions);
+                cameraController.viewTargets().save(splineCamTargets);
+                cameraController.speeds().save(splineCamSpeeds);
+            }
 
+            if(gui.addButton("Spline Picker", gui.displaySplinePicker)){
+                gui.addIndent();
+                std::string statePicker = "Current state: " + Gui::SplineStateString.at(splinePicker.state());
+                statePicker += isSplinePickerEnabled ? " enabled" : " disabled";
+                gui.addLabel(statePicker.c_str());
+
+                isSplinePickerEnabled = gui.addButton("Toggle Activation") == !isSplinePickerEnabled;
+
+                if(gui.addButton("Position picking"))
+                    splinePicker.setState(Gui::SplineState::position);
+                if(gui.addButton("Target picking"))
+                    splinePicker.setState(Gui::SplineState::target);
+                if(gui.addButton("Veclocity picking"))
+                    splinePicker.setState(Gui::SplineState::velocity);
+                gui.addSlider("Spline Y Plane", &splinePicker.yPlaneIntersection(), -100, 100, 1);
+
+                if(splinePicker.state() != Gui::SplineState::velocity){
+                    Geometry::Spline3D& currentSplinePicker = Gui::SplineState::position == splinePicker.state()? splinePicker.positions() : splinePicker.targets();
+
+                    gui.addLabel(std::string("Spline " + Gui::SplineStateString.at(splinePicker.state())).c_str());
+
+                    if(gui.addButton("Clear"))
+                        currentSplinePicker.clear();
+
+                    for(size_t k = 0; k < currentSplinePicker.size(); ++k){
+                        gui.addLabel(std::string("#" + std::to_string(k)).c_str());
+                        gui.addSlider("Y", &currentSplinePicker[k].y, -100, 100, 1);
+                        if(gui.addButton("Remove"))
+                            currentSplinePicker.erase(currentSplinePicker.begin()+ k);
+                        gui.addSeparatorLine();
+                    }
+                }
+                gui.addUnindent();
+
+            }
             gui.addUnindent();
-
         }
 
         gui.scrollAreaEnd();

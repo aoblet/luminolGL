@@ -43,7 +43,9 @@ void SceneIOJson::load(Graphics::Scene &scene, const std::string &inPath) {
         Value& meshJS = *it;
         assert(meshJS.IsObject());
 
+        bool castShadow = meshJS.HasMember(SceneIOJsonKeys::castingShadows) ? meshJS[SceneIOJsonKeys::castingShadows].GetBool() : true;
         Graphics::ModelMeshInstanced mesh(meshJS[SceneIOJsonKeys::mesh_path].GetString());
+        mesh.setCastShadows(castShadow);
 
         Value& transformationsJS = meshJS[SceneIOJsonKeys::mesh_transformations];
         assert(transformationsJS.IsObject());
@@ -124,6 +126,7 @@ void SceneIOJson::writeTransformations(const Graphics::ModelMeshInstanced &mesh,
     Value meshJson(kObjectType);
     std::string mPath = mesh.modelPath();
     meshJson.AddMember(SceneIOJsonKeys::mesh_path, Value(mPath.c_str(), (int)mPath.size(), allocator), allocator);
+    meshJson.AddMember(SceneIOJsonKeys::castingShadows, Value(mesh.castShadows()), allocator);
 
     Value transformations(kObjectType), positions(kArrayType), rotations(kArrayType), scales(kArrayType);
 

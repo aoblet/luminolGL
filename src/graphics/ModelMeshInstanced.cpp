@@ -2,13 +2,15 @@
 
 using namespace Graphics;
 
-ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations):
+ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations, bool castShadows):
         _modelMeshGroup(modelPath),
         _VAO(),
         _verticesVBO(Graphics::DataType::VERTEX_DESCRIPTOR),
         _indexesVBO(Graphics::DataType::ELEMENT_ARRAY_BUFFER),
         _transformations(transformations),
-        _modelPath(modelPath){}
+        _modelPath(modelPath),
+        _castShadows(castShadows)
+        {}
 
 ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
         _modelMeshGroup(std::move(other._modelMeshGroup)),
@@ -17,9 +19,25 @@ ModelMeshInstanced::ModelMeshInstanced(ModelMeshInstanced &&other):
         _indexesVBO(std::move(other._indexesVBO)),
         _transformations(std::move(other._transformations)),
         _modelPath(std::move(other._modelPath)),
-        _scenePositionsVBO(std::move(other._scenePositionsVBO)){
+        _scenePositionsVBO(std::move(other._scenePositionsVBO)),
+        _castShadows(std::move(other._castShadows))
+{
 
     resetVAO();
+}
+
+ModelMeshInstanced &ModelMeshInstanced::operator=(ModelMeshInstanced &&other) {
+    std::swap(_modelMeshGroup, other._modelMeshGroup);
+    std::swap(_VAO, other._VAO);
+    std::swap(_verticesVBO, other._verticesVBO);
+    std::swap(_indexesVBO, other._indexesVBO);
+    std::swap(_transformations,other._transformations);
+    std::swap(_modelPath, other._modelPath);
+    std::swap(_castShadows, other._castShadows);
+    std::swap(_scenePositionsVBO, other._scenePositionsVBO);
+    resetVAO();
+
+    return *this;
 }
 
 void ModelMeshInstanced::resetVAO(){
@@ -33,20 +51,6 @@ void ModelMeshInstanced::resetVAO(){
         _VAO.addVBO(_scenePositionsVBO);
     }
 }
-
-ModelMeshInstanced &ModelMeshInstanced::operator=(ModelMeshInstanced &&other) {
-    std::swap(_modelMeshGroup, other._modelMeshGroup);
-    std::swap(_VAO, other._VAO);
-    std::swap(_verticesVBO, other._verticesVBO);
-    std::swap(_indexesVBO, other._indexesVBO);
-    std::swap(_transformations,other._transformations);
-    std::swap(_modelPath, other._modelPath);
-    std::swap(_scenePositionsVBO, other._scenePositionsVBO);
-    resetVAO();
-
-    return *this;
-}
-
 
 Geometry::Transformation& ModelMeshInstanced::addInstance(const Geometry::Transformation &trans){
     _transformations.push_back(trans);
@@ -147,4 +151,12 @@ ModelMeshGroup &ModelMeshInstanced::modelMeshGroup(){
 
 VertexArrayObject &ModelMeshInstanced::vao() {
     return _VAO;
+}
+
+bool ModelMeshInstanced::castShadows() const {
+    return _castShadows;
+}
+
+void ModelMeshInstanced::setCastShadows(bool cast) {
+    _castShadows = cast;
 }

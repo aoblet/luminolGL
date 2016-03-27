@@ -25,8 +25,8 @@ namespace Graphics{
         const std::string SPECULAR_POWER                = "SpecularPower";
 
         // Fireflies
-        const std::string WINDOW_RATIO     = "WindowRatio";
-        const std::string IS_SUN           = "IsSun";
+        const std::string WINDOW_RATIO                  = "WindowRatio";
+        const std::string IS_SUN                        = "IsSun";
 
         // Shadow
         const std::string SHADOW_MVP                    = "ShadowMVP";
@@ -38,9 +38,9 @@ namespace Graphics{
         const std::string SCREEN_TO_VIEW                = "ScreenToView";
 
         // Ambient
-        const std::string AMBIENT_INTENSITY  = "Ambient";
-        const std::string BEAUTY_BUFFER  = "Beauty";
-        const std::string SSAO_BUFFER  = "SSAO";
+        const std::string AMBIENT_INTENSITY             = "Ambient";
+        const std::string BEAUTY_BUFFER                 = "Beauty";
+        const std::string SSAO_BUFFER                   = "SSAO";
 
         // Camera Motion Blur
         const std::string PREVIOUS_MVP                  = "PreviousMVP";
@@ -63,16 +63,17 @@ namespace Graphics{
         const std::string MOTION_BLUR_DEPTH             = "Depth";
         const std::string MOTION_BLUR_SAMPLE_COUNT      = "SampleCount";
 
-        const std::string SSAO_POSITION_DEPTH = "PositionDepth";
-        const std::string SSAO_DEPTH = "Depth";
-        const std::string SSAO_NORMAL = "Normal";
-        const std::string SSAO_NOISE = "Noise";
-        const std::string SSAO_SCREEN_DIM = "ScreenDim";
-        const std::string SSAO_SAMPLES = "Samples";
-        const std::string SSAO_PROJECTION = "Projection";
-        const std::string SSAO_OCCLUSION_INTENSITY = "OcclusionIntensity";
-        const std::string SSAO_OCCLUSION_RADIUS = "OcclusionRadius";
-        const std::string SSAO_NOISE_SIZE = "NoiseSize";
+        const std::string SSAO_POSITION_DEPTH           = "PositionDepth";
+        const std::string SSAO_DEPTH                    = "Depth";
+        const std::string SSAO_NORMAL                   = "Normal";
+        const std::string SSAO_NOISE                    = "Noise";
+        const std::string SSAO_SCREEN_DIM               = "ScreenDim";
+        const std::string SSAO_SAMPLES                  = "Samples";
+        const std::string SSAO_PROJECTION               = "Projection";
+        const std::string SSAO_OCCLUSION_INTENSITY      = "OcclusionIntensity";
+        const std::string SSAO_OCCLUSION_RADIUS         = "OcclusionRadius";
+        const std::string SSAO_NOISE_SIZE               = "NoiseSize";
+
 
         // DEBUG
         const std::string DEBUG_COLOR                   = "debugColor";
@@ -98,6 +99,13 @@ namespace Graphics{
         const std::string WATER_FRESNEL_AMPLITUDE       = "FresnelAmplitude";
         const std::string WATER_FRESNEL_BIAS            = "FresnelBias";
 
+        // FOG
+        const std::string FOG_DENSITY                   = "FogDensity";
+        const std::string FOG_DEPTH                     = "Depth";
+        const std::string FOG_TEXTURE                   = "Texture";
+        const std::string FOG_COLOR                     = "FogColor";
+        const std::string FOG_NEAR                      = "zNear";
+        const std::string FOG_FAR                       = "zFar";
 
     }
 }

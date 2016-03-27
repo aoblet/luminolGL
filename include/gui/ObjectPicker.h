@@ -48,6 +48,7 @@ namespace Gui
         void attachToScene(Graphics::Scene * scene);
         void reset();
         bool isPicked();
+        void toggleShadow();
         Geometry::Transformation* currentTransformation();
     };
 }

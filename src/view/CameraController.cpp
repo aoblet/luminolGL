@@ -34,15 +34,15 @@ void CameraController::updateFromInput(const GUI::UserInput& userInput) {
     _camera.update(userInput.rotate * userInput.velocityRotate, movement * userInput.velocityMovement);
 }
 
-Geometry::Spline<glm::vec3>& CameraController::positions() {
+Geometry::Spline3D& CameraController::positions() {
     return _cameraPositions;
 }
 
-Geometry::Spline<glm::tvec1<float>>& CameraController::speeds() {
+Geometry::Spline1D& CameraController::speeds() {
     return _cameraSpeeds;
 }
 
-Geometry::Spline<glm::vec3>& CameraController::viewTargets() {
+Geometry::Spline3D& CameraController::viewTargets() {
     return _cameraViewTargets;
 }
 

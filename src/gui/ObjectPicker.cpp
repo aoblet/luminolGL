@@ -240,21 +240,10 @@ namespace Gui
         return _targetTransformation;
     }
 
-//    void ObjectPicker::addSplinePoint(Geometry::Spline & spline, const glm::vec2 &cursorPosition, const View::CameraFreefly &camera, bool click) {
-//        if(!click)
-//            return;
-//
-//        glm::vec3 front = camera.getFront();
-//        float mouseNormX = ((cursorPosition.x / camera.getViewPort().x) * 2 * camera.getNormalizedViewPort().x - 1 * camera.getNormalizedViewPort().x);
-//        float mouseNormY = ((cursorPosition.y / camera.getViewPort().y) * 2 * camera.getNormalizedViewPort().y - 1 * camera.getNormalizedViewPort().y);
-//
-//        glm::vec3 left = - camera.getLeft() * mouseNormX;
-//        glm::vec3 up = camera.getUp() * mouseNormY;
-//        glm::vec3 rayDir = glm::normalize(front + left + up);
-//        glm::vec3 rayOrigin = camera.getEye();
-//        float yPlane = 10;
-//        glm::vec3 point = ((rayOrigin.y - yPlane) / (glm::dot(glm::vec3(0, -1, 0), rayDir))) *rayDir ;
-//        point += rayOrigin;
-//        spline.add(point);
-//    }
+    void ObjectPicker::toggleShadow() {
+        if(_currentMeshPicked == nullptr)
+            return;
+
+        _currentMeshPicked->setCastShadows(!_currentMeshPicked->castShadows());
+    }
 }

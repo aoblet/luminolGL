@@ -31,10 +31,18 @@ namespace Geometry
         void clear();
         T linearInterpolation(float t) const;
         T cubicInterpolation(float t) const;
+        void erase(typename std::vector<T>::iterator it);
+        typename std::vector<T>::iterator begin();
 
         void load(const std::string & filePath);
         void save(const std::string & filePath) const;
     };
+
+
+
+    using Spline1D = Spline<glm::tvec1<float, glm::precision::highp>>;
+    using Spline2D = Spline<glm::vec2>;
+    using Spline3D = Spline<glm::vec3>;
 }
 
 #include "Spline.tpp"

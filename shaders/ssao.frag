@@ -35,10 +35,6 @@ vec3 decodeNormal(vec3 enc)
     return n;
 }
 
-float rand(float n){
-    return fract(sin(n) * 43758.5453123);
-}
-
 void main(void)
 {
     float noiseSize = 4;
@@ -48,9 +44,7 @@ void main(void)
     vec3 position = texture(PositionDepth, In.Texcoord).xyz;
     float depth = texture(Depth, In.Texcoord).r;
     vec3 normal = decodeNormal(texture(Normal, In.Texcoord).rgb);
-    ivec2 randPick = ivec2(3 * rand(In.Texcoord.x * normal.y), 3 * rand(In.Texcoord.y * normal.x));
-    randPick = ivec2(0,0);
-    vec3 noise = texture(Noise, In.Texcoord * noiseScale + randPick).rgb;
+    vec3 noise = texture(Noise, In.Texcoord * noiseScale).rgb;
 
     if(depth >= 1 - 0.000000001){
         Color = vec4(vec3(1), 1);
