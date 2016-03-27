@@ -12,7 +12,7 @@ namespace Graphics
     VertexBufferObject::VertexBufferObject(DataType dataType, GLuint attribArray, bool initGL) : _dataType(dataType), _attribArray(attribArray), _isInGPU(initGL) {
         if(initGL)
             glGenBuffers(1, &_glId);
-        _target = _dataType == ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
+        _target = _dataType == DataType::ELEMENT_ARRAY_BUFFER ? GL_ELEMENT_ARRAY_BUFFER : GL_ARRAY_BUFFER;
     }
 
     VertexBufferObject::VertexBufferObject(VertexBufferObject &&other) {
@@ -51,31 +51,31 @@ namespace Graphics
             initGL();
 
         switch(_dataType){
-            case VERTEX_DESCRIPTOR:
+            case DataType::VERTEX_DESCRIPTOR:
                 initVboVertexDescriptor();
                 break;
 
-            case VEC3:
+            case DataType::VEC3:
                 initVboVec3();
                 break;
 
-            case VEC2:
+            case DataType::VEC2:
                 initVboVec2();
                 break;
 
-            case FLOAT:
+            case DataType::FLOAT:
                 initVboFloat();
                 break;
 
-            case INT:
+            case DataType::INT:
                 initVboInt();
                 break;
 
-            case INSTANCE_BUFFER:
+            case DataType::INSTANCE_BUFFER:
                 initVboInstanceVec3();
                 break;
 
-            case INSTANCE_TRANSFORMATION_BUFFER:
+            case DataType::INSTANCE_TRANSFORMATION_BUFFER:
                 initVboInstanceMat4();
                 break;
 

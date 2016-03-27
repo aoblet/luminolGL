@@ -131,8 +131,8 @@ int main( int argc, char **argv ) {
 
     std::vector<int> quadIds = {0, 1, 2, 2, 1, 3};
 
-    Graphics::VertexBufferObject quadVerticesVbo(Graphics::VEC2);
-    Graphics::VertexBufferObject quadIdsVbo(Graphics::ELEMENT_ARRAY_BUFFER);
+    Graphics::VertexBufferObject quadVerticesVbo(Graphics::DataType::VEC2);
+    Graphics::VertexBufferObject quadIdsVbo(Graphics::DataType::ELEMENT_ARRAY_BUFFER);
 
     Graphics::VertexArrayObject quadVAO;
     quadVAO.addVBO(&quadVerticesVbo);

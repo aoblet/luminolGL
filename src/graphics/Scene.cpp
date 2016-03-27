@@ -10,7 +10,7 @@
 
 namespace Graphics {
     Scene::Scene(Data::SceneIO* ioHandler, const std::string& scenePath, std::vector<ModelMeshInstanced>&& meshes):
-            _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::INSTANCE_TRANSFORMATION_BUFFER, 3),
+            _meshInstances(std::move(meshes)), _visibleTransformationsVBO(Graphics::DataType::INSTANCE_TRANSFORMATION_BUFFER, 3),
             _ioHandler(ioHandler), _water(ModelMeshGroup::PATH_PLANE){
 
         scenePath.empty() ? initGL() : load(scenePath);
@@ -105,6 +105,9 @@ namespace Graphics {
             return;
         }
         tr.erase(tr.begin() + indexRemove);
+
+        if(meshInstanced == &_water)
+            return;
 
         // Remove meshInstanced if no more transformations are present
         if(!tr.empty())

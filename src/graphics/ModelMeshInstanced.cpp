@@ -5,8 +5,8 @@ using namespace Graphics;
 ModelMeshInstanced::ModelMeshInstanced(const std::string &modelPath, const std::vector<Geometry::Transformation>& transformations):
         _modelMeshGroup(modelPath),
         _VAO(),
-        _verticesVBO(Graphics::VERTEX_DESCRIPTOR),
-        _indexesVBO(Graphics::ELEMENT_ARRAY_BUFFER),
+        _verticesVBO(Graphics::DataType::VERTEX_DESCRIPTOR),
+        _indexesVBO(Graphics::DataType::ELEMENT_ARRAY_BUFFER),
         _transformations(transformations),
         _modelPath(modelPath){}
 

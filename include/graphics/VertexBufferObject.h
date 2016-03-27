@@ -12,7 +12,7 @@
 
 namespace Graphics
 {
-    enum DataType{
+    enum class DataType{
         VERTEX_DESCRIPTOR,
         VEC3,
         VEC2,
