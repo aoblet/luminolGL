@@ -196,13 +196,13 @@ namespace Light{
 			void createFirefliesTornado(int fd, int rayon, int step, const int & nbFireflies, const int & multCounterCircle, float w, float yFirstHeight = 5.5f);
 			
 			/** Instanciate point lights to act like rising fireflies */
-			void createRisingFireflies(const int & nbFireflies=10, const int & x=50, const int & z=50, const int & y=20);
+			void createRisingFireflies(const int nbFireflies=10, const int x=50, const int z=50, const int y=20, const glm::vec3 center=glm::vec3(0,0,0));
 			
 			/** Instanciate point lights to behave randomly 
 			 *   @params: x, y and z represent a rectangle with the width x, height y and depth is z.
 			 *   	Fireflies will spawn in this rectangle.  
 			 */
-			void createRandomFireflies(const int & nbFireflies, const int & x, const int & z, const int & y);
+			void createRandomFireflies(const int nbFireflies, const int x, const int z, const int y, const glm::vec3 center=glm::vec3(0,0,0));
 
 			glm::vec3 getRandomColors(int i);
 

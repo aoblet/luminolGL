@@ -12,6 +12,7 @@ layout(location = 0) out vec4 Color;
 
 uniform sampler2D DepthBuffer;
 uniform mat4 MVP;
+uniform float multIntensity;
 uniform float WindowRatio;
 uniform bool IsSun;
 uniform float Time;
@@ -70,14 +71,16 @@ void main(void)
 	vec4 lightScreenPosition = MVP * vec4(PointLight.Position, 1.0) ;
 	
 	float w = 0;
-	float mult = 1.0;
+	float mult = multIntensity;
 	if(PointLight.type == 4){ // if tornado
 		w = Time; 
 		mult = 0.7;
 		mat4 rotateMatrix = rotationMatrix(vec3(0.,-1.,0.) , w);
 		lightScreenPosition = MVP * rotateMatrix * vec4(PointLight.Position, 1.0) ;
-	} 
+	}
+	else if(IsSun) mult = 1.0; 
 
+	if(lightScreenPosition.z < 0) return;
 	lightScreenPosition /= lightScreenPosition.w;
  
 	// Fragment Position in Screen Coord
@@ -90,8 +93,7 @@ void main(void)
 
 	// If this is the sun and the fragment point we are testing is not the skybox (z<200) and is in front of our sun
 	// OR if there is a fragment in front of our light we do not colorize the fragment
-	if( ( IsSun && point.Position.z < 200 && (depthLightPosition < lightScreenPosition.z*0.5+0.5) ) || (depthLightPosition < lightScreenPosition.z*0.5+0.5 && !IsSun)  
-	) {	
+	if( ( IsSun && point.Position.z < 400 && (depthLightPosition < lightScreenPosition.z*0.5+0.5) ) || (depthLightPosition < lightScreenPosition.z*0.5+0.5 && !IsSun)  ) {
 		return;
 	}	
 		 
