@@ -71,8 +71,10 @@ int main( int argc, char **argv ) {
 
     int DPI;
     GLFWwindow * window = nullptr;
+    bool displayGui = true;
+    bool keypressedDrawGui = true;
     // glm::ivec2 dimViewport(1280, 720);
-    glm::ivec2 dimViewport(1280, 720);
+    glm::ivec2 dimViewport(1280, 760);
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
@@ -172,7 +174,7 @@ int main( int argc, char **argv ) {
     checkErrorGL("Scene");
 
 
-    // My Lights -------------------------------------------------------------------------------------------------------------------------------
+    // My Lights / Fireflies -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
     lightHandler.setDirectionalLight(glm::vec3(0.818, -0.862, -1), glm::vec3(1), 1);
 
@@ -182,17 +184,17 @@ int main( int argc, char **argv ) {
     ////////////// Sun ---- Point Light 
     lightHandler.addPointLight(glm::vec3(-15000, 12000, 15000), glm::vec3(24.5, 18.5, 0.05), 0.8, 2.0, Light::SUN);
 
-    ////////////// Firefly fixe---- Point Lights
-    lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
+    ////////////// Firefly fixe---- 
+    // lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
     
-    ////////////// Tornado Fireflies ---- Point Light  // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
+    ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
-    ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height 
-    lightHandler.createRisingFireflies(500, 200, 200, 80); 
+    ////////////// Rising Fireflies ---- // NB_RISING_FIREFLIES, width, profondeur, height, center 
+    lightHandler.createRisingFireflies(500, 10, 10, 160, glm::vec3(20,0,20)); 
     
-    ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-    lightHandler.createRandomFireflies(500, 200, 200, 70);
+    ////////////// Random Displacement Fireflies ---- // NB_RANDOM_FIREFLIES, width, profondeur, height, center 
+    lightHandler.createRandomFireflies(100, 50, 50, 40, glm::vec3(-150,20,50));
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
@@ -701,27 +703,6 @@ int main( int argc, char **argv ) {
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
-//<<<<<<< HEAD
-//        fxFBO.texture(4).bind(GL_TEXTURE0);
-//        gBufferFBO.normal().bind(GL_TEXTURE1);
-//        gBufferFBO.depth().bind(GL_TEXTURE2);
-//        // gBufferFBO.shadow().bind(GL_TEXTURE3);
-//
-//        for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
-//            std::vector<glm::vec2> littleQuadVertices;
-//            if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation)){
-//                //quad size reduction and frustum according to the light position, intensity, color and attenuation
-//                quadVerticesVbo.updateData(littleQuadVertices);
-//                quadIdsVbo.updateData(quadIds);
-//                uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-//                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//            }
-//        }
-//        quadVerticesVbo.updateData(quadVertices);
-//        quadIdsVbo.updateData(quadIds);
-//=======
-//>>>>>>> 960aa433b112c50d02fa8b60355a1120ef345814
-
         //------------------------------------- Post FX Draw
 
         // Fallback to default framebuffer
@@ -754,7 +735,7 @@ int main( int argc, char **argv ) {
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
-        // ------------------------------------ Point Lights
+        // ------------------------------------ Fireflies
         fireflyShader.useProgram(); // point light shaders
         quadVAO.bind(); // Bind quad vao
         glEnable(GL_BLEND);
@@ -791,8 +772,6 @@ int main( int argc, char **argv ) {
         quadIdsVbo.updateData(quadIds);
 
         glDisable(GL_BLEND);
-        
-        // std::cout << timeGLFW << std::endl;
 
 
         // ------- INDIRECT LIGHT ------
@@ -971,118 +950,131 @@ int main( int argc, char **argv ) {
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);
         if(glfwGetKey(window, GLFW_KEY_R)) picker.switchMode(Gui::PickerMode::ROTATION);
 
-        gui.addLabel("FPS", &fps);
-        gui.addLabel("Lights", cptLights);
-
-        if(gui.addButton("Menu", gui.displayMenu)){
-            gui.setWindowWidth(guiExpandWidth);
-            gui.setWindowHeight(guiExpandHeight);
+         if(glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && !keypressedDrawGui){
+            displayGui = !(displayGui);
+            keypressedDrawGui = true;
         }
-        else{
-            gui.setWindowWidth(guiMinimalWidth);
-            gui.setWindowHeight(guiMinimalHeight);
+
+        if(glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE && keypressedDrawGui){
+            keypressedDrawGui = false;
         }
 
 
-        if(gui.displayMenu){
+        if(displayGui){
 
-            gui.addSeparatorLine();
-            gui.addIndent();
-
-            if(gui.addButton("Camera switch"))
-                cameraController.setSpectator(!cameraController.isSpectator());
-            if(gui.addButton("IsNormalMapActive"))
-                mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
-            if(gui.addButton("Draw FBO textures"))
-                drawFBOTextures = !drawFBOTextures;
+            gui.addLabel("FPS", &fps);
             
-            gui.addSeparatorLine();
+            if(gui.addButton("Menu", gui.displayMenu)){
+                gui.setWindowWidth(guiExpandWidth);
+                gui.setWindowHeight(guiExpandHeight);
+            }
+            else{
+                gui.setWindowWidth(guiMinimalWidth);
+                gui.setWindowHeight(guiMinimalHeight);
+            }
 
-            if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){
-                gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
-                gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
-                gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
-                gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
-                gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
-                gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
-                gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
-                gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
-                gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
+
+            if(gui.displayMenu){
+
+                gui.addLabel("Lights", cptLights);
                 gui.addSeparatorLine();
-            }
+                gui.addIndent();
 
-            if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){
-                gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
-                gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
-                gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
-                gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
-
-                gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
-
-                gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
-                gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
-                gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);
-                gui.addSeparatorLine();
-            }
-
-            if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
-                gui.addSliderPointLights(lightHandler);
-
-            if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters)){
-                gui.addSlider("Shadow Bias", &shadowBias, 0, 0.01, 0.00000001);
-                gui.addSliderSpotLights(lightHandler);
-            }
-
-            if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
-                gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
-                gui.addSliderDirectionalLights(lightHandler, -1, 1);
-                gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
-            }
-
-            if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){
-                gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
-                gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
-                gui.addSliderSpline(cameraController.viewTargets());
-                if(gui.addButton("Add Spline"))
-                    cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
-            }
-
-            if(gui.addButton("Water", gui.displayWaterParams)) {
-                gui.addSlider("Waves", &noiseAmplitudeWaves, 0.0, 1, 0.00000001);
-                gui.addSlider("Waves specular", &specularAmplitudeWaves, 0.0, 1, 0.00000001);
-                gui.addSlider("Fresnel Amplitude", &fresnelAmplitude, 0.0, 20, 0.00000001);
-                gui.addSlider("Fresnel Bias", &fresnelBias, 0.0, 1, 0.00000001);
-            }
-
-            if(gui.addButton("Bounding Box"))
-                debugScene.toggle();
-
-            if(gui.addButton("Mesh Transform", gui.displayMeshTransform)){
-                gui.addSlider("Scale", &scaleMeshTransform, 0, 50, 0.1);
+                if(gui.addButton("Camera switch"))
+                    cameraController.setSpectator(!cameraController.isSpectator());
+                if(gui.addButton("IsNormalMapActive"))
+                    mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
+                if(gui.addButton("Draw FBO textures"))
+                    drawFBOTextures = !drawFBOTextures;
+                
                 gui.addSeparatorLine();
 
-                gui.addLabel("Translation");
-                imgui3Slider("X", &translateMeshTransform.x, -10, 10, 0.1, 1);
-                imgui3Slider("Y", &translateMeshTransform.y, -10, 10, 0.1, 2);
-                imgui3Slider("Z", &translateMeshTransform.z, -10, 10, 0.1, 3);
-
-                if(gui.addButton("Apply transform"))
-                    picker.transformPickedObject(translateMeshTransform, glm::vec3(scaleMeshTransform));
-
-                if(gui.addButton("Reset")){
-                    translateMeshTransform = glm::vec3(0);
-                    scaleMeshTransform = 1;
+                if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){
+                    gui.addSlider("Gamma", &gamma, 1, 8, 0.01);
+                    gui.addSlider("Sobel Intensity", &sobelIntensity, 0, 4, 0.01);
+                    gui.addSlider("Blur Sample Count", &sampleCount, 0, 32, 1);
+                    gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
+                    gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
+                    gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
+                    gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+                    gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
+                    gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
+                    gui.addSeparatorLine();
                 }
+
+                if(gui.addButton("General Lights Parameters", gui.displayGeneralLightParameters)){
+                    gui.addSlider("Specular Power", &lightHandler._specularPower, 0, 100, 0.1);
+                    gui.addSlider("Attenuation", &lightHandler._lightAttenuation, 0, 16, 0.1);
+                    gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
+                    gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
+                    gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
+                    gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
+                    gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
+                    gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);
+                    gui.addSliderSun(lightHandler);
+                    gui.addSeparatorLine();
+                }
+
+                if(gui.addButton("Point Lights Parameters", gui.displayPointLightParameters))
+                    gui.addSliderPointLights(lightHandler);
+
+                if(gui.addButton("Spot Lights Parameters", gui.displaySpotLightParameters)){
+                    gui.addSlider("Shadow Bias", &shadowBias, 0, 0.01, 0.00000001);
+                    gui.addSliderSpotLights(lightHandler);
+                }
+
+                if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
+                    gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
+                    gui.addSliderDirectionalLights(lightHandler, -1, 1);
+                    gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
+                }
+
+                if(gui.addButton("Camera Spline", gui.displayCameraSplineParameters)){
+                    gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+                    gui.addSlider("Camera angles velocity", &userInput.getVelocityRotate(), 0.0, 0.2, 0.001);
+                    gui.addSliderSpline(cameraController.viewTargets());
+                    if(gui.addButton("Add Spline"))
+                        cameraController.viewTargets().add(cameraController.viewTargets()[cameraController.viewTargets().size()-1]);
+                }
+
+                if(gui.addButton("Water", gui.displayWaterParams)) {
+                    gui.addSlider("Waves", &noiseAmplitudeWaves, 0.0, 1, 0.00000001);
+                    gui.addSlider("Waves specular", &specularAmplitudeWaves, 0.0, 1, 0.00000001);
+                    gui.addSlider("Fresnel Amplitude", &fresnelAmplitude, 0.0, 20, 0.00000001);
+                    gui.addSlider("Fresnel Bias", &fresnelBias, 0.0, 1, 0.00000001);
+                }
+
+                if(gui.addButton("Bounding Box"))
+                    debugScene.toggle();
+
+                if(gui.addButton("Mesh Transform", gui.displayMeshTransform)){
+                    gui.addSlider("Scale", &scaleMeshTransform, 0, 50, 0.1);
+                    gui.addSeparatorLine();
+
+                    gui.addLabel("Translation");
+                    imgui3Slider("X", &translateMeshTransform.x, -10, 10, 0.1, 1);
+                    imgui3Slider("Y", &translateMeshTransform.y, -10, 10, 0.1, 2);
+                    imgui3Slider("Z", &translateMeshTransform.z, -10, 10, 0.1, 3);
+
+                    if(gui.addButton("Apply transform"))
+                        picker.transformPickedObject(translateMeshTransform, glm::vec3(scaleMeshTransform));
+
+                    if(gui.addButton("Reset")){
+                        translateMeshTransform = glm::vec3(0);
+                        scaleMeshTransform = 1;
+                    }
+                }
+
+                if(gui.addButton("Save to assets/luminolGL.json"))
+                    scene.save("../assets/luminolGL.json");
+
+                gui.addUnindent();
+
             }
 
-            if(gui.addButton("Save to assets/luminolGL.json"))
-                scene.save("../assets/luminolGL.json");
-
-            gui.addUnindent();
+            gui.scrollAreaEnd();
 
         }
-
-        gui.scrollAreaEnd();
 
         glDisable(GL_BLEND);
 #endif

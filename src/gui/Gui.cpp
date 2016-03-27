@@ -146,24 +146,6 @@ namespace Gui{
 
     void Gui::addSliderPointLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
 
-        float size = 15000.0;
-        addIndent();
-        addLabel("SUN: ");
-        addIndent();
-        imguiSlider("PL: position.x", &lightHandler._pointLights[0]._pos.x, -size, size, posStep);
-        imguiSlider("PL: position.y", &lightHandler._pointLights[0]._pos.y, -3.0, size, posStep);
-        imguiSlider("PL: position.z", &lightHandler._pointLights[0]._pos.z, -size, size, posStep);
-        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 100, 0.001);
-        imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 4, attStep);
-        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 2, 0.01, 1);
-        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 2, 0.01, 2);
-        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 2, 0.01, 3);
-        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 300, 0.01, 1);
-        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 300, 0.01, 2);
-        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 300, 0.01, 3);
-        addUnindent();
-        addUnindent();
-
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
             addIndent();
             addLabel("Point Light: ", (int)i);
@@ -180,8 +162,27 @@ namespace Gui{
             imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 100, 0.01, 2);
             imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 100, 0.01, 3);
             addUnindent();
+            addUnindent();
         }
         addSeparatorLine();
+    }
+
+        void Gui::addSliderSun(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
+
+        float size = 15000.0;
+        addLabel("SUN: ");
+        addIndent();
+        imguiSlider("PL: position.x", &lightHandler._pointLights[0]._pos.x, -size, size, posStep);
+        imguiSlider("PL: position.y", &lightHandler._pointLights[0]._pos.y, -3.0, size, posStep);
+        imguiSlider("PL: position.z", &lightHandler._pointLights[0]._pos.z, -size, size, posStep);
+        imguiSlider("PL: intensity", &lightHandler._pointLights[0]._intensity, 0, 100, 0.001);
+        imguiSlider("PL: attenuation", &lightHandler._pointLights[0]._attenuation, 0.01, 4, attStep);
+        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 2, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 2, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 2, 0.01, 3);
+        imgui3Slider("Red", &lightHandler._pointLights[0]._color.r, 0, 300, 0.01, 1);
+        imgui3Slider("Green", &lightHandler._pointLights[0]._color.g, 0, 300, 0.01, 2);
+        imgui3Slider("Blue", &lightHandler._pointLights[0]._color.b, 0, 300, 0.01, 3);
     }
 
     void Gui::addSliderSpline(Geometry::Spline<glm::vec3>& spline, float posBegin, float posEnd, float posStep){

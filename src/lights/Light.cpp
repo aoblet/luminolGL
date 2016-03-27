@@ -150,12 +150,12 @@ namespace Light{
 
 	}
 
-	void LightHandler::createRisingFireflies(const int & nbFireflies, const int & x, const int & z, const int & y){
+	void LightHandler::createRisingFireflies(const int nbFireflies, const int x, const int z, const int y, const glm::vec3 center){
 		srand (time(NULL));
 
 		for(int i = 0; i < nbFireflies; ++i){
 			
-			glm::vec3 fireflyPosition = glm::vec3( 
+			glm::vec3 fireflyPosition = center + glm::vec3( 
 	            rand() % (2*x) + 1 - x
 	            , - rand() % y
 	            , rand() % (2*z) + 1 - z
@@ -172,17 +172,18 @@ namespace Light{
 
 
 
-	void LightHandler::createRandomFireflies(const int & nbFireflies, const int & x, const int & z, const int & y){
+	void LightHandler::createRandomFireflies(const int nbFireflies, const int x, const int z, const int y, const glm::vec3 center){
 		
 		srand (time(NULL));
 
 		for(int i = 0; i < nbFireflies; ++i){
 			
-			glm::vec3 fireflyPosition = glm::vec3( 
+			glm::vec3 fireflyPosition = center + glm::vec3( 
 	            rand() % (2*x) + 1 - x
-	            , rand() % 10 + 5
+	            , rand() % y + 5
 	            , rand() % (2*z) + 1 - z
 	        );
+
 
 	        glm::vec3 fireflyColor = getRandomColors(i);
 
