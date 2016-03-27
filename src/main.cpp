@@ -603,6 +603,26 @@ int main( int argc, char **argv ) {
         waterReflectionFBO.unbind();
         glDisable(GL_CLIP_DISTANCE0);
 
+        // ------- FOG ------
+        fxFBO.bind();
+        quadVAO.bind();
+        fxFBO.changeCurrentTexture(1);
+        fxFBO.clearColor();
+        fogShader.useProgram();
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DENSITY, fogDensity);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_TEXTURE, 0);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_COLOR, fogColor);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_NEAR, camera.getNearFar().x);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_FAR, camera.getNearFar().y);
+
+        waterReflectionFBO.color().bind(GL_TEXTURE0);
+        waterReflectionFBO.depth().bind(GL_TEXTURE1);
+        glDisable(GL_DEPTH_TEST);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        glEnable(GL_DEPTH_TEST);
+        fxFBO.unbind();
+
 
         //----------------------- REFLECTION SCENE + SKYBOX -------------
         // Render skybox texture combined with reflection: mask with depth buffer
@@ -614,7 +634,7 @@ int main( int argc, char **argv ) {
 
         skybox.bindTexture(GL_TEXTURE0); // cubeMap
         waterReflectionFBO.depth().bind(GL_TEXTURE1);
-        waterReflectionFBO.color().bind(GL_TEXTURE2);
+        fxFBO.texture(1).bind(GL_TEXTURE2);
 
         quadVAO.bind();
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
