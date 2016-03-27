@@ -2,6 +2,7 @@
 #define POSITION 0
 layout(location = POSITION) in vec2 Position;
 
+
 out block
 {
     vec2 Texcoord;
