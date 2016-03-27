@@ -1154,7 +1154,7 @@ int main( int argc, char **argv ) {
                     cameraController.viewTargets().save(splineCamTargets);
                     cameraController.speeds().save(splineCamSpeeds);
                 }
-
+ 
                 if(gui.addButton("Spline Picker", gui.displaySplinePicker)){
                     gui.addIndent();
                     std::string statePicker = "Current state: " + Gui::SplineStateString.at(splinePicker.state());
