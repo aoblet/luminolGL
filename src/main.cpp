@@ -901,7 +901,8 @@ int main( int argc, char **argv ) {
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
 
-        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader);
+        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(1,0,0));
+        Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), cameraController.positions().size()*10, debugShapesShader, glm::vec3(0,1,0));
 
         if(drawFBOTextures){
             int screenNumber = 7;
