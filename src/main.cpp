@@ -592,7 +592,7 @@ int main( int argc, char **argv ) {
         pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, true);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         pointLightShader.updateUniform(Graphics::UBO_keys::IS_SUN, false);
-
+        int cptLights = 0;
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
             std::vector<glm::vec2> littleQuadVertices;
             if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation, lightHandler._pointLights[i]._type, timeGLFW)){
@@ -604,6 +604,8 @@ int main( int argc, char **argv ) {
                 quadVerticesVbo.updateData(littleQuadVertices);
                 quadIdsVbo.updateData(quadIds);
                 
+                cptLights++;
+
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
                 glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
             }
@@ -823,6 +825,7 @@ int main( int argc, char **argv ) {
         if(glfwGetKey(window, GLFW_KEY_R)) picker.switchMode(Gui::PickerMode::ROTATION);
 
         gui.addLabel("FPS", &fps);
+        gui.addLabel("Lights", cptLights);
 
         if(gui.addButton("Menu", gui.displayMenu)){
             gui.setWindowWidth(guiExpandWidth);
