@@ -14,6 +14,7 @@
 
 #include <glog/logging.h>
 #include <callbacks/CallbacksManager.hpp>
+#include <glm/gtc/random.hpp>
 
 
 #include "geometry/Spline.h"
@@ -104,8 +105,8 @@ int main( int argc, char **argv ) {
 //    DLOG(INFO) << "creating texture...";
 //    Graphics::Texture gridTex("../assets/models/ground/ground03_height.tga");
 //    DLOG(INFO) << "generating meshgrid...";
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 10);
-//    grid.saveOBJ("../assets/models/ground/", "ground03");
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(7, 7, &gridTex, glm::vec3(1), 0.1f, 7);
+//    grid.saveOBJ("../assets/models/ground/", "ground03", false);
 //    DLOG(INFO) << "meshgrid created !";
 //    return 0;
 
@@ -189,10 +190,10 @@ int main( int argc, char **argv ) {
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height 
-    lightHandler.createRisingFireflies(500, 200, 200, 80); 
+//    lightHandler.createRisingFireflies(500, 200, 200, 80);
     
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-    lightHandler.createRandomFireflies(500, 200, 200, 70);
+//    lightHandler.createRandomFireflies(500, 200, 200, 70);
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
@@ -294,11 +295,13 @@ int main( int argc, char **argv ) {
 
     // Samples for SSAO ------------------------------------------------------------------------------
 
+    int kernelSize = 32;
+
     // random floats between 0.0 - 1.0
     std::uniform_real_distribution<GLfloat> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
     std::vector<glm::vec3> ssaoKernel;
-    for (int i = 0; i < 64; ++i)
+    for (int i = 0; i < kernelSize; ++i)
     {
         glm::vec3 sample(
                 randomFloats(generator) * 2.0f - 1.0f,
@@ -330,9 +333,12 @@ int main( int argc, char **argv ) {
     Graphics::Texture ssaoNoiseTex(4, 4, Graphics::TexParams(GL_RGB16F, GL_RGB, GL_FLOAT, GL_REPEAT, GL_NEAREST));
     ssaoNoiseTex.updateData(ssaoNoise.data());
     ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_SAMPLES, ssaoKernel);
+    ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_NOISE_SIZE, glm::vec2(noiseSizeX, noiseSizeY));
 
     float occlusionIntensity = 2.0;
     float occlusionRadius = 3.0;
+
+    float ssaoBlur = 4.0f;
 
     //Water--------------------------------------------------------------
     Graphics::GeometricFBO waterReflectionFBO(dimViewport);
@@ -511,31 +517,30 @@ int main( int argc, char **argv ) {
         quadVAO.bind();
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-        //blur on ssao texture
-        if(sampleCount > 0){
-            // Use blur program shader
-            blurShader.useProgram();
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, 3);
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
+//        blur on ssao texture
+        // Use blur program shader
+        blurShader.useProgram();
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_SAMPLE_COUNT, int(ssaoBlur));
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_SIGMA, 8.f);
 
-            // Write into Vertical Blur Texture
-            fxFBO.changeCurrentTexture(1);
-            // Clear the content of texture
-            fxFBO.clearColor();
-            // Read the texture processed by the Sobel operator
-            fxFBO.texture(0).bind(GL_TEXTURE0);
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        // Write into Vertical Blur Texture
+        fxFBO.changeCurrentTexture(1);
+        // Clear the content of texture
+        fxFBO.clearColor();
+        // Read the texture processed by the Sobel operator
+        fxFBO.texture(0).bind(GL_TEXTURE0);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-            fxFBO.changeCurrentTexture(0);
-            // Clear the content of texture
-            fxFBO.clearColor();
-            // Write into Horizontal Blur Texture
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
+        fxFBO.changeCurrentTexture(0);
+        // Clear the content of texture
+        fxFBO.clearColor();
+        // Write into Horizontal Blur Texture
+        blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(0,1));
 
-            // Read the texture processed by the Vertical Blur
-            fxFBO.texture(1).bind(GL_TEXTURE0);
-            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        }
+        // Read the texture processed by the Vertical Blur
+        fxFBO.texture(1).bind(GL_TEXTURE0);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // We mix SSAO and diffuse color into gbuffer
         gBufferFBO.bind();
@@ -701,27 +706,6 @@ int main( int argc, char **argv ) {
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
 
-//<<<<<<< HEAD
-//        fxFBO.texture(4).bind(GL_TEXTURE0);
-//        gBufferFBO.normal().bind(GL_TEXTURE1);
-//        gBufferFBO.depth().bind(GL_TEXTURE2);
-//        // gBufferFBO.shadow().bind(GL_TEXTURE3);
-//
-//        for(size_t i = 0; i < lightHandler._pointLights.size(); ++i){
-//            std::vector<glm::vec2> littleQuadVertices;
-//            if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation)){
-//                //quad size reduction and frustum according to the light position, intensity, color and attenuation
-//                quadVerticesVbo.updateData(littleQuadVertices);
-//                quadIdsVbo.updateData(quadIds);
-//                uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-//                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-//            }
-//        }
-//        quadVerticesVbo.updateData(quadVertices);
-//        quadIdsVbo.updateData(quadIds);
-//=======
-//>>>>>>> 960aa433b112c50d02fa8b60355a1120ef345814
-
         //------------------------------------- Post FX Draw
 
         // Fallback to default framebuffer
@@ -821,6 +805,7 @@ int main( int argc, char **argv ) {
             // Use blur program shader
             blurShader.useProgram();
             blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SIGMA, 1.f);
 
             // Write into Vertical Blur Texture
             fxFBO.changeCurrentTexture(1);
@@ -995,7 +980,9 @@ int main( int argc, char **argv ) {
                 mainShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP_ACTIVE, (isNormalMapActive = isNormalMapActive ? 0 : 1));
             if(gui.addButton("Draw FBO textures"))
                 drawFBOTextures = !drawFBOTextures;
-            
+
+            gui.addSlider("BlurSSAO", &ssaoBlur, 1, 128, 1);
+
             gui.addSeparatorLine();
 
             if(gui.addButton("Post-FX parameters", gui.displayPostFxParameters) ){

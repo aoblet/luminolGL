@@ -53,6 +53,7 @@ namespace Graphics{
         const std::string SOBEL_INTENSITY               = "SobelIntensity";
         const std::string BLUR_SAMPLE_COUNT             = "SampleCount";
         const std::string BLUR_DIRECTION                = "BlurDirection";
+        const std::string BLUR_SIGMA                    = "Sigma";
 
         const std::string DOF_COLOR                     = "Color";
         const std::string DOF_COC                       = "CoC";
@@ -71,6 +72,7 @@ namespace Graphics{
         const std::string SSAO_PROJECTION = "Projection";
         const std::string SSAO_OCCLUSION_INTENSITY = "OcclusionIntensity";
         const std::string SSAO_OCCLUSION_RADIUS = "OcclusionRadius";
+        const std::string SSAO_NOISE_SIZE = "NoiseSize";
 
         // DEBUG
         const std::string DEBUG_COLOR                   = "debugColor";
