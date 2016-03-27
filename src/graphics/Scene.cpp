@@ -54,7 +54,7 @@ namespace Graphics {
         _visibleTransformations.clear();
         for(int i = 0; i < mesh.getInstanceNumber(); ++i){
             float distance = glm::distance(mesh.getPosition(i), _cameraPosition);
-            if(mesh.getBoundingBox(i).isVisible(VP)/* && distance < _far*/){
+            if(mesh.getBoundingBox(i).isVisible(VP) && distance < _far){
                 _visibleTransformations.push_back(mesh.getTransformationMatrix(i));
             }
         }

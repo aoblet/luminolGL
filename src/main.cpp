@@ -16,7 +16,7 @@
 #include <callbacks/CallbacksManager.hpp>
 
 
-#include "geometry/Spline3D.h"
+#include "geometry/Spline.h"
 
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Texture.h"
@@ -101,10 +101,10 @@ int main( int argc, char **argv ) {
 
 //    DLOG(INFO) << "creating meshgrid...";
 //    DLOG(INFO) << "creating texture...";
-//    Graphics::Texture gridTex("../assets/models/mountains/mountain_08_spec.jpg");
+//    Graphics::Texture gridTex("../assets/models/ground/ground03_height.tga");
 //    DLOG(INFO) << "generating meshgrid...";
 //    Graphics::Mesh grid = Graphics::Mesh::genGrid(200, 200, &gridTex, glm::vec3(1), 0.1f, 10);
-//    grid.saveOBJ("../assets/models/mountains/", "mountain_08");
+//    grid.saveOBJ("../assets/models/ground/", "ground03");
 //    DLOG(INFO) << "meshgrid created !";
 //    return 0;
 
@@ -335,8 +335,6 @@ int main( int argc, char **argv ) {
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
     //*********************************************************************************************
-
-
 
     // Identity matrix
     glm::mat4 objectToWorld;
@@ -824,8 +822,8 @@ int main( int argc, char **argv ) {
         //------------------------------------ Debug Shape Drawing
         debugScene.draw(mvp);
         picker.drawPickedObject(debugShapesShader);
-        Graphics::DebugDrawer::drawSpline(cameraController.positions(), 50, debugShapesShader, glm::vec3(1,0,0));
-        Graphics::DebugDrawer::drawSpline(cameraController.viewTargets(), 50, debugShapesShader, glm::vec3(0,1,0));
+
+        Graphics::DebugDrawer::drawSpline(cameraController.positions(), cameraController.positions().size()*10, debugShapesShader);
 
         if(drawFBOTextures){
             int screenNumber = 7;

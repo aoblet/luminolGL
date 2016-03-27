@@ -58,7 +58,7 @@ namespace Graphics
         }
     };
 
-    enum TextureType{
+    enum class TextureType{
         DEFAULT,
         FRAMEBUFFER_DEPTH,
         FRAMEBUFFER_RGBA,
@@ -89,7 +89,7 @@ namespace Graphics
         Texture(const Texture& texture);
         Texture(Texture&& texture);
 
-        Texture(const std::string& path="", TextureType type=DEFAULT) ; /** Default */
+        Texture(const std::string& path="", TextureType type=TextureType::DEFAULT) ; /** Default */
         Texture(const std::string& path, TexParams texParams) ;         /** Texture File with custom texParams */
         Texture(int width, int height, TextureType fboType);            /** Fbo constructor */
         Texture(int width, int height, TexParams texParams);            /** Custom fbo constructor*/

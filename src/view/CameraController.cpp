@@ -19,7 +19,7 @@ CameraFreefly &CameraController::camera() const {
 
 void CameraController::updateFromSplines(float time) {
     float indexSpline = glm::mod(time*0.005f, 1.f);
-    float speed = _cameraSpeeds.size() ? _cameraSpeeds.cubicInterpolation(indexSpline).y : 1;
+    float speed = _cameraSpeeds.size() ? _cameraSpeeds.cubicInterpolation(indexSpline).x : 1;
     speed *= _velocitySplines;
     _camera.setEye(_cameraPositions.cubicInterpolation(glm::mod(time*speed, 1.f)));
     _camera.updateFromTarget(_cameraViewTargets.cubicInterpolation(indexSpline));
@@ -34,15 +34,15 @@ void CameraController::updateFromInput(const GUI::UserInput& userInput) {
     _camera.update(userInput.rotate * userInput.velocityRotate, movement * userInput.velocityMovement);
 }
 
-Geometry::Spline3D& CameraController::positions() {
+Geometry::Spline<glm::vec3>& CameraController::positions() {
     return _cameraPositions;
 }
 
-Geometry::Spline3D& CameraController::speeds() {
+Geometry::Spline<glm::tvec1<float>>& CameraController::speeds() {
     return _cameraSpeeds;
 }
 
-Geometry::Spline3D& CameraController::viewTargets() {
+Geometry::Spline<glm::vec3>& CameraController::viewTargets() {
     return _cameraViewTargets;
 }
 

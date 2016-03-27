@@ -5,6 +5,7 @@
 #ifndef LUMINOLGL_OBJECTPICKER_H
 #define LUMINOLGL_OBJECTPICKER_H
 
+#include "geometry/Spline.h"
 #include "graphics/ShaderProgram.hpp"
 #include "graphics/Mesh.h"
 #include "graphics/Scene.h"
@@ -13,11 +14,7 @@
 
 namespace Gui
 {
-    enum PickerMode{
-        TRANSLATION = 0,
-        ROTATION = 1,
-        SCALE = 2
-    };
+    enum class PickerMode{TRANSLATION, ROTATION , SCALE};
 
     class ObjectPicker {
     private:

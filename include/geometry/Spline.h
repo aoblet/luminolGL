@@ -11,36 +11,32 @@
 
 namespace Geometry
 {
-    class Spline3D{
+    /**
+     * Templated Spline class.
+     * @template T must be of type glm::vecN or tvec1 (1d): needed by interpolation module.
+     */
+    template<class T> class Spline {
     private:
-        std::vector<glm::vec3> _points;
-
+        std::vector<T> _points;
         int findIndex(float t) const;
-
         float findInterval(float t) const;
-
         int at(int index) const;
 
     public:
-        void add(const glm::vec3 &point);
-
+        void add(const T& points);
         void remove(int index);
-
-        glm::vec3 operator[](int index) const;
-
-        glm::vec3& operator[](int index);
-
+        T operator[](int index) const;
+        T& operator[](int index);
         size_t size() const;
-
         void clear();
-
-        glm::vec3 linearInterpolation(float t) const;
-
-        glm::vec3 cubicInterpolation(float t) const;
+        T linearInterpolation(float t) const;
+        T cubicInterpolation(float t) const;
 
         void load(const std::string & filePath);
         void save(const std::string & filePath) const;
     };
 }
+
+#include "Spline.tpp"
 
 #endif //LUMINOLGL_SPLINE3D_H

@@ -56,7 +56,7 @@ namespace Graphics
     }
 
 
-    void DebugDrawer::drawSpline(const Geometry::Spline3D &spline, int subdivisions, ShaderProgram &program, const glm::vec3 &color, float lineWidth) {
+    void DebugDrawer::drawSpline(const Geometry::Spline<glm::vec3> &spline, int subdivisions, ShaderProgram &program, const glm::vec3 &color, float lineWidth) {
         for(int t = 0; t <= subdivisions; ++t){
             float interpolation1 = t / float(subdivisions);
             float interpolation2 = (t+1) / float(subdivisions);
