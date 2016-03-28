@@ -77,7 +77,7 @@ namespace Light{
 
         glm::vec3 axis = glm::vec3(0.0,1.0,0.0);
         float w = 0;
-        if(type == TORNADO){
+        if(type == PointLightBehavior::TORNADO){
         	axis = glm::vec3(0.0,-1.0,0.0);	
         	w = t;
         }
@@ -103,9 +103,13 @@ namespace Light{
             if( projPoint.y < ymin) ymin = projPoint.y;
         }
 
+
         if(DEBUG) std::cout << "Left: " << xmin << " Right: " << xmax << " Top: " << ymax << " Bottom: " << ymin << std::endl; 
 
         float m = 0.02f; // mult
+        if(type == PointLightBehavior::SUN){
+        	m = 2.f;
+        }
         littleQuadVertices.push_back(glm::vec2(xmin-m, ymin-m));
         littleQuadVertices.push_back(glm::vec2(xmax+m, ymin-m));
         littleQuadVertices.push_back(glm::vec2(xmin-m, ymax+m));
@@ -145,7 +149,7 @@ namespace Light{
 	        fireflyColor = glm::vec3(0.8,0.2,0.8);
 	        float intensity = 0.1;
 
-	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::TORNADO);
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::PointLightBehavior::TORNADO);
 		}	
 
 	}
@@ -165,7 +169,7 @@ namespace Light{
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
 	        float intensity = 0.1;
 
-	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::RISING, 5, multVelocity);
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::PointLightBehavior::RISING, 5, multVelocity);
 	    }
 
 	}
@@ -191,7 +195,7 @@ namespace Light{
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
 	        float intensity = 0.1;
 
-	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::RANDOM_DISPLACEMENT, lastChangeDir, multVelocity);
+	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::PointLightBehavior::RANDOM_DISPLACEMENT, lastChangeDir, multVelocity);
 	    }
 
 	}

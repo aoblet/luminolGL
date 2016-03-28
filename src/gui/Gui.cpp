@@ -147,7 +147,7 @@ namespace Gui{
     void Gui::addSliderPointLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
 
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
-            if(lightHandler._pointLights[i]._type == 0){   
+            if(lightHandler._pointLights[i]._type == Light::PointLightBehavior::FIXE){   
                 addIndent();
                 addLabel("Point Light: ", (int)i);
                 addIndent();
