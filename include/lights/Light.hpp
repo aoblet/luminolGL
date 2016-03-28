@@ -18,7 +18,7 @@ namespace Light{
 	    SPOT
 	};
 
-	enum PointLightBehavior{
+	enum class PointLightBehavior{
 		FIXE,
 		FIREFLY,
 		RANDOM_DISPLACEMENT,
@@ -45,13 +45,13 @@ namespace Light{
 	    glm::vec3 _vel = glm::vec3(0, 0, 0); 	/** Velocity, speed of the  */
 
 		 /** Point Light constructor with default values */
-	    PointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.8, float attenuation=2.0, PointLightBehavior type=FIXE, int lastChangeDir=10, float multVelocity=1.f)
+	    PointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.8, float attenuation=2.0, PointLightBehavior type=PointLightBehavior::FIXE, int lastChangeDir=10, float multVelocity=1.f)
 	    {
 	        update(pos, color, intensity, attenuation, type, lastChangeDir, multVelocity);
 	    }
 
 	     /** update a point light struct*/
-	    void update(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation, PointLightBehavior type=FIXE, int lastChangeDir = 5, float multVelocity=1.f)
+	    void update(glm::vec3 pos, glm::vec3 color, float intensity, float attenuation, PointLightBehavior type=PointLightBehavior::FIXE, int lastChangeDir = 5, float multVelocity=1.f)
 	    {
 	        _pos = pos;
 	        _color = color;
@@ -177,7 +177,7 @@ namespace Light{
 
 			LightHandler();
 
-   	 		void addPointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2, PointLightBehavior type=FIXE, int lastChangeDir=10, float multVelocity=1.f);
+   	 		void addPointLight(glm::vec3 pos=glm::vec3(0,0,0), glm::vec3 color=glm::vec3(0,0,0), float intensity=0.2, float attenuation=0.2, PointLightBehavior type=PointLightBehavior::FIXE, int lastChangeDir=10, float multVelocity=1.f);
    	 		void addPointLight(PointLight pl);
    	 		void setDirectionalLight(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 color = glm::vec3(0, 0, 0),
                                      float intensity = 0.2, float attenuation = 0.2);

@@ -205,11 +205,14 @@ int main( int argc, char **argv ) {
     float multFireflyIntensity = 0.5;
 
     ////////////// Sun ---- Point Light 
-    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::SUN);
+
+    // lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
+    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::PointLightBehavior::SUN);
 
     ////////////// Firefly fixe---- 
-    lightHandler.addPointLight(glm::vec3(-4.3, 2.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
-    
+
+    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
@@ -824,16 +827,24 @@ int main( int argc, char **argv ) {
 
         // Sun
         uboLight.updateBuffer(&lightHandler._pointLights[0], sizeof(Light::PointLight));
+
         fireflyShader.updateUniform(Graphics::UBO_keys::IS_SUN, true);
+        int i = 0;
+        std::vector<glm::vec2> littleQuadVerticesSun;
+        if(lightHandler.isOnScreen(mvp, littleQuadVerticesSun, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation, lightHandler._pointLights[i]._type, timeGLFW)){
+            quadVerticesVbo.updateData(littleQuadVerticesSun);
+            quadIdsVbo.updateData(quadIds);
+        }
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
         fireflyShader.updateUniform(Graphics::UBO_keys::IS_SUN, false);
         int cptLights = 0;
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
             std::vector<glm::vec2> littleQuadVertices;
             if(lightHandler.isOnScreen(mvp, littleQuadVertices, lightHandler._pointLights[i]._pos, lightHandler._pointLights[i]._color, lightHandler._pointLights[i]._intensity, lightHandler._pointLights[i]._attenuation, lightHandler._pointLights[i]._type, timeGLFW)){
                 
-                if(lightHandler._pointLights[i]._type == 5 ) lightHandler._pointLights[i].computeRisingFireflies(timeGLFW);
-                if(lightHandler._pointLights[i]._type == 2 ) lightHandler._pointLights[i].computeRandomFireflies(timeGLFW);
+                if(lightHandler._pointLights[i]._type == Light::PointLightBehavior::RISING) lightHandler._pointLights[i].computeRisingFireflies(timeGLFW);
+                if(lightHandler._pointLights[i]._type == Light::PointLightBehavior::RANDOM_DISPLACEMENT) lightHandler._pointLights[i].computeRandomFireflies(timeGLFW);
                 
                 //quad size reduction and frustum according to the light position, intensity, color and attenuation
                 quadVerticesVbo.updateData(littleQuadVertices);
