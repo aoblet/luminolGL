@@ -24,12 +24,12 @@ namespace Graphics {
             instance.initGLBuffers(_visibleTransformationsVBO);
     }
 
-    void Scene::draw(const glm::mat4 &VP, bool castShadowless) {
+    void Scene::draw(const glm::mat4 &VP, bool castShadowless, bool checkFrontCamera) {
         for(auto& instance : _meshInstances){
             if(!instance.castShadows() && !castShadowless)
                 continue;
 
-            computeVisibleTransformations(VP, instance);
+            computeVisibleTransformations(VP, instance, checkFrontCamera);
             _visibleTransformationsVBO.updateData(_visibleTransformations);
             // Draw for current instance nb transformations visible i.e total amount of instanced elements
             instance.draw((int)_visibleTransformations.size());
@@ -52,11 +52,11 @@ namespace Graphics {
         _cameraPosition = camPos;
     }
 
-    void Scene::computeVisibleTransformations(const glm::mat4 &VP, const ModelMeshInstanced& mesh) {
+    void Scene::computeVisibleTransformations(const glm::mat4 &VP, const ModelMeshInstanced& mesh, bool checkFrontCamera) {
         _visibleTransformations.clear();
         for(int i = 0; i < mesh.getInstanceNumber(); ++i){
             float distance = glm::distance(mesh.getPosition(i), _cameraPosition);
-            if(mesh.getBoundingBox(i).isVisible(VP) && distance < _far){
+            if(mesh.getBoundingBox(i).isVisible(VP, checkFrontCamera) && distance < _far){
                 _visibleTransformations.push_back(mesh.getTransformationMatrix(i));
             }
         }

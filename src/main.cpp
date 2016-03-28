@@ -739,7 +739,7 @@ int main( int argc, char **argv ) {
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToDirLightScreen);
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToDirLightScreen);
         shadowShader.useProgram();
-        scene.draw(worldToDirLightScreen, false);
+        scene.draw(worldToDirLightScreen, false, false);
         shadowMapFBO.unbind();
 
         //-------------------------------------Light Draw
