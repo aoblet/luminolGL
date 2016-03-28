@@ -207,7 +207,7 @@ int main( int argc, char **argv ) {
     ////////////// Sun ---- Point Light 
 
     // lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
-    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::SUN);
+    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::PointLightBehavior::SUN);
 
     ////////////// Firefly fixe---- 
     lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
