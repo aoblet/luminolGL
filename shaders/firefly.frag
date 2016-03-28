@@ -93,6 +93,7 @@ void main(void)
 
 	// If this is the sun and the fragment point we are testing is not the skybox (z<200) and is in front of our sun
 	// OR if there is a fragment in front of our light we do not colorize the fragment
+
 	if( ( IsSun && point.Position.z < 400 && (depthLightPosition < lightScreenPosition.z*0.5+0.5) ) || (depthLightPosition < lightScreenPosition.z*0.5+0.5 && !IsSun)  ) {
 		return;
 	}	
@@ -112,7 +113,10 @@ void main(void)
   
 	// We draw a circle around the point light position (screen coord)
 	color += mult * attenuationFunc * PointLight.Color;
-
+	
+	if(IsSun) color = clamp( (1 / (pow(d,2) * 32 * PointLight.Attenuation / PointLight.Intensity))  , 0 , 1 ) * PointLight.Color;
+	
 	// if(!IsSun) color += vec3(0.3,0.0,0.0); // test quad reduction
+	// if(IsSun) color += vec3(0.1,0.0,0.0); // test quad reduction
     Color = vec4(color, 1);
 }
