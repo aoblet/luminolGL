@@ -9,6 +9,8 @@ The aim is to build a small render engine using deferred shading, shadow map and
 Inspired from [trine game](http://trine2.com/site/) atmosphere.
 
 
+[Documentation](http://maximilien-glineur.fr/luminolGL/doxygen/)
+
 ## Authors
 
 [Maximilien Glineur](https://github.com/sayanel)
