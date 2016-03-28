@@ -208,13 +208,13 @@ int main( int argc, char **argv ) {
     lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::SUN);
 
     ////////////// Firefly fixe---- 
-    // lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
+    lightHandler.addPointLight(glm::vec3(-4.3, 2.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
     
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
-//    lightHandler.createRisingFireflies(50, 200, 200, 80);
+    lightHandler.createRisingFireflies(50, 200, 200, 80);
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
 //    lightHandler.createRandomFireflies(500, 200, 200, 70);
