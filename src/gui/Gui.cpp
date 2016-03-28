@@ -147,22 +147,25 @@ namespace Gui{
     void Gui::addSliderPointLights(Light::LightHandler & lightHandler, float posBegin, float posEnd, float posStep, float attBegin, float attEnd, float attStep){
 
         for(size_t i = 1; i < lightHandler._pointLights.size(); ++i){
-            addIndent();
-            addLabel("Point Light: ", (int)i);
-            addIndent();
-            imguiSlider("PL: position.x", &lightHandler._pointLights[i]._pos.x, posBegin, posEnd, posStep);
-            imguiSlider("PL: position.y", &lightHandler._pointLights[i]._pos.y, -3.0, 200.0, posStep);
-            imguiSlider("PL: position.z", &lightHandler._pointLights[i]._pos.z, posBegin, posEnd, posStep);
-            imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 5, 0.001);
-            imguiSlider("PL: attenuation", &lightHandler._pointLights[i]._attenuation, attBegin, attEnd, attStep);
-            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 2, 0.01, 1);
-            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 2, 0.01, 2);
-            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 2, 0.01, 3);
-            imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 100, 0.01, 1);
-            imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 100, 0.01, 2);
-            imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 100, 0.01, 3);
-            addUnindent();
-            addUnindent();
+            if(lightHandler._pointLights[i]._type == 0){   
+                addIndent();
+                addLabel("Point Light: ", (int)i);
+                addIndent();
+                imguiSlider("PL: position.x", &lightHandler._pointLights[i]._pos.x, posBegin, posEnd, posStep);
+                imguiSlider("PL: position.y", &lightHandler._pointLights[i]._pos.y, -3.0, 200.0, posStep);
+                imguiSlider("PL: position.z", &lightHandler._pointLights[i]._pos.z, posBegin, posEnd, posStep);
+                imguiSlider("PL: intensity", &lightHandler._pointLights[i]._intensity, 0, 5, 0.001);
+                imguiSlider("PL: attenuation", &lightHandler._pointLights[i]._attenuation, attBegin, attEnd, attStep);
+                imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 2, 0.01, 1);
+                imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 2, 0.01, 2);
+                imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 2, 0.01, 3);
+                imgui3Slider("Red", &lightHandler._pointLights[i]._color.r, 0, 100, 0.01, 1);
+                imgui3Slider("Green", &lightHandler._pointLights[i]._color.g, 0, 100, 0.01, 2);
+                imgui3Slider("Blue", &lightHandler._pointLights[i]._color.b, 0, 100, 0.01, 3);
+                addUnindent();
+                addUnindent();
+            }
+
         }
         addSeparatorLine();
     }

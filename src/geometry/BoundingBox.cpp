@@ -64,9 +64,9 @@ namespace Geometry
             if( projPoint.x > xmax) xmax = projPoint.x;
             if( projPoint.y < ymin) ymin = projPoint.y;
         }
-
-        if(!isInFrontOfCamera)
-            return false;
+    //TODO fix
+//        if(!isInFrontOfCamera)
+//            return false;
 
         // screen space limit (between -1 and 1 for each axis x,y and z)
         float limit = 1;

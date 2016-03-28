@@ -198,14 +198,14 @@ int main( int argc, char **argv ) {
 
     // My Lights / Fireflies -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(0.818, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
+    lightHandler.setDirectionalLight(glm::vec3(0.296, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
 
     glm::vec3 ambient(0.65, 0.65, 1);
     float ambientIntensity = 0.2;
-    float multIntensity = 0.5;
+    float multFireflyIntensity = 0.5;
 
     ////////////// Sun ---- Point Light 
-    lightHandler.addPointLight(glm::vec3(-15000, 2252, 15000), glm::vec3(68.19, 41.80, 53.10), 0.8, 2.0, Light::SUN);
+    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::SUN);
 
     ////////////// Firefly fixe---- 
     // lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::FIXE);
@@ -253,12 +253,14 @@ int main( int argc, char **argv ) {
     // ---------------------- FX Variables
     float shadowBias            = 0.00019;
     float shadowBiasDirLight    = 0.001571;
+    float shadowBlurSampleCount = 1;
+    float shadowBlurSigma       = 0.5;
 
     float gamma                 = 1.22;
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 200;
+    float dirLightOrthoProjectionDim = 160;
     glm::vec3 focus(0, 1, 100);
 
     // ---------------------- FX uniform update
@@ -379,11 +381,11 @@ int main( int argc, char **argv ) {
     glm::vec3 translateMeshTransform(0);
 
 
-    bool drawSplines = true;
+    bool drawSplines = false;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 3;
-    glm::vec3 fogColor = glm::vec3(0.082, 0.083, 0.120);
+    float fogDensity = 2.f;
+    glm::vec3 fogColor = glm::vec3(0.16, 0.16, 0.24);
 
 
     //*********************************************************************************************
@@ -468,12 +470,14 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
         directionalLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BLUR_SAMPLE_COUNT, (int)shadowBlurSampleCount);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BLUR_SIGMA, shadowBlurSigma);
 
         fireflyShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         float windowratio = (float)width / (float)height;
         fireflyShader.updateUniform(Graphics::UBO_keys::WINDOW_RATIO, windowratio);
         fireflyShader.updateUniform(Graphics::UBO_keys::TIME, timeGLFW);
-        fireflyShader.updateUniform(Graphics::UBO_keys::MULT_INTENSITY, multIntensity);
+        fireflyShader.updateUniform(Graphics::UBO_keys::MULT_INTENSITY, multFireflyIntensity);
 
 
         ambientShader.updateUniform(Graphics::UBO_keys::AMBIENT_INTENSITY, ambient * ambientIntensity);
@@ -1106,7 +1110,7 @@ int main( int argc, char **argv ) {
                     gui.addSlider("Intensity", &lightHandler._lightIntensity, 0, 10, 0.1);
                     gui.addSlider("Threshold", &lightHandler._lightAttenuationThreshold, 0, 0.5, 0.0001);
                     gui.addSlider("Ambient Intensity", &ambientIntensity, 0, 1, 0.0001);
-                    gui.addSlider("Firefly Intensity", &multIntensity, 0, 2, 0.0001);
+                    gui.addSlider("Firefly Intensity", &multFireflyIntensity, 0, 2, 0.0001);
                     gui.addSlider("Ambient.r", &ambient.x, 0, 1, 0.0001);
                     gui.addSlider("Ambient.g", &ambient.y, 0, 1, 0.0001);
                     gui.addSlider("Ambient.b", &ambient.z, 0, 1, 0.0001);
@@ -1124,6 +1128,8 @@ int main( int argc, char **argv ) {
 
                 if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
                     gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
+                    gui.addSlider("Blur Sample Count", &shadowBlurSampleCount, 1, 10, 1);
+                    gui.addSlider("Blur Sigma", &shadowBlurSigma, 0, 10, 0.01);
                     gui.addSliderDirectionalLights(lightHandler, -1, 1);
                     gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
                 }
@@ -1163,9 +1169,6 @@ int main( int argc, char **argv ) {
                         scaleMeshTransform = 1;
                     }
                 }
-
-                if(gui.addButton("Save to assets/luminolGL.json"))
-                    scene.save("../assets/luminolGL.json");
 
                 if(gui.addButton(std::string("Save Scene to " + scenePath + " and splines").c_str())){
                     scene.save(scenePath);
@@ -1225,6 +1228,8 @@ int main( int argc, char **argv ) {
         fps = float(1.f/ (newTime - timeGLFW));
     }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
+
+    scene.save(scenePath);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
