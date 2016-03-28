@@ -23,7 +23,7 @@ namespace Geometry
         BoundingBox();
         BoundingBox(const glm::vec3& AABBmin, const glm::vec3& AABBmax);
 
-        bool isVisible(const glm::mat4 &MVP) const; /** Check if the bounding is visible
+        bool isVisible(const glm::mat4 &MVP, bool checkFrontCamera=true) const; /** Check if the bounding is visible
                                                      * by a matrix (usually MVP)
                                                      */
 

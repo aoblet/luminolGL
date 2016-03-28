@@ -39,7 +39,7 @@ namespace Geometry
         _AABBmax = AABBmax;
     }
 
-    bool BoundingBox::isVisible(const glm::mat4 &VP)  const {
+    bool BoundingBox::isVisible(const glm::mat4 &VP, bool checkFrontCamera)  const {
         glm::vec4 projInitPoint = VP * glm::vec4(_points[0], 1.0);
         projInitPoint /= projInitPoint.w;
 
@@ -65,7 +65,8 @@ namespace Geometry
             if( projPoint.y < ymin) ymin = projPoint.y;
         }
 
-        if(!isInFrontOfCamera)
+        //TODO fix
+        if(checkFrontCamera && !isInFrontOfCamera)
             return false;
 
         // screen space limit (between -1 and 1 for each axis x,y and z)

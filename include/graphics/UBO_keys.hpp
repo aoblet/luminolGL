@@ -33,6 +33,8 @@ namespace Graphics{
         const std::string SHADOW_MVP                    = "ShadowMVP";
         const std::string SHADOW_MV                     = "ShadowMV";
         const std::string SHADOW_BIAS                   = "ShadowBias";
+        const std::string SHADOW_BLUR_SAMPLE_COUNT      = "BlurSampleCount";
+        const std::string SHADOW_BLUR_SIGMA             = "BlurSigma";
         const std::string SHADOW_POISSON_SAMPLE_COUNT   = "SampleCountPoisson";
         const std::string SHADOW_POISSON_SPREAD         = "SpreadPoisson";
         const std::string WORLD_TO_LIGHT_SCREEN         = "WorldToLightScreen";

@@ -98,10 +98,10 @@ int main( int argc, char **argv ) {
 
 //    DLOG(INFO) << "creating meshgrid...";
 //    DLOG(INFO) << "creating texture...";
-//    Graphics::Texture gridTex("../assets/models/ground/ground03_height.tga");
+//    Graphics::Texture gridTex("../assets/models/mountains/mountain_03_spec.png");
 //    DLOG(INFO) << "generating meshgrid...";
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(7, 7, &gridTex, glm::vec3(1), 0.1f, 7);
-//    grid.saveOBJ("../assets/models/ground/", "ground03", false);
+//    Graphics::Mesh grid = Graphics::Mesh::genGrid(400, 400, &gridTex, glm::vec3(1), 0.1f, 15);
+//    grid.saveOBJ("../assets/models/ground/", "mountain03", false);
 //    DLOG(INFO) << "meshgrid created !";
 //    return 0;
 
@@ -182,7 +182,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/skybox_sunset", {}, ".png"));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, scenePath);
@@ -198,28 +198,26 @@ int main( int argc, char **argv ) {
 
     // My Lights / Fireflies -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(0.818, -0.862, -1), glm::vec3(1), 1);
+    lightHandler.setDirectionalLight(glm::vec3(0.296, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
 
-    glm::vec3 ambient(1);
+    glm::vec3 ambient(0.65, 0.65, 1);
     float ambientIntensity = 0.2;
     float multFireflyIntensity = 0.5;
 
     ////////////// Sun ---- Point Light 
-    lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
+
+    // lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
+    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::SUN);
 
     ////////////// Firefly fixe---- 
-    // lightHandler.addPointLight(glm::vec3(-4.3, 9.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
     
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
     // lightHandler.createFirefliesTornado(10, 1, 1, 800, 5, 1);
 
-    ////////////// Rising Fireflies ---- // NB_RISING_FIREFLIES, width, profondeur, height, center 
-    lightHandler.createRisingFireflies(200, 30, 30, 160, glm::vec3(20,0,20)); 
-    
-    ////////////// Random Displacement Fireflies ---- // NB_RANDOM_FIREFLIES, width, profondeur, height, center 
-    lightHandler.createRandomFireflies(200, 100, 100, 40, glm::vec3(-150,20,50));
+    ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
+//    lightHandler.createRisingFireflies(50, 200, 200, 80);
 
-    
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
 //    lightHandler.createRandomFireflies(500, 200, 200, 70);
 
@@ -227,7 +225,7 @@ int main( int argc, char **argv ) {
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
     bool drawFBOTextures    = true;
-    int isNormalMapActive   = 0;
+    int isNormalMapActive   = 1;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
     mainShader.updateUniform(Graphics::UBO_keys::SPECULAR, 1);
@@ -257,12 +255,14 @@ int main( int argc, char **argv ) {
     // ---------------------- FX Variables
     float shadowBias            = 0.00019;
     float shadowBiasDirLight    = 0.001571;
+    float shadowBlurSampleCount = 1;
+    float shadowBlurSigma       = 0.5;
 
     float gamma                 = 1.22;
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 200;
+    float dirLightOrthoProjectionDim = 160;
     glm::vec3 focus(0, 1, 100);
 
     // ---------------------- FX uniform update
@@ -372,22 +372,22 @@ int main( int argc, char **argv ) {
     //Water--------------------------------------------------------------
     Graphics::GeometricFBO waterReflectionFBO(dimViewport);
     Graphics::PostFxFBO waterTextures(dimViewport, 2);
-    Graphics::Texture waterNormals("../assets/textures/water/normals.jpg");
-    float noiseAmplitudeWaves = 0.001f;
-    float specularAmplitudeWaves = 0.001f;
+    Graphics::Texture waterNormals("../assets/textures/water/normalNVIDIA.png");
+    float noiseAmplitudeWaves = 0.042f;
+    float specularAmplitudeWaves = 1.f;
     float fresnelBias = 0.001f;
-    float fresnelAmplitude = 3;
+    float fresnelAmplitude = 0;
 
 
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
 
 
-    bool drawSplines = true;
+    bool drawSplines = false;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 1;
-    glm::vec3 fogColor = glm::vec3(0.99, 0.91, 0.95);
+    float fogDensity = 2.f;
+    glm::vec3 fogColor = glm::vec3(0.16, 0.16, 0.24);
 
 
     //*********************************************************************************************
@@ -472,6 +472,8 @@ int main( int argc, char **argv ) {
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SAMPLE_COUNT, int(shadowPoissonSampleCount));
         directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_POISSON_SPREAD, shadowPoissonSpread);
         directionalLightShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BLUR_SAMPLE_COUNT, (int)shadowBlurSampleCount);
+        directionalLightShader.updateUniform(Graphics::UBO_keys::SHADOW_BLUR_SIGMA, shadowBlurSigma);
 
         fireflyShader.updateUniform(Graphics::UBO_keys::MVP, mvp);
         float windowratio = (float)width / (float)height;
@@ -739,7 +741,7 @@ int main( int argc, char **argv ) {
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToDirLightScreen);
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToDirLightScreen);
         shadowShader.useProgram();
-        scene.draw(worldToDirLightScreen, false);
+        scene.draw(worldToDirLightScreen, false, false);
         shadowMapFBO.unbind();
 
         //-------------------------------------Light Draw
@@ -1136,6 +1138,8 @@ int main( int argc, char **argv ) {
 
                 if(gui.addButton("Directional Lights Parameters", gui.displayDirectionalLightParameters)){
                     gui.addSlider("Shadow Bias DirLight", &shadowBiasDirLight, 0, 0.1, 0.000001);
+                    gui.addSlider("Blur Sample Count", &shadowBlurSampleCount, 1, 10, 1);
+                    gui.addSlider("Blur Sigma", &shadowBlurSigma, 0, 10, 0.01);
                     gui.addSliderDirectionalLights(lightHandler, -1, 1);
                     gui.addSlider("Ortho box dim", &dirLightOrthoProjectionDim, 1, 1000, 1);
                 }
@@ -1175,9 +1179,6 @@ int main( int argc, char **argv ) {
                         scaleMeshTransform = 1;
                     }
                 }
-
-                if(gui.addButton("Save to assets/luminolGL.json"))
-                    scene.save("../assets/luminolGL.json");
 
                 if(gui.addButton(std::string("Save Scene to " + scenePath + " and splines").c_str())){
                     scene.save(scenePath);
@@ -1237,6 +1238,8 @@ int main( int argc, char **argv ) {
         fps = float(1.f/ (newTime - timeGLFW));
     }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
+
+//    scene.save(scenePath);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
