@@ -438,7 +438,7 @@ int main( int argc, char **argv ) {
         // Orthogonal projection matrix: parallel rays
         glm::mat4 projDirLight = glm::ortho<float>(-dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
                                                    -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim,
-                                                   0, dirLightOrthoProjectionDim);
+                                                   -dirLightOrthoProjectionDim, dirLightOrthoProjectionDim);
         // From world to light
         // The "box" fallows the camera position
         glm::mat4 worldToDirLight = glm::lookAt(camera.getEye(),
@@ -739,7 +739,7 @@ int main( int argc, char **argv ) {
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MVP, objectToDirLightScreen);
         shadowShader.updateUniform(Graphics::UBO_keys::SHADOW_MV, objectToDirLightScreen);
         shadowShader.useProgram();
-        scene.draw(worldToDirLightScreen, false);
+        scene.draw(worldToDirLightScreen, false, false);
         shadowMapFBO.unbind();
 
         //-------------------------------------Light Draw
