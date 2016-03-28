@@ -1229,7 +1229,7 @@ int main( int argc, char **argv ) {
     }
     while( glfwGetKey( window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && !glfwWindowShouldClose(window));
 
-    scene.save(scenePath);
+//    scene.save(scenePath);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();

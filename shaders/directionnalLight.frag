@@ -15,6 +15,9 @@ uniform mat4 WorldToLightScreen;
 uniform mat4 MVP;
 uniform sampler2DShadow ShadowBuffer;
 uniform float ShadowBias;
+uniform float BlurSigma;
+uniform int BlurSampleCount;
+
 
 
 layout(std140) uniform Light
@@ -179,5 +182,5 @@ void main(void){
 //    	Color *= 0;
 //    }
 //    TODO: separable gaussian filter
-    Color *= gaussianBlurShadow(lP,2,3);
+    Color *= gaussianBlurShadow(lP, BlurSigma, BlurSampleCount);
 }
