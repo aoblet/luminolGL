@@ -109,6 +109,9 @@ namespace Graphics{
         const std::string FOG_COLOR                     = "FogColor";
         const std::string FOG_NEAR                      = "zNear";
         const std::string FOG_FAR                       = "zFar";
+        const std::string FOG_CONSTANT_MULTIPLIER       = "FogConstantMultiplier";
+        const std::string FOG_FRAG_VIEW_SPACE           = "FragPosViewSpace";
+        const std::string FOG_HEIGHT                    = "FogHeight";
 
     }
 }
