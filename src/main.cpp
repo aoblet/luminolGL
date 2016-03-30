@@ -134,7 +134,7 @@ int main( int argc, char **argv ) {
     const std::string splineCamSpeeds       = "../assets/camSpeeds.txt";
 
     // Camera config
-    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 1000.f));
+    View::CameraFreefly camera(glm::vec2(width, height), glm::vec2(0.01, 5000.f));
     camera.setEye(glm::vec3(10,10,-10));
 
     // Camera splines config
@@ -182,7 +182,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/skybox_sunset", {}, ".png"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, scenePath);
@@ -211,22 +211,22 @@ int main( int argc, char **argv ) {
 
     ////////////// Firefly fixe---- 
 
-    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+//    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
 
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
-    lightHandler.createFirefliesTornado(10, 1, 1, 50, 5, 1);
+//    lightHandler.createFirefliesTornado(10, 1, 1, 50, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
-    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
-    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
+//    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
+//    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-    lightHandler.createRandomFireflies(200, 300, 300, 100, glm::vec3(40,10,40));
+//    lightHandler.createRandomFireflies(200, 300, 300, 100, glm::vec3(40,10,40));
 
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
-    bool drawFBOTextures    = true;
+    bool drawFBOTextures    = false;
     int isNormalMapActive   = 1;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
@@ -264,7 +264,7 @@ int main( int argc, char **argv ) {
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 160;
+    float dirLightOrthoProjectionDim = 210;
     glm::vec3 focus(0, 1, 100);
 
     // ---------------------- FX uniform update
@@ -323,6 +323,7 @@ int main( int argc, char **argv ) {
     fireflyShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     directionalLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
     spotLightShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
+    fogShader.updateBindingPointUBO(Graphics::UBO_keys::STRUCT_BINDING_POINT_CAMERA, uboCamera.bindingPoint());
 
     // Samples for SSAO ------------------------------------------------------------------------------
 
@@ -374,11 +375,11 @@ int main( int argc, char **argv ) {
     //Water--------------------------------------------------------------
     Graphics::GeometricFBO waterReflectionFBO(dimViewport);
     Graphics::PostFxFBO waterTextures(dimViewport, 2);
-    Graphics::Texture waterNormals("../assets/textures/water/normalNVIDIA.png");
-    float noiseAmplitudeWaves = 0.042f;
-    float specularAmplitudeWaves = 1.f;
+    Graphics::Texture waterNormals("../assets/textures/water/lake.png");
+    float noiseAmplitudeWaves = 0.302857;
+    float specularAmplitudeWaves = 2;
     float fresnelBias = 0.001f;
-    float fresnelAmplitude = 0;
+    float fresnelAmplitude = 2.2857;
 
 
     float scaleMeshTransform(1);
@@ -388,8 +389,11 @@ int main( int argc, char **argv ) {
     bool drawSplines = false;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 2.f;
-    glm::vec3 fogColor = glm::vec3(0.16, 0.16, 0.24);
+    float fogDensity = 0.04528573;
+    float fogConstantMultiplier = 100;
+    float fogHeight = 0.8685716;
+    float fogTest = 10;
+    glm::vec3 fogColor = glm::vec3(0.596, 0.569, 0.937);
 
 
     //*********************************************************************************************
@@ -621,6 +625,10 @@ int main( int argc, char **argv ) {
         quadVAO.bind();
         fxFBO.changeCurrentTexture(1);
         fxFBO.clearColor();
+
+        Data::UniformCamera uCamera(reflectedCamPos, glm::inverse(reflectedVP), glm::inverse(reflectionViewMatrix));
+        uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
+
         fogShader.useProgram();
         fogShader.updateUniform(Graphics::UBO_keys::FOG_DENSITY, fogDensity);
         fogShader.updateUniform(Graphics::UBO_keys::FOG_TEXTURE, 0);
@@ -629,13 +637,18 @@ int main( int argc, char **argv ) {
         fogShader.updateUniform(Graphics::UBO_keys::FOG_NEAR, camera.getNearFar().x);
         fogShader.updateUniform(Graphics::UBO_keys::FOG_FAR, camera.getNearFar().y);
 
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_CONSTANT_MULTIPLIER, fogConstantMultiplier);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_FRAG_VIEW_SPACE, 2);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_HEIGHT, fogHeight);
+        fogShader.updateUniform("FogT", fogTest);
+        waterReflectionFBO.position().bind(GL_TEXTURE2);
+
         waterReflectionFBO.color().bind(GL_TEXTURE0);
         waterReflectionFBO.depth().bind(GL_TEXTURE1);
         glDisable(GL_DEPTH_TEST);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         glEnable(GL_DEPTH_TEST);
         fxFBO.unbind();
-
 
         //----------------------- REFLECTION SCENE + SKYBOX -------------
         // Render skybox texture combined with reflection: mask with depth buffer
@@ -671,7 +684,7 @@ int main( int argc, char **argv ) {
 
         //******************************************************* SECOND PASS (Shadow Pass)
         // Update Camera pos and screenToWorld matrix to all light shaders
-        Data::UniformCamera uCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
+        uCamera = Data::UniformCamera(camera.getEye(), glm::inverse(mvp), mvInverse);
         uboCamera.updateBuffer(&uCamera, sizeof(Data::UniformCamera));
         beautyFBO.bind();
         beautyFBO.clearColor();
@@ -793,7 +806,13 @@ int main( int argc, char **argv ) {
         fogShader.updateUniform(Graphics::UBO_keys::FOG_COLOR, fogColor);
         fogShader.updateUniform(Graphics::UBO_keys::FOG_NEAR, camera.getNearFar().x);
         fogShader.updateUniform(Graphics::UBO_keys::FOG_FAR, camera.getNearFar().y);
-        fogShader.updateUniform(Graphics::UBO_keys::FOG_DEPTH, 1);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_HEIGHT, fogHeight);
+        fogShader.updateUniform("FogT", fogTest);
+
+
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_CONSTANT_MULTIPLIER, fogConstantMultiplier);
+        fogShader.updateUniform(Graphics::UBO_keys::FOG_FRAG_VIEW_SPACE, 2);
+        gBufferFBO.position().bind(GL_TEXTURE2);
 
         fxFBO.changeCurrentTexture(2);
         fxFBO.clearColor();
@@ -1109,7 +1128,10 @@ int main( int argc, char **argv ) {
                     gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
                     gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
                     gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
-                    gui.addSlider("Fog density", &fogDensity, 0, 3, 0.00001);
+                    gui.addSlider("Fog density", &fogDensity, 0, 0.5, 0.00000001);
+                    gui.addSlider("Fog Mult", &fogConstantMultiplier, 0, 100, 0.00001);
+                    gui.addSlider("Fog Height", &fogHeight, 0, 1, 0.0000001);
+                    gui.addSlider("Fog Test", &fogTest, 0, 10, 0.0000001);
                     imgui3Slider("X", &fogColor.x, 0,1, 0.001, 1);
                     imgui3Slider("Y", &fogColor.y, 0,1, 0.001, 2);
                     imgui3Slider("Z", &fogColor.z, 0,1, 0.001, 3);
