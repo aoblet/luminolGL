@@ -219,7 +219,13 @@ int main( int argc, char **argv ) {
 //    lightHandler.createRisingFireflies(50, 200, 200, 80);
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-//    lightHandler.createRandomFireflies(500, 200, 200, 70);
+   lightHandler.createRandomFireflies(50, 200, 200, 70);
+
+
+
+    // oeil statue
+    // lightHandler.addPointLight(glm::vec3(-29.7, 66.8, 193), glm::vec3(0.0, 0.0, 0.9), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+    // lightHandler.addSpotLight(glm::vec3(-29.7, 66.8, 193), glm::vec3(0, -1, 0), glm::vec3(0.1, 0.0, 0.9), 0.35, 2.0, 45, 45);   
 
 
     // ---------------------- For Geometry Shading

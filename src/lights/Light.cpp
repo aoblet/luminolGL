@@ -190,6 +190,7 @@ namespace Light{
 
 
 	        glm::vec3 fireflyColor = getRandomColors(i);
+	        // glm::vec3 fireflyColor = getNotSoRandomColors(i);
 
 	        int lastChangeDir = rand() % 15 + 4;
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
@@ -226,6 +227,24 @@ namespace Light{
 
 	    // std::cout << red << " " << green << " " << blue << std::endl;
 	    return glm::vec3( red , green , blue);
+	}
+
+	glm::vec3 LightHandler::getNotSoRandomColors(int i){
+	   std::vector<glm::vec3> colors;
+	   colors.push_back(glm::vec3(2.0, 0.32, 0.31));
+	   colors.push_back(glm::vec3(0.61, 0.32, 0.31));
+	   colors.push_back(glm::vec3(0.92, 0.91, 0.31));
+	   colors.push_back(glm::vec3(1.82, 1.56, 1.33));
+	   colors.push_back(glm::vec3(0.60, 1.56, 0.86));
+	   colors.push_back(glm::vec3(1.50, 1.64, 0.10));
+	   colors.push_back(glm::vec3(0.0, 0.64, 0.0));
+	   colors.push_back(glm::vec3(1.37, 0.64, 0.0));
+	   colors.push_back(glm::vec3(0.92, 0.0, 0.55));
+	   int size = colors.size();
+
+	   int j = rand() % size -1;	
+
+	   return colors[j];
 	}
 
 
