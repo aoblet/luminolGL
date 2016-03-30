@@ -224,9 +224,33 @@ int main( int argc, char **argv ) {
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
 //    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
 //    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
+   lightHandler.createRisingFireflies(25, 25, 25, 60, glm::vec3(219, 9, -114)); // spot 1 - arbre + statue sur l'eau à l'est// fix height 
+   lightHandler.createRisingFireflies(40, 40, 40, 60, glm::vec3(247, 1, 7)); // spot 2 // ruines sur l'eau à l'est fix height 
+   lightHandler.createRisingFireflies(20, 60, 60, 60, glm::vec3(-32.5, 42.7, -112.8)); // spot 3 grand arbre// fix height 
+   lightHandler.createRisingFireflies(30, 20, 20, 60, glm::vec3(-32.5, 42.7, -112.8)); // spot 3 BIS // fix height 
+   lightHandler.createRisingFireflies(20, 10, 10, 40, glm::vec3(51.5, 9.8, -53.8)); // spot 4 devant les premeirs escaliers de l'ile// fix height 
+   lightHandler.createRisingFireflies(30, 150, 150, 20, glm::vec3(-32.5, 22.7, -112.8)); // spot 5 all the map // fix height 
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
+   // lightHandler.createRandomFireflies(50, 200, 200, 70);
+   lightHandler.createRandomFireflies(8, 20, 20, 10, glm::vec3(219, 9, -114)); // spot 1 // 
+   lightHandler.createRandomFireflies(12, 40, 40, 20, glm::vec3(247, 10, 7)); // spot 2 // 
+   lightHandler.createRandomFireflies(10, 10, 10, 10, glm::vec3(-32.5, 72.7, -112.8)); // spot 3 // 
+
+   lightHandler.createRandomFireflies(30, 350, 350, 60, glm::vec3(-32.5, 42.7, -112.8)); // spot 5 // 
+
+
+
+   //TODO FIREFLIES: moins de random, plus de rising
+
+
+
+    // oeil statue
+    // lightHandler.addPointLight(glm::vec3(-29.7, 66.8, 193), glm::vec3(0.0, 0.0, 0.9), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+    // lightHandler.addSpotLight(glm::vec3(-29.7, 66.8, 193), glm::vec3(0, -1, 0), glm::vec3(0.1, 0.0, 0.9), 0.35, 2.0, 45, 45);   
+
     // lightHandler.createRandomFireflies(20, 300, 300, 100, glm::vec3(40,10,40));
+
 
 
     // ---------------------- For Geometry Shading
@@ -875,11 +899,11 @@ int main( int argc, char **argv ) {
                 quadVerticesVbo.updateData(littleQuadVertices);
                 quadIdsVbo.updateData(quadIds);
                 
-                cptLights++;
-
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-                if(lightHandler._pointLights[i]._pos.y > -3)
+                if(lightHandler._pointLights[i]._pos.y > -3){
+                    cptLights++;
                     glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+                }
             }
         }
         quadVerticesVbo.updateData(quadVertices);
