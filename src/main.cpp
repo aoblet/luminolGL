@@ -76,7 +76,9 @@ int main( int argc, char **argv ) {
     bool displayGui = true;
     bool keypressedDrawGui = true;
     // glm::ivec2 dimViewport(1280, 720);
-    glm::ivec2 dimViewport(1280, 760);
+    glm::ivec2 dimViewport(1280, 545); // 2.35
+    // glm::ivec2 dimViewport(1280, 692); // 1.85
+    // glm::ivec2 dimViewport(1778, 757);
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
@@ -138,7 +140,7 @@ int main( int argc, char **argv ) {
     camera.setEye(glm::vec3(10,10,-10));
 
     // Camera splines config
-    View::CameraController cameraController(camera, userInput, 0.05);
+    View::CameraController cameraController(camera, userInput, 0.023);
     try{
         cameraController.positions().load(splineCamPositions);
         cameraController.viewTargets().load(splineCamTargets);
@@ -147,11 +149,14 @@ int main( int argc, char **argv ) {
     catch(std::exception& e){
         DLOG(WARNING) << e.what();
     }
-
+    cameraController.setSpectator(!cameraController.isSpectator());
 
 
     // Camera link with spline picker
     Gui::SplinePicker splinePicker(cameraController.positions(), cameraController.viewTargets(), cameraController.speeds());
+    float splineSmooth = 1;
+    int freezeTime = 0;
+    float timeFreezeValue = 0;
 
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
@@ -211,22 +216,22 @@ int main( int argc, char **argv ) {
 
     ////////////// Firefly fixe---- 
 
-    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+//    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
 
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
-    lightHandler.createFirefliesTornado(10, 1, 1, 50, 5, 1);
+//    lightHandler.createFirefliesTornado(10, 1, 1, 50, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
-    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
-    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
+//    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
+//    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-    lightHandler.createRandomFireflies(200, 300, 300, 100, glm::vec3(40,10,40));
+    // lightHandler.createRandomFireflies(20, 300, 300, 100, glm::vec3(40,10,40));
 
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
-    bool drawFBOTextures    = true;
+    bool drawFBOTextures    = false;
     int isNormalMapActive   = 1;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
@@ -258,14 +263,14 @@ int main( int argc, char **argv ) {
     float shadowBias            = 0.00019;
     float shadowBiasDirLight    = 0.001571;
     float shadowBlurSampleCount = 1;
-    float shadowBlurSigma       = 0.5;
+    float shadowBlurSigma       = 1.5;
 
     float gamma                 = 1.22;
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 160;
-    glm::vec3 focus(0, 1, 100);
+    float dirLightOrthoProjectionDim = 210;
+    glm::vec3 focus(0, 1, 1000);
 
     // ---------------------- FX uniform update
     // For shadow pass shading (unit texture)
@@ -366,8 +371,8 @@ int main( int argc, char **argv ) {
     ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_SAMPLES, ssaoKernel);
     ssaoShader.updateUniform(Graphics::UBO_keys::SSAO_NOISE_SIZE, glm::vec2(noiseSizeX, noiseSizeY));
 
-    float occlusionIntensity = 2.0;
-    float occlusionRadius = 3.0;
+    float occlusionIntensity = 3.0;
+    float occlusionRadius = 7.0;
 
     float ssaoBlur = 4.0f;
 
@@ -378,18 +383,18 @@ int main( int argc, char **argv ) {
     float noiseAmplitudeWaves = 0.042f;
     float specularAmplitudeWaves = 1.f;
     float fresnelBias = 0.001f;
-    float fresnelAmplitude = 0;
+    float fresnelAmplitude = 2.0;
 
 
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
 
 
-    bool drawSplines = false;
+    bool drawSplines = true;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 2.f;
-    glm::vec3 fogColor = glm::vec3(0.16, 0.16, 0.24);
+    float fogDensity = 1.7484f;
+    glm::vec3 fogColor = glm::vec3(0.596, 0.569, 0.734);
 
 
     //*********************************************************************************************
@@ -405,7 +410,7 @@ int main( int argc, char **argv ) {
         timeGLFW = static_cast<float>(glfwGetTime());
 
         userInput.update(window);
-        cameraController.update(timeGLFW);
+        cameraController.update(freezeTime ? timeFreezeValue : timeGLFW);
 
         //****************************************** UPLOAD UNIFORMS *******************************************
 
@@ -854,7 +859,8 @@ int main( int argc, char **argv ) {
                 cptLights++;
 
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+                if(lightHandler._pointLights[i]._pos.y > -3)
+                    glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
             }
         }
         quadVerticesVbo.updateData(quadVertices);
@@ -888,7 +894,7 @@ int main( int argc, char **argv ) {
             // Use blur program shader
             blurShader.useProgram();
             blurShader.updateUniform(Graphics::UBO_keys::BLUR_DIRECTION, glm::ivec2(1,0));
-            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SIGMA, 1.f);
+            blurShader.updateUniform(Graphics::UBO_keys::BLUR_SIGMA, 1.5f);
 
             // Write into Vertical Blur Texture
             fxFBO.changeCurrentTexture(1);
@@ -1106,7 +1112,7 @@ int main( int argc, char **argv ) {
                     gui.addSlider("Motion Blur Intensity", &motionBlurSampleCount, 0, 128, 1);
                     gui.addSlider("Focus Near", &focus[0], 0, 10, 0.01);
                     gui.addSlider("Focus Position", &focus[1], 0, 100, 0.01);
-                    gui.addSlider("Focus Far", &focus[2], 0, 100, 0.01);
+                    gui.addSlider("Focus Far", &focus[2], 0, 600, 0.01);
                     gui.addSlider("Occlusion Intensity", &occlusionIntensity, 0, 10, 0.01);
                     gui.addSlider("Occlusion Radius", &occlusionRadius, 0, 30, 0.01);
                     gui.addSlider("Fog density", &fogDensity, 0, 3, 0.00001);
@@ -1195,6 +1201,22 @@ int main( int argc, char **argv ) {
                     statePicker += isSplinePickerEnabled ? " enabled" : " disabled";
                     gui.addLabel(statePicker.c_str());
 
+                    gui.addSlider("Spline Smooth Editing", &splineSmooth, 0.1, 10, 0.01);
+                    freezeTime = gui.addButton("Freeze time toggle") == !freezeTime;
+                    gui.addSlider("Spline Time", &timeFreezeValue, 0, 0.99999, 0.00001);
+                    gui.addSlider("Camera splines velocity", &(cameraController.velocitySplines()), 0.0, 1.0, 0.001);
+
+                    if(gui.addButton("Reload Splines")){
+                            try{
+                                cameraController.positions().load(splineCamPositions);
+                                cameraController.viewTargets().load(splineCamTargets);
+                                cameraController.speeds().load(splineCamSpeeds);
+                            }
+                            catch(std::exception& e){
+                                DLOG(WARNING) << e.what();
+                            }
+                    }
+
                     isSplinePickerEnabled = gui.addButton("Toggle Activation") == !isSplinePickerEnabled;
 
                     if(gui.addButton("Position picking"))
@@ -1205,19 +1227,37 @@ int main( int argc, char **argv ) {
                         splinePicker.setState(Gui::SplineState::velocity);
                     gui.addSlider("Spline Y Plane", &splinePicker.yPlaneIntersection(), -100, 100, 1);
 
+                    gui.addLabel(std::string("Spline " + Gui::SplineStateString.at(splinePicker.state())).c_str());
+
                     if(splinePicker.state() != Gui::SplineState::velocity){
                         Geometry::Spline3D& currentSplinePicker = Gui::SplineState::position == splinePicker.state()? splinePicker.positions() : splinePicker.targets();
-
-                        gui.addLabel(std::string("Spline " + Gui::SplineStateString.at(splinePicker.state())).c_str());
 
                         if(gui.addButton("Clear"))
                             currentSplinePicker.clear();
 
                         for(size_t k = 0; k < currentSplinePicker.size(); ++k){
                             gui.addLabel(std::string("#" + std::to_string(k)).c_str());
-                            gui.addSlider("Y", &currentSplinePicker[k].y, -100, 100, 1);
+                            gui.addSlider("X", &currentSplinePicker[k].x, currentSplinePicker[k].x - splineSmooth, currentSplinePicker[k].x + splineSmooth, 0.1);
+                            gui.addSlider("Y", &currentSplinePicker[k].y, -100, 100, 0.1);
+                            gui.addSlider("Z", &currentSplinePicker[k].z, currentSplinePicker[k].z - splineSmooth, currentSplinePicker[k].z + splineSmooth, 0.1);
                             if(gui.addButton("Remove"))
                                 currentSplinePicker.erase(currentSplinePicker.begin()+ k);
+                            gui.addSeparatorLine();
+                        }
+                    }
+                    else{
+                        Geometry::Spline1D& currentSplinePicker = splinePicker.velocities();
+
+                        if(gui.addButton("Clear"))
+                            currentSplinePicker.clear();
+
+                        for(size_t k = 0; k < currentSplinePicker.size(); ++k){
+                            gui.addLabel(std::string("#" + std::to_string(k)).c_str());
+                            gui.addSlider("X", &currentSplinePicker[k].x, 0, 1, 0.001);
+                            if(gui.addButton("Remove"))
+                                currentSplinePicker.erase(currentSplinePicker.begin()+ k);
+                            if(gui.addButton("Add"))
+                                currentSplinePicker.add(currentSplinePicker[k]);
                             gui.addSeparatorLine();
                         }
                     }
