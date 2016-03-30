@@ -194,7 +194,7 @@ namespace Light{
 	        // glm::vec3 fireflyColor = getRandomColors(i);
 	        glm::vec3 fireflyColor = getNotSoRandomColors(i);
 
-	        int lastChangeDir = rand() % 15 + 4;
+	        int lastChangeDir = rand() % 7 + 4;
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
 	        float intensity = 0.05;
 
