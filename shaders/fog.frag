@@ -6,10 +6,16 @@ in block{
 
 uniform sampler2D Texture;
 uniform sampler2D Depth;
+uniform sampler2D FragPosViewSpace;
+
 uniform float FogDensity;
+uniform float FogConstantMultiplier;
+uniform float FogHeight;
+uniform float FogT;
 uniform float zNear = 0.1;
 uniform float zFar = 500.0;
 uniform vec3 FogColor = vec3(0.5, 0.7, 1);
+
 
 layout(location = 0, index = 0) out vec4  Color;
 
@@ -30,11 +36,17 @@ layout(std140) uniform Camera{
 
 // rgb: original color of the pixel
 // distance: camera to point distance
-vec3 applyFog(vec3  rgb, float distance){
+vec3 applyFog(vec3  rgb, float distance, vec3 fragPosViewSpace){
     float density = FogDensity /(zFar -zNear);
     density *= 2; // magic!
 
-    float fogAmount = 1.f - exp(-distance*distance*density*density);
+    vec3 camToPointVector =  (Cam.ViewToWorld * vec4(fragPosViewSpace,1)).xyz;
+//    float fogAmount = 1.f - exp(-distance*distance*density*density);
+//    float fogAmount = exp(-Cam.Position.y*FogDensity*FogConstantMultiplier) * (1.f - exp(-distance*density*abs(camToPointVector.y))/camToPointVector.y * FogHeight);
+    float a = (camToPointVector.y);
+    float s = distance*density*a;
+    float fogAmount = FogConstantMultiplier* exp(-FogDensity*FogT)*  ((1.f - exp(-s))/(a*FogHeight));
+
     return mix(rgb, FogColor, fogAmount );
 }
 
@@ -50,5 +62,6 @@ float linearDepth(float depthSample){
 void main(void){
     float depth = texture(Depth, In.Texcoord).r;
     vec3 color = texture(Texture, In.Texcoord).rgb;
-    Color = vec4(applyFog(color.xyz, linearDepth(depth)),1) ;
+    vec3 fragPosViewSpace = texture(FragPosViewSpace, In.Texcoord).rgb;
+    Color = vec4(applyFog(color.xyz, linearDepth(depth), fragPosViewSpace ), 1) ;
 }
