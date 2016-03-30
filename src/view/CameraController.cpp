@@ -18,10 +18,9 @@ CameraFreefly &CameraController::camera() const {
 }
 
 void CameraController::updateFromSplines(float time) {
-    float indexSpline = glm::mod(time*0.005f, 1.f);
-    float speed = _cameraSpeeds.size() ? _cameraSpeeds.cubicInterpolation(indexSpline).x : 1;
-    speed *= _velocitySplines;
-    _camera.setEye(_cameraPositions.cubicInterpolation(glm::mod(time*speed, 1.f)));
+    float indexSpline = glm::mod(time * _velocitySplines, 1.f);
+    float speed = _cameraSpeeds.size() ? _cameraSpeeds.linearInterpolation(indexSpline).x : 1;
+    _camera.setEye(_cameraPositions.cubicInterpolation(indexSpline));
     _camera.updateFromTarget(_cameraViewTargets.cubicInterpolation(indexSpline));
 }
 
