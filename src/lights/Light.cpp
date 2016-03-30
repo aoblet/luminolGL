@@ -161,13 +161,15 @@ namespace Light{
 			
 			glm::vec3 fireflyPosition = center + glm::vec3( 
 	            rand() % (2*x) + 1 - x
-	            , - rand() % y
+	            , 10 - rand() % y
 	            , rand() % (2*z) + 1 - z
 	        );
 
-	        glm::vec3 fireflyColor = getRandomColors(i);
+	        // glm::vec3 fireflyColor = getRandomColors(i);
+	        glm::vec3 fireflyColor = getNotSoRandomColors(i);
+
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
-	        float intensity = 0.1;
+	        float intensity = 0.05;
 
 	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::PointLightBehavior::RISING, 5, multVelocity);
 	    }
@@ -189,12 +191,12 @@ namespace Light{
 	        );
 
 
-	        glm::vec3 fireflyColor = getRandomColors(i);
-	        // glm::vec3 fireflyColor = getNotSoRandomColors(i);
+	        // glm::vec3 fireflyColor = getRandomColors(i);
+	        glm::vec3 fireflyColor = getNotSoRandomColors(i);
 
 	        int lastChangeDir = rand() % 15 + 4;
 	        float multVelocity = ( rand() % 30 + 10 ) / 10;
-	        float intensity = 0.1;
+	        float intensity = 0.05;
 
 	        addPointLight(fireflyPosition, fireflyColor, intensity, 2.0, Light::PointLightBehavior::RANDOM_DISPLACEMENT, lastChangeDir, multVelocity);
 	    }
@@ -231,20 +233,43 @@ namespace Light{
 
 	glm::vec3 LightHandler::getNotSoRandomColors(int i){
 	   std::vector<glm::vec3> colors;
-	   colors.push_back(glm::vec3(2.0, 0.32, 0.31));
-	   colors.push_back(glm::vec3(0.61, 0.32, 0.31));
-	   colors.push_back(glm::vec3(0.92, 0.91, 0.31));
-	   colors.push_back(glm::vec3(1.82, 1.56, 1.33));
-	   colors.push_back(glm::vec3(0.60, 1.56, 0.86));
-	   colors.push_back(glm::vec3(1.50, 1.64, 0.10));
-	   colors.push_back(glm::vec3(0.0, 0.64, 0.0));
-	   colors.push_back(glm::vec3(1.37, 0.64, 0.0));
-	   colors.push_back(glm::vec3(0.92, 0.0, 0.55));
+	   colors.push_back(glm::vec3(0.9999, 0.921568627, 0.517647059));
+	   colors.push_back(glm::vec3(0.592156863, 0.9999, 0.407843137));
+	   colors.push_back(glm::vec3(0.9999, 0.607843137, 0.407843137));
+	   colors.push_back(glm::vec3(0.9999, 0.77254902, 0.71372549));
+	   colors.push_back(glm::vec3(0.698039216, 0.309803922, 0.215686275));
+	   // colors.push_back(glm::vec3(0, 0, 0));
 	   int size = colors.size();
 
 	   int j = rand() % size -1;	
 
-	   return colors[j];
+	   float red = colors[j].x;
+	   float green = colors[j].y;
+	   float blue = colors[j].z;
+
+	   float kr = ( rand() % 20 -10) / 10;
+	   float kg = ( rand() % 20 -10) / 10;
+	   float kb = ( rand() % 20 -10) / 10;
+
+	   if(red >= 0.3 && red <= 0.8) red += kr; 
+	   if(green >= 0.3 && green <= 0.8) green += kb; 
+	   if(blue >= 0.3 && blue <= 0.8) blue += kb;
+
+		// si la lumière n'est pas assez puissante on va booster un channel au hasard
+	    // if(red<0.4 && green <0.4 && blue < 0.4){
+	    //     int r = rand() % 3 + 1;
+	    //     if(r==1) blue +=0.5; else if(r==2) green +=0.5; else red +=0.5; 
+	    // } 
+	    // else if(red > 0.8 && green > 0.8 && blue > 0.8){
+	    // 	int r = rand() % 3 + 1;
+	    //     if(r==1) blue -=0.6; else if(r==2) green -=0.6; else red -=0.6; 
+	    // }
+	    // else if(red > 0.8 && blue > 0.8){
+	    // 	int r = rand() % 2 + 1;
+	    //     if(r==1) blue -=0.3; else red -=0.3; 
+	    // }
+
+	   return glm::vec3(red, green, blue);
 	}
 
 
