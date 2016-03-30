@@ -182,7 +182,7 @@ int main( int argc, char **argv ) {
     Graphics::VertexBufferObject::unbindAll();
 
     // Create Scene -------------------------------------------------------------------------------------------------------------------------------
-    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/ocean", {}, ".jpg"));
+    Graphics::Skybox skybox(Graphics::CubeMapTexture("../assets/textures/skyboxes/skybox_sunset", {}, ".png"));
 
     Data::SceneIOJson sceneIOJson;
     Graphics::Scene scene(&sceneIOJson, scenePath);
