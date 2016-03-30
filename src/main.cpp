@@ -73,12 +73,12 @@ int main( int argc, char **argv ) {
 
     int DPI;
     GLFWwindow * window = nullptr;
-    bool displayGui = true;
+    bool displayGui = false;
     bool keypressedDrawGui = true;
     // glm::ivec2 dimViewport(1280, 720);
     glm::ivec2 dimViewport(1280, 545); // 2.35
     // glm::ivec2 dimViewport(1280, 692); // 1.85
-    // glm::ivec2 dimViewport(1778, 757);
+    //glm::ivec2 dimViewport(1778, 757); //2.35
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
@@ -140,7 +140,7 @@ int main( int argc, char **argv ) {
     camera.setEye(glm::vec3(10,10,-10));
 
     // Camera splines config
-    View::CameraController cameraController(camera, userInput, 0.023);
+    View::CameraController cameraController(camera, userInput, 0.051);
     try{
         cameraController.positions().load(splineCamPositions);
         cameraController.viewTargets().load(splineCamTargets);
@@ -212,7 +212,7 @@ int main( int argc, char **argv ) {
     ////////////// Sun ---- Point Light 
 
     // lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
-    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::PointLightBehavior::SUN);
+    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(30.65, 16.57, 7.82), 0.8, 2.0, Light::PointLightBehavior::SUN);
 
     ////////////// Firefly fixe---- 
 
@@ -391,12 +391,12 @@ int main( int argc, char **argv ) {
     glm::vec3 translateMeshTransform(0);
 
 
-    bool drawSplines = true;
+    bool drawSplines = false;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 0.04528573;
-    float fogConstantMultiplier = 100;
-    float fogHeight = 0.8685716;
+    float fogDensity = 0.00571428;
+    float fogConstantMultiplier = 88;
+    float fogHeight = 0.5085;
     float fogTest = 10;
     glm::vec3 fogColor = glm::vec3(0.596, 0.569, 0.937);
 
