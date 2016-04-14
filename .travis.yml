@@ -13,10 +13,10 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.6
+      - llvm-toolchain-precise
     packages:
-      - g++-5
       - gcc-5
+      - g++-5
       - libassimp-dev
       - libgoogle-glog-dev
       - libglm-dev
@@ -25,9 +25,13 @@ addons:
 cache:
   apt: true
 
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get install -qq libgoogle-glog-dev g++-5
 
 before_script:
-  - export CXX="g++-4.8"
+  - export CXX="g++-5"
+  - export CC="gcc-5"
 
 script:
   - mkdir build && cd build
