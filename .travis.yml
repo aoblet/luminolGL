@@ -1,0 +1,26 @@
+sudo: true
+
+language: cpp
+
+compiler: g++
+
+branches:
+  only:
+    - develop
+
+addons:
+  apt:
+    packages:
+      - g++-5
+      - libassimp-dev
+      - libgoogle-glog-dev
+      - libglm-dev
+      - rapidjson-dev
+
+cache:
+  apt: true
+
+script:
+  - mkdir build && cd build
+  - cmake ..
+  - make
