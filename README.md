@@ -23,3 +23,4 @@ Inspired from [trine game](http://trine2.com/site/) atmosphere.
 
 
 [![Stories in Ready](https://badge.waffle.io/aoblet/luminolGL.png?label=ready&title=Ready)](http://waffle.io/aoblet/luminolGL)
+[![Build Status](https://travis-ci.org/aoblet/luminolGL.svg?branch=develop)](https://travis-ci.org/aoblet/luminolGL)
