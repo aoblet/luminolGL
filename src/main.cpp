@@ -57,8 +57,6 @@
 
 #include "callbacks/CallbacksManager.hpp"
 
-
-
 #define IMGUI_DRAW 1
 
 // Font buffers IMGUI
@@ -67,7 +65,6 @@ extern const unsigned int DroidSans_ttf_len;
 
 int main( int argc, char **argv ) {
 
-
     // GLOG debug level, 0 == all
     FLAGS_minloglevel = 0;
 
@@ -75,10 +72,7 @@ int main( int argc, char **argv ) {
     GLFWwindow * window = nullptr;
     bool displayGui = true;
     bool keypressedDrawGui = true;
-    // glm::ivec2 dimViewport(1280, 720);
-    glm::ivec2 dimViewport(1280, 545); // 2.35
-    // glm::ivec2 dimViewport(1280, 692); // 1.85
-    // glm::ivec2 dimViewport(1778, 757);
+    glm::ivec2 dimViewport(1280, 545); // 2.35 ratio
     int& width = dimViewport.x, height = dimViewport.y;
     float fps = 0.f;
 
@@ -96,16 +90,6 @@ int main( int argc, char **argv ) {
     Gui::ObjectPicker picker;
     Gui::Gui gui(DPI, width, height, guiExpandWidth, guiExpandHeight, "LuminoGL");
     bool castShadowKeyPressed = false;
-
-
-//    DLOG(INFO) << "creating meshgrid...";
-//    DLOG(INFO) << "creating texture...";
-//    Graphics::Texture gridTex("../assets/models/mountains/mountain_03_spec.png");
-//    DLOG(INFO) << "generating meshgrid...";
-//    Graphics::Mesh grid = Graphics::Mesh::genGrid(400, 400, &gridTex, glm::vec3(1), 0.1f, 15);
-//    grid.saveOBJ("../assets/models/ground/", "mountain03", false);
-//    DLOG(INFO) << "meshgrid created !";
-//    return 0;
 
     // SHADERS
     Graphics::ShaderProgram mainShader("../shaders/aogl.vert", "", "../shaders/aogl.frag");
@@ -129,7 +113,6 @@ int main( int argc, char **argv ) {
     Graphics::ShaderProgram ambientShader(blitShader.vShader(), "../shaders/ambient.frag");
     Graphics::ShaderProgram fogShader(blitShader.vShader(), "../shaders/fog.frag");
 
-
     const std::string scenePath             = "../assets/luminolGL.json";
     const std::string splineCamPositions    = "../assets/camPos.txt";
     const std::string splineCamTargets      = "../assets/camTargets.txt";
@@ -140,7 +123,8 @@ int main( int argc, char **argv ) {
     camera.setEye(glm::vec3(10,10,-10));
 
     // Camera splines config
-    View::CameraController cameraController(camera, userInput, 0.023);
+//    View::CameraController cameraController(camera, userInput, 0.042);
+    View::CameraController cameraController(camera, userInput, 1);
     try{
         cameraController.positions().load(splineCamPositions);
         cameraController.viewTargets().load(splineCamTargets);
@@ -149,15 +133,12 @@ int main( int argc, char **argv ) {
     catch(std::exception& e){
         DLOG(WARNING) << e.what();
     }
-    cameraController.setSpectator(!cameraController.isSpectator());
-
 
     // Camera link with spline picker
     Gui::SplinePicker splinePicker(cameraController.positions(), cameraController.viewTargets(), cameraController.speeds());
     float splineSmooth = 1;
     int freezeTime = 0;
     float timeFreezeValue = 0;
-
 
     // Create Quad for FBO -------------------------------------------------------------------------------------------------------------------------------
     int   quad_triangleCount = 2;
@@ -203,7 +184,7 @@ int main( int argc, char **argv ) {
 
     // My Lights / Fireflies -------------------------------------------------------------------------------------------------------------------------------
     Light::LightHandler lightHandler;
-    lightHandler.setDirectionalLight(glm::vec3(0.296, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
+    lightHandler.setDirectionalLight(glm::vec3(0.975, -0.415, -1), glm::vec3(1, 0.41, 0.22), 1);
 
     glm::vec3 ambient(0.65, 0.65, 1);
     float ambientIntensity = 0.2;
@@ -211,27 +192,25 @@ int main( int argc, char **argv ) {
 
     ////////////// Sun ---- Point Light 
 
-    // lightHandler.addPointLight(glm::vec3(-15000, 6000, 15000), glm::vec3(44.5, 35.5, 10.5), 0.8, 2.0, Light::PointLightBehavior::SUN);
-    lightHandler.addPointLight(glm::vec3(-4300, 2252, 15000), glm::vec3(79.84, 65.10, 22.39), 0.8, 2.0, Light::PointLightBehavior::SUN);
-
-    ////////////// Firefly fixe---- 
-
-//    lightHandler.addPointLight(glm::vec3(-4.3, 19.5f, -7), glm::vec3(0.9, 0.2, 0.6), 0.35, 2.0, Light::PointLightBehavior::FIXE);
+    lightHandler.addPointLight(glm::vec3(-14629, 1578, 15000), glm::vec3(30.65, 16.57, 7.82), 0.8, 2.0, Light::PointLightBehavior::SUN);
 
     ////////////// Tornado Fireflies ---- // fd, rayon, int step, NB_TORNADO_FIREFLIES, multCounterCircle, w 
 //    lightHandler.createFirefliesTornado(10, 1, 1, 50, 5, 1);
 
     ////////////// Rising Fireflies ---- Point Light // NB_RISING_FIREFLIES, width, profondeur, height
-//    lightHandler.createRisingFireflies(100, 10, 10, 100, glm::vec3(80,10,-186));
-//    lightHandler.createRisingFireflies(400, 300, 300, 100, glm::vec3(40,10,40));
+   lightHandler.createRisingFireflies(5, 30, 30, 40, glm::vec3(247, 1, 7)); // spot 2 // arbre + statue sur l'eau à l'est// fix height //breakdown
+   lightHandler.createRisingFireflies(20, 60, 60, 60, glm::vec3(-32.5, 42.7, -112.8)); // spot 3 grand arbre// fix height //breakdown
+   lightHandler.createRisingFireflies(30, 30, 30, 60, glm::vec3(-32.5, 42.7, -112.8)); // spot 3 BIS // fix height //breakdown
+
 
     ////////////// Random Displacement Fireflies ---- Point Light // NB_RANDOM_FIREFLIES, width, profondeur, height 
-    // lightHandler.createRandomFireflies(20, 300, 300, 100, glm::vec3(40,10,40));
-
+   lightHandler.createRandomFireflies(5, 20, 20, 10, glm::vec3(219, 9, -114)); // spot 1 // breakdown
+   lightHandler.createRandomFireflies(5, 30, 30, 5, glm::vec3(247, 10, 7)); // spot 2 // breakdown
+   lightHandler.createRandomFireflies(40, 20, 20, 20, glm::vec3(-32.5, 72.7, -112.8)); // spot 3 // breakdown
 
     // ---------------------- For Geometry Shading
     float timeGLFW = 0;
-    bool drawFBOTextures    = false;
+    bool drawFBOTextures    = true;
     int isNormalMapActive   = 1;
 
     mainShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
@@ -269,7 +248,7 @@ int main( int argc, char **argv ) {
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur
-    float dirLightOrthoProjectionDim = 210;
+    float dirLightOrthoProjectionDim = 220;
     glm::vec3 focus(0, 1, 600);
 
     // ---------------------- FX uniform update
@@ -381,25 +360,22 @@ int main( int argc, char **argv ) {
     Graphics::GeometricFBO waterReflectionFBO(dimViewport);
     Graphics::PostFxFBO waterTextures(dimViewport, 2);
     Graphics::Texture waterNormals("../assets/textures/water/lake.png");
-    float noiseAmplitudeWaves = 0.302857;
+    float noiseAmplitudeWaves = 0.30285;
     float specularAmplitudeWaves = 2;
     float fresnelBias = 0.001f;
-    float fresnelAmplitude = 2.2857;
-
+    float fresnelAmplitude = 2.285;
 
     float scaleMeshTransform(1);
     glm::vec3 translateMeshTransform(0);
 
-
     bool drawSplines = true;
     bool isSplinePickerEnabled = false;
 
-    float fogDensity = 0.04528573;
-    float fogConstantMultiplier = 100;
-    float fogHeight = 0.8685716;
+    float fogDensity = 0.00571428;
+    float fogConstantMultiplier = 88;
+    float fogHeight = 0.5085;
     float fogTest = 10;
     glm::vec3 fogColor = glm::vec3(0.596, 0.569, 0.937);
-
 
     //*********************************************************************************************
     //***************************************** MAIN LOOP *****************************************
@@ -613,7 +589,6 @@ int main( int argc, char **argv ) {
         glEnable(GL_DEPTH_TEST);
         gBufferFBO.unbind();
 
-
         //----------------------- WATER -------------
         //----------------------- REFLECTION SCENE -------------
         // Render scene for water (flipped Camera)
@@ -671,13 +646,11 @@ int main( int argc, char **argv ) {
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         waterTextures.unbind();
 
-
         //----------------------- REFLECTION - REFRACTION - Wave Animation into main scene (gbuffer) -------------
         mainShader.useProgram();
         waterRenderShader.updateUniform(Graphics::UBO_keys::DIFFUSE, 0);
         waterRenderShader.updateUniform(Graphics::UBO_keys::NORMAL_MAP, 1);
         waterRenderShader.updateUniform(Graphics::UBO_keys::WATER_REFRACTION_TEXTURE, 2);
-
 
         gBufferFBO.bind();
         waterRenderShader.useProgram();
@@ -839,7 +812,6 @@ int main( int argc, char **argv ) {
         fxFBO.texture(2).bind(GL_TEXTURE2);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
-
         // ------------------------------------ Fireflies
         fireflyShader.useProgram(); // point light shaders
         quadVAO.bind(); // Bind quad vao
@@ -848,7 +820,6 @@ int main( int argc, char **argv ) {
         gBufferFBO.color().bind(GL_TEXTURE0);
         gBufferFBO.normal().bind(GL_TEXTURE1);
         gBufferFBO.depth().bind(GL_TEXTURE2);
-        // gBufferFBO.shadow().bind(GL_TEXTURE3);
 
         // Sun
         uboLight.updateBuffer(&lightHandler._pointLights[0], sizeof(Light::PointLight));
@@ -875,11 +846,11 @@ int main( int argc, char **argv ) {
                 quadVerticesVbo.updateData(littleQuadVertices);
                 quadIdsVbo.updateData(quadIds);
                 
-                cptLights++;
-
                 uboLight.updateBuffer(&lightHandler._pointLights[i], sizeof(Light::PointLight));
-                if(lightHandler._pointLights[i]._pos.y > -3)
+                if(lightHandler._pointLights[i]._pos.y > -3){
+                    cptLights++;
                     glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+                }
             }
         }
         quadVerticesVbo.updateData(quadVertices);
@@ -932,8 +903,6 @@ int main( int argc, char **argv ) {
             fxFBO.texture(1).bind(GL_TEXTURE0);
             glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
-
-
 
         // ------- COC ------
         // Use circle of confusion program shader
@@ -1073,7 +1042,6 @@ int main( int argc, char **argv ) {
         if(glfwGetKey(window, GLFW_KEY_Y)) picker.switchMode(Gui::PickerMode::SCALE);
         if(glfwGetKey(window, GLFW_KEY_R)) picker.switchMode(Gui::PickerMode::ROTATION);
 
-
         if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !castShadowKeyPressed){
             picker.toggleShadow();
             castShadowKeyPressed = true;
@@ -1091,12 +1059,10 @@ int main( int argc, char **argv ) {
             keypressedDrawGui = false;
         }
 
-
         if(displayGui){
 
             gui.addLabel("FPS", &fps);
-            gui.addLabel("Lights", cptLights);
-            
+
             if(gui.addButton("Menu", gui.displayMenu)){
                 gui.setWindowWidth(guiExpandWidth);
                 gui.setWindowHeight(guiExpandHeight);
@@ -1106,10 +1072,8 @@ int main( int argc, char **argv ) {
                 gui.setWindowHeight(guiMinimalHeight);
             }
 
-
             if(gui.displayMenu){
 
-                gui.addLabel("Lights", cptLights);
                 gui.addSeparatorLine();
                 gui.addIndent();
 

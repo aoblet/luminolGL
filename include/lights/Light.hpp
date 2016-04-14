@@ -205,6 +205,7 @@ namespace Light{
 			void createRandomFireflies(const int nbFireflies, const int x, const int z, const int y, const glm::vec3 center=glm::vec3(0,0,0));
 
 			glm::vec3 getRandomColors(int i);
+			glm::vec3 getNotSoRandomColors(int i);
 
 			float getSpecularPower(){ return _specularPower; }
 			float getLightAttenuation(){ return _lightAttenuation; }
