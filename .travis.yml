@@ -13,8 +13,9 @@ cache:
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo add-apt-repository ppa:wsnipex/kodi-git -y
   - sudo apt-get update
-  - sudo apt-get install -qq libgoogle-glog-dev g++-5 gcc-5 libglm-dev libassimp-dev rapidjson-dev
+  - sudo apt-get install -qq libgoogle-glog0v5 g++-5 gcc-5 libglm-dev libassimp-dev rapidjson
 
 before_script:
   - export CXX="g++-5"
