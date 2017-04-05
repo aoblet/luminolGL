@@ -37,7 +37,7 @@ CubeMapTexture::CubeMapTexture(const std::string &folderTextures, const std::vec
             DLOG(ERROR) << "Error throwing exception";
             throw std::runtime_error("CubeMapTexture error when loading image " + filename +" : data empty");
         }
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

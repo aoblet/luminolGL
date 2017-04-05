@@ -244,7 +244,7 @@ int main( int argc, char **argv ) {
     float shadowBlurSampleCount = 1;
     float shadowBlurSigma       = 1.5;
 
-    float gamma                 = 1.22;
+    float gamma                 = 2.2;
     float sobelIntensity        = 0.05;
     float sampleCount           = 1; // blur
     float motionBlurSampleCount = 8; // motion blur

@@ -33,7 +33,7 @@ namespace Graphics{
         void aiMeshToMesh(aiMesh* aiMesh, const aiScene* scene);
         void loadMeshes(const aiScene* scene);
         /** Save the texture and return the storage address */
-        Texture* saveTexture(const std::string& pathTexture);
+        Texture* saveTexture(const std::string& pathTexture, bool sRGB=true);
 
     public:
         static const std::string PATH_PLANE;

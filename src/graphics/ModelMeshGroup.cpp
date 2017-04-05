@@ -138,13 +138,13 @@ void ModelMeshGroup::aiMeshToMesh(aiMesh *aiMesh, const aiScene *scene) {
     _meshes.push_back(std::move(mesh));
 }
 
-Texture*ModelMeshGroup::saveTexture(const std::string &pathTexture) {
+Texture* ModelMeshGroup::saveTexture(const std::string &pathTexture, bool sRGB) {
 
     // DLOG(INFO) << "Saving texture (no doubloons)" << pathTexture;
 
     // If the texture does not exist we create it
     if(_textures.find(pathTexture) == _textures.end())
-        _textures.insert(std::make_pair(pathTexture, Texture(pathTexture)));
+        _textures.insert(std::make_pair(pathTexture, Texture(pathTexture, sRGB ? TextureType::SRGB: TextureType::DEFAULT)));
     return &_textures[pathTexture];
 }
 

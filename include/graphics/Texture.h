@@ -19,7 +19,7 @@ namespace Graphics
     struct TexParams{
 
         //For glTexImage2D
-        GLenum internalFormat;  /** GL_RGB, GL_RGBA8, GL_DEPTH_COMPONENT24, ... */
+        GLenum internalFormat;  /** GL_RGB, GL_RGBA8, GL_DEPTH_COMPONENT24, GL_SRGB ... */
         GLenum format;          /** Specifies the format of the pixel data. GL_RED, GL_RG, GL_RGB, GL_BGR, ... */
         GLenum type;            /** Specifies the data type of the pixel data. GL_UNSIGNED_BYTE, GL_BYTE, GL_INT, GL_FLOAT, ... */
 
@@ -56,6 +56,10 @@ namespace Graphics
         static TexParams normalEncodedFBO(){
             return TexParams(GL_RGBA8,  GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
         }
+
+        static TexParams sRGB(){
+            return TexParams(GL_SRGB_ALPHA, GL_RGBA, GL_UNSIGNED_BYTE, GL_CLAMP_TO_EDGE, GL_NEAREST, false);
+        }
     };
 
     enum class TextureType{
@@ -63,7 +67,8 @@ namespace Graphics
         FRAMEBUFFER_DEPTH,
         FRAMEBUFFER_RGBA,
         FRAMEBUFFER_NORMAL_ENCODED,
-        FROM_FILE
+        FROM_FILE,
+        SRGB
     };
 
     class Texture {

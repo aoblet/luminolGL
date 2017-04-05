@@ -69,6 +69,8 @@ namespace Graphics
             _texParams = TexParams::rgbaFBO();
         else if(type == TextureType::FRAMEBUFFER_NORMAL_ENCODED)
             _texParams = TexParams::normalEncodedFBO();
+        else if(type == TextureType::SRGB)
+            _texParams = TexParams::sRGB();
         else
             _texParams = TexParams();
 
