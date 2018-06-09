@@ -8,22 +8,20 @@ set(CMAKE_CXX_STANDARD 11)
 
 
 # Find packages
-find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
-
 find_package(GLEW REQUIRED)
 find_package(GLM REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(assimp REQUIRED)
 find_package(GLOG REQUIRED)
 find_package(RapidJSON REQUIRED)
+find_package(glfw3 REQUIRED)
 
 # Include external headers
 include_directories(
     ${GLM_INCLUDE_DIR}
     ${GLEW_INCLUDE_DIR}
     ${OpenGL_INCLUDE_DIR}
-    ${GLFW_INCLUDE_DIRS}
+    ${GLFW3_INCLUDE_DIR}
     ${assimp_INCLUDE_DIRS}
     ${GLOG_INCLUDE_DIRS}
     ${RAPIDJSON_INCLUDES}
@@ -39,10 +37,11 @@ add_executable(${PROJECT_EXE} ${SRC_FILES})
 # Load libraries
 add_subdirectory(lib)
 
+
 # Link libraries with luminolGL
 target_link_libraries(
     ${PROJECT_EXE}
-    ${GLFW_LIBRARIES}
+    ${GLFW3_LIBRARY}
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARY}
     ${assimp_LIBRARIES}
