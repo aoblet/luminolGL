@@ -4,6 +4,7 @@ project (luminolGL)
 set(PROJECT_EXE luminolGL)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -ffast-math -Wall")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmakeModules/)
+set(CMAKE_CXX_STANDARD 11)
 
 
 # Find packages
