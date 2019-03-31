@@ -3,7 +3,7 @@
 Advanced OpenGL 4 project - [IMAC School](http://www.ingenieur-imac.fr/)
 Professor [Adrien Herubel](https://github.com/AdrienHerubel)
 
-[Demo video](https://www.youtube.com/watch?v=ztFf6k681KE)
+[![Demo video](https://img.youtube.com/vi/ztFf6k681KE/0.jpg)](https://www.youtube.com/watch?v=ztFf6k681KE)
 
 
 The aim is to build a small render engine using deferred shading, shadow map and post fx treatments.
